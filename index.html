@@ -12618,6 +12618,11 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
         ? `<button class="btn btn-header-outline btn-sm" onclick="openCustomerAccountModal()"><i class="fa fa-circle-user"></i><span class="hdr-label"> ${(currentCustomer.name || 'My Account').split(' ')[0]}</span></button>`
         : `<button class="btn btn-header-outline btn-sm" onclick="openCustomerAuthModal()"><i class="fa fa-user"></i><span class="hdr-label"> Login / Sign Up</span></button>`;
       const bellBtn = `<button class="btn btn-header-outline btn-sm notif-bell-btn" id="hdrBellBtn" onclick="openNotificationFeedModal()" title="Notifications"><i class="fa fa-bell"></i><span class="notif-badge" id="hdrBellBadge" style="display:none">0</span></button>`;
+      // Admin-controlled via Site Config -> Feature Visibility -> "Register Your Business"
+      // Header Button. Only relevant to someone who isn't already a business/driver/admin.
+      const registerBtn = (SITE_CONFIG.showRegisterButton !== false)
+        ? `<button class="btn btn-header-outline btn-sm" onclick="openBusinessRegModal()"><i class="fa fa-store"></i><span class="hdr-label"> Register Your Business</span></button>`
+        : '';
       if (hdrRight) {
         if (currentBusiness) {
           const bName = currentBusiness.displayName || currentBusiness.venture || currentBusiness.name || currentBusiness.businessName || (currentBusiness.email ? currentBusiness.email.split('@')[0] : 'My Business');
@@ -12630,7 +12635,7 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
           hdrRight.innerHTML = `${bellBtn}${customerBtn}<span class="admin-badge hdr-label">Admin</span>
         <button class="btn btn-sm btn-header-outline" onclick="exitAdmin()"><i class="fa fa-sign-out-alt"></i><span class="hdr-label"> Exit Admin</span></button>`;
         } else {
-          hdrRight.innerHTML = `${bellBtn}${customerBtn}`;
+          hdrRight.innerHTML = `${registerBtn}${bellBtn}${customerBtn}`;
         }
         if (typeof updateUnreadNotifBadges === 'function') updateUnreadNotifBadges();
       }
@@ -22138,6 +22143,20 @@ Together, we grow stronger — one order at a time.`;
         </p>
       </div>
 
+      <!-- 3a. Register Your Business header button -->
+      <div style="background:var(--cream);border-radius:12px;padding:16px;border:1.5px solid var(--border)">
+        <div style="font-weight:700;font-size:.95rem;margin-bottom:8px;color:var(--text);display:flex;align-items:center;gap:8px">
+          <i class="fa fa-store" style="color:var(--green);font-size:1.1rem"></i> "Register Your Business" Header Button
+        </div>
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600;font-size:.88rem">
+          <input type="checkbox" id="cfg_showRegisterButton" ${SITE_CONFIG.showRegisterButton !== false ? 'checked' : ''} style="accent-color:var(--green);width:18px;height:18px">
+          Show "Register Your Business" Button in Top Header
+        </label>
+        <p style="font-size:.78rem;color:var(--text-muted);margin-top:6px;line-height:1.4">
+          When enabled, a button next to Login/Account in the top header invites visitors to register as a seller. When disabled, it's hidden site-wide (registration is still reachable from the sidebar menu).
+        </p>
+      </div>
+
       <!-- 3. AI Chatbot Assistant (Ask TynTron) -->
       <div style="background:var(--cream);border-radius:12px;padding:16px;border:1.5px solid var(--border)">
         <div style="font-weight:700;font-size:.95rem;margin-bottom:8px;color:var(--text);display:flex;align-items:center;gap:8px">
@@ -22335,6 +22354,7 @@ Together, we grow stronger — one order at a time.`;
     async function saveAdminFeatures() {
       const showCarpool = document.getElementById('cfg_showCarpool')?.checked !== false;
       const showAiChatbot = document.getElementById('cfg_showAiChatbot')?.checked !== false;
+      const showRegisterButton = document.getElementById('cfg_showRegisterButton')?.checked !== false;
       const showProductListing = !!document.getElementById('cfg_showProductListing')?.checked;
       const showBusinessCanDeliver = document.getElementById('cfg_showBusinessCanDeliver')?.checked !== false;
       const showDriverLogin = document.getElementById('cfg_showDriverLogin')?.checked !== false;
@@ -22345,6 +22365,7 @@ Together, we grow stronger — one order at a time.`;
 
       SITE_CONFIG.showCarpool = showCarpool;
       SITE_CONFIG.showAiChatbot = showAiChatbot;
+      SITE_CONFIG.showRegisterButton = showRegisterButton;
       SITE_CONFIG.showProductListing = showProductListing;
       SITE_CONFIG.showBusinessCanDeliver = showBusinessCanDeliver;
       SITE_CONFIG.showDriverLogin = showDriverLogin;
@@ -22354,6 +22375,7 @@ Together, we grow stronger — one order at a time.`;
       await fsSaveConfig({
         showCarpool,
         showAiChatbot,
+        showRegisterButton,
         showProductListing,
         showBusinessCanDeliver,
         showDriverLogin,
@@ -22363,6 +22385,7 @@ Together, we grow stronger — one order at a time.`;
 
       applyFooterLinks();
       renderGlobalProductBoxes();
+      updatePanelTabs();
       showToast('Feature visibility settings saved ✓');
     }
     function adminAddNumber() {
