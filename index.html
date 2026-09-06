@@ -7837,7 +7837,7 @@
       const ejsPubKey = SITE_CONFIG.ejsPublicKey || '';
       const ejsService = SITE_CONFIG.ejsServiceId || '';
       const ejsTemplate = SITE_CONFIG.ejsBusinessTemplateId || SITE_CONFIG.ejsTemplateId || '';
-      const adminEmail = SITE_CONFIG.contactEmail || 'admin@tyntron.co.in';
+      const adminEmail = SITE_CONFIG.contactEmail || 'info@tyntron.com';
       if (!(ejsPubKey && ejsService && ejsTemplate)) return { ok: false, reason: 'Email service not configured' };
       try {
         await emailjs.init({ publicKey: ejsPubKey });
@@ -13331,7 +13331,7 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
           from_email: 'noreply@tyntron.co.in',
           subject: `[TynTron Announcement] ${notif.title}`,
           message: notif.body.replace(/<[^>]*>?/gm, ''),
-          to_email: SITE_CONFIG.contactEmail || 'admin@tyntron.co.in'
+          to_email: SITE_CONFIG.contactEmail || 'info@tyntron.com'
         });
       } catch (e) { console.warn('Email broadcast warning:', e); }
     }
@@ -15437,7 +15437,7 @@ Together, we grow stronger — one order at a time.`;
         const ejsPubKey = SITE_CONFIG.ejsPublicKey || '';
         const ejsService = SITE_CONFIG.ejsServiceId || '';
         const ejsTemplate = SITE_CONFIG.ejsBusinessTemplateId || SITE_CONFIG.ejsTemplateId || '';
-        const adminEmail = SITE_CONFIG.contactEmail || 'admin@tyntron.co.in';
+        const adminEmail = SITE_CONFIG.contactEmail || 'info@tyntron.com';
 
         if (ejsPubKey && ejsService && ejsTemplate) {
           try {
@@ -16276,7 +16276,7 @@ Together, we grow stronger — one order at a time.`;
           await emailjs.send(ejsService, ejsTemplate, {
             from_name: name, from_email: email, mobile: mobile || 'Not provided',
             subject: subject, message: message,
-            to_email: 'contact@tyntron.co.in'
+            to_email: SITE_CONFIG.contactEmail || 'info@tyntron.com'
           });
           status.textContent = 'Message sent successfully! We will get back to you soon.';
           status.style.color = 'var(--green)'; status.style.display = 'block';
@@ -16289,7 +16289,7 @@ Together, we grow stronger — one order at a time.`;
         }
       } else {
         const body = encodeURIComponent(`Name: ${name}\nEmail: ${email}\nMobile: ${mobile || 'Not provided'}\n\n${message}`);
-        window.open(`mailto:contact@tyntron.co.in?subject=${encodeURIComponent(subject)}&body=${body}`, '_blank');
+        window.open(`mailto:${SITE_CONFIG.contactEmail || 'info@tyntron.com'}?subject=${encodeURIComponent(subject)}&body=${body}`, '_blank');
         status.textContent = 'Your mail client has opened. Please send the email from there.';
         status.style.color = '#b8860b'; status.style.display = 'block';
         btn.disabled = false; btn.innerHTML = '<i class="fa fa-paper-plane"></i> Send Message';
@@ -19827,7 +19827,7 @@ Together, we grow stronger — one order at a time.`;
           + `• Speciality: ${vendor.speciality || 'Quality Community Services'}\n`
           + `• Location: ${vendor.society || 'Community'}${vendor.flat ? ' (Flat ' + vendor.flat + ')' : ''}\n\n`
           + `👉 Order Now on TynTron:\n`
-          + `https://tyntron.co.in\n\n`
+          + `https://tyntron.com\n\n`
           + `Thank you for supporting home businesses! We look forward to serving you.\n\n`
           + `Best regards,\n`
           + `${vendor.venture} & Team TynTron\n`
