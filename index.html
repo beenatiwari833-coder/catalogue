@@ -7828,6 +7828,41 @@
       }
     }
 
+    /* Notifies the admin contact address (Site Config -> contactEmail) that a new business
+       registration is waiting for review, mirroring the existing service-expansion-request
+       admin email's pattern. Best-effort -- a failure here never blocks the seller's own
+       registration from completing, so it's always called without awaiting/surfacing errors
+       to them. */
+    async function _notifyAdminNewBusinessRequest(reqData) {
+      const ejsPubKey = SITE_CONFIG.ejsPublicKey || '';
+      const ejsService = SITE_CONFIG.ejsServiceId || '';
+      const ejsTemplate = SITE_CONFIG.ejsBusinessTemplateId || SITE_CONFIG.ejsTemplateId || '';
+      const adminEmail = SITE_CONFIG.contactEmail || 'admin@tyntron.co.in';
+      if (!(ejsPubKey && ejsService && ejsTemplate)) return { ok: false, reason: 'Email service not configured' };
+      try {
+        await emailjs.init({ publicKey: ejsPubKey });
+        await emailjs.send(ejsService, ejsTemplate, {
+          from_name: reqData.venture || 'A new business', from_email: 'noreply@tyntron.co.in',
+          mobile: reqData.mobile || reqData.phone || '',
+          subject: `New seller request for approval: ${reqData.venture || 'Untitled business'}`,
+          message: `A service provider has submitted a new registration on TynTron and is waiting for admin approval.\n\n`
+            + `• Business: ${reqData.venture || '—'}\n`
+            + `• Category: ${reqData.cat || '—'}\n`
+            + `• Society: ${reqData.society || '—'}\n`
+            + `• Contact Person: ${reqData.contact || '—'}\n`
+            + `• Mobile: ${reqData.mobile || reqData.phone || '—'}\n`
+            + `• Email: ${reqData.email || '—'}\n`
+            + `• Submitted: ${new Date().toLocaleString()}\n\n`
+            + `Please review and approve/reject it from the Admin Panel.`,
+          to_email: adminEmail
+        });
+        return { ok: true };
+      } catch (e) {
+        console.warn('Admin new-request notification email failed:', e.message);
+        return { ok: false, reason: e.text || e.message || 'unknown error' };
+      }
+    }
+
     async function _sendNotificationRejectionEmail(email, senderName, title, reason) {
       if (!email) return { ok: false, reason: 'No business email address available' };
       const ejsPubKey = SITE_CONFIG.ejsPublicKey || '';
@@ -19533,6 +19568,9 @@ Together, we grow stronger — one order at a time.`;
             throw dbErr;
           }
         }
+
+        // Best-effort — never block the seller's own submission on this.
+        _notifyAdminNewBusinessRequest(reqData).catch(() => {});
 
         _srqAll = await fsLoadBusinessRequests();
 
