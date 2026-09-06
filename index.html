@@ -11895,9 +11895,6 @@
 
     let DATA = loadData();
     let IMGS = loadImages();
-    /* Categories with zero real (Firestore-backed) vendors fall back to the built-in
-       demo listings so customer browsing doesn't look empty before local businesses sign
-       up; any category with at least one real vendor shows only real ones (no mixing). */
     function isVendorPubliclyVisible(v) {
       if (!v) return false;
       if (v.active === false) return false;
@@ -11919,10 +11916,13 @@
       return true;
     }
 
+    // Used to fall back to the built-in SEED demo listings for any category with zero real
+    // vendors, so browsing never looked empty before real sellers signed up. Removed now that
+    // real vendors exist -- a deleted/never-onboarded category shows a real empty state
+    // instead of demo businesses (with real-looking names/phone numbers) that could confuse
+    // customers into thinking they're genuine listings.
     function getBrowseData() {
-      const activeData = DATA.filter(d => isVendorPubliclyVisible(d));
-      const realCats = new Set(activeData.map(d => d.cat));
-      return activeData.concat(SEED.filter(s => !realCats.has(s.cat)));
+      return DATA.filter(d => isVendorPubliclyVisible(d));
     }
 
     /* ═══════════ FIRST LOGIN SELLER ONBOARDING & TERMS ═══════════ */
