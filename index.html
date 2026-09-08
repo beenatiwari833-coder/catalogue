@@ -4201,7 +4201,8 @@
         <div class="form-group" style="margin-bottom:12px">
           <label>New Password *</label>
           <div class="token-wrap">
-            <input type="password" id="businessResetNewPwInput" placeholder="Minimum 6 characters" oninput="validateRealtimePassword('businessResetNewPwInput', 'businessResetNewPw_hint', 'businessResetConfirmPwInput', 'businessResetConfirmPw_hint')">
+            <input type="password" id="businessResetNewPwInput" placeholder="Minimum 6 characters"
+              oninput="validateRealtimePassword('businessResetNewPwInput', 'businessResetNewPw_hint', 'businessResetConfirmPwInput', 'businessResetConfirmPw_hint')">
             <button class="token-toggle" type="button" onclick="togglePwVis('businessResetNewPwInput',this)"><i
                 class="fa fa-eye"></i> Show</button>
           </div>
@@ -4210,7 +4211,8 @@
         <div class="form-group" style="margin-bottom:16px">
           <label>Confirm New Password *</label>
           <div class="token-wrap">
-            <input type="password" id="businessResetConfirmPwInput" placeholder="Re-enter new password" oninput="validateRealtimeConfirmPassword('businessResetNewPwInput', 'businessResetConfirmPwInput', 'businessResetConfirmPw_hint')">
+            <input type="password" id="businessResetConfirmPwInput" placeholder="Re-enter new password"
+              oninput="validateRealtimeConfirmPassword('businessResetNewPwInput', 'businessResetConfirmPwInput', 'businessResetConfirmPw_hint')">
             <button class="token-toggle" type="button" onclick="togglePwVis('businessResetConfirmPwInput',this)"><i
                 class="fa fa-eye"></i> Show</button>
           </div>
@@ -4243,11 +4245,16 @@
         <label
           style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:.85rem;font-weight:600;color:var(--green-dark)">
           <input type="checkbox" id="sellerTermsCheckbox" style="accent-color:var(--green);width:18px;height:18px">
-          <span>I have read and accept the <a href="#" onclick="toggleSellerTermsBox(event)" style="color:var(--green);text-decoration:underline;font-weight:700">TynTron Terms &amp; Conditions and Seller Guidelines</a> *</span>
+          <span>I have read and accept the <a href="#" onclick="toggleSellerTermsBox(event)"
+              style="color:var(--green);text-decoration:underline;font-weight:700">TynTron Terms &amp; Conditions and
+              Seller Guidelines</a> *</span>
         </label>
         <div>
-          <button type="button" class="btn btn-sm btn-ghost" id="sellerTermsCollapseBtn" onclick="toggleSellerTermsBox(event)" style="font-size:.8rem;color:var(--green-dark);padding:4px 10px;border:1px dashed var(--green-light);border-radius:6px">
-            <i class="fa fa-eye" id="sellerTermsEyeIcon"></i> <span id="sellerTermsToggleLabel">View Terms &amp; Conditions</span>
+          <button type="button" class="btn btn-sm btn-ghost" id="sellerTermsCollapseBtn"
+            onclick="toggleSellerTermsBox(event)"
+            style="font-size:.8rem;color:var(--green-dark);padding:4px 10px;border:1px dashed var(--green-light);border-radius:6px">
+            <i class="fa fa-eye" id="sellerTermsEyeIcon"></i> <span id="sellerTermsToggleLabel">View Terms &amp;
+              Conditions</span>
           </button>
         </div>
       </div>
@@ -4278,7 +4285,8 @@
         <div class="form-group full">
           <label>New Password *</label>
           <div class="token-wrap">
-            <input type="password" id="sfpw_new" placeholder="At least 6 characters" oninput="validateRealtimePassword('sfpw_new', 'sfpw_new_hint', 'sfpw_confirm', 'sfpw_confirm_hint')">
+            <input type="password" id="sfpw_new" placeholder="At least 6 characters"
+              oninput="validateRealtimePassword('sfpw_new', 'sfpw_new_hint', 'sfpw_confirm', 'sfpw_confirm_hint')">
             <button class="token-toggle" type="button" onclick="togglePwVis('sfpw_new',this)"><i class="fa fa-eye"></i>
               Show</button>
           </div>
@@ -4287,7 +4295,8 @@
         <div class="form-group full">
           <label>Confirm New Password *</label>
           <div class="token-wrap">
-            <input type="password" id="sfpw_confirm" placeholder="Re-enter new password" oninput="validateRealtimeConfirmPassword('sfpw_new', 'sfpw_confirm', 'sfpw_confirm_hint')">
+            <input type="password" id="sfpw_confirm" placeholder="Re-enter new password"
+              oninput="validateRealtimeConfirmPassword('sfpw_new', 'sfpw_confirm', 'sfpw_confirm_hint')">
             <button class="token-toggle" type="button" onclick="togglePwVis('sfpw_confirm',this)"><i
                 class="fa fa-eye"></i> Show</button>
           </div>
@@ -4409,8 +4418,17 @@
             <div class="form-group">
               <label><i class="fa fa-building" style="color:var(--green)"></i> Society / Complex *</label>
               <div style="position:relative;width:100%">
-                <input type="text" id="drv_reg_society" required placeholder="Search area, street, society…"
-                  autocomplete="off" oninput="onSocietyManualSearch('drv_reg_society', 'drv_reg_society_suggestions')"
+                <select id="drv_reg_society_select"
+                  onchange="handleFormSocietyDropdownChange('drv_reg_society_select', 'drv_reg_society_custom_group', 'drv_reg_society')">
+                  <option value="Prateek Laurel">Prateek Laurel</option>
+                  <option value="RG Residency">RG Residency</option>
+                  <option value="Amrapali Zodiac">Amrapali Zodiac</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div id="drv_reg_society_custom_group" style="display:none;margin-top:8px;position:relative;width:100%">
+                <input type="text" id="drv_reg_society" placeholder="Search area, street, society…" autocomplete="off"
+                  oninput="onSocietyManualSearch('drv_reg_society', 'drv_reg_society_suggestions')"
                   onfocus="onSocietyManualSearch('drv_reg_society', 'drv_reg_society_suggestions')">
                 <div id="drv_reg_society_suggestions" class="loc-suggest-list"
                   style="display:none;position:absolute;top:100%;left:0;right:0;z-index:9999;max-height:220px;overflow-y:auto;background:var(--card-bg, #fff);border:1.5px solid var(--border);border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,0.15);padding:4px">
@@ -4496,8 +4514,17 @@
           <div class="form-group">
             <label><i class="fa fa-building" style="color:var(--green)"></i> Society / Complex *</label>
             <div style="position:relative;width:100%">
-              <input type="text" id="drv_edit_society" required placeholder="Search area, street, society…"
-                autocomplete="off" oninput="onSocietyManualSearch('drv_edit_society', 'drv_edit_society_suggestions')"
+              <select id="drv_edit_society_select"
+                onchange="handleFormSocietyDropdownChange('drv_edit_society_select', 'drv_edit_society_custom_group', 'drv_edit_society')">
+                <option value="Prateek Laurel">Prateek Laurel</option>
+                <option value="RG Residency">RG Residency</option>
+                <option value="Amrapali Zodiac">Amrapali Zodiac</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div id="drv_edit_society_custom_group" style="display:none;margin-top:8px;position:relative;width:100%">
+              <input type="text" id="drv_edit_society" placeholder="Search area, street, society…" autocomplete="off"
+                oninput="onSocietyManualSearch('drv_edit_society', 'drv_edit_society_suggestions')"
                 onfocus="onSocietyManualSearch('drv_edit_society', 'drv_edit_society_suggestions')">
               <div id="drv_edit_society_suggestions" class="loc-suggest-list"
                 style="display:none;position:absolute;top:100%;left:0;right:0;z-index:9999;max-height:220px;overflow-y:auto;background:var(--card-bg, #fff);border:1.5px solid var(--border);border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,0.15);padding:4px">
@@ -5288,6 +5315,15 @@
         <div class="form-group">
           <label><i class="fa fa-building" style="color:var(--green)"></i> Society *</label>
           <div style="position:relative;width:100%">
+            <select id="f_society_select"
+              onchange="handleFormSocietyDropdownChange('f_society_select', 'f_society_custom_group', 'f_society')">
+              <option value="Prateek Laurel">Prateek Laurel</option>
+              <option value="RG Residency">RG Residency</option>
+              <option value="Amrapali Zodiac">Amrapali Zodiac</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div id="f_society_custom_group" style="display:none;margin-top:8px;position:relative;width:100%">
             <input type="text" id="f_society" placeholder="Search area, street, society…" autocomplete="off"
               oninput="onSocietyManualSearch('f_society', 'f_society_suggestions')"
               onfocus="onSocietyManualSearch('f_society', 'f_society_suggestions')">
@@ -5464,7 +5500,8 @@
         <div class="form-group">
           <label>Password *</label>
           <div class="token-wrap">
-            <input type="password" id="sr_password" placeholder="Enter Password" oninput="validateRealtimePassword('sr_password', 'sr_password_hint', 'sr_password2', 'sr_password2_hint')">
+            <input type="password" id="sr_password" placeholder="Enter Password"
+              oninput="validateRealtimePassword('sr_password', 'sr_password_hint', 'sr_password2', 'sr_password2_hint')">
             <button class="token-toggle" type="button" onclick="togglePwVis('sr_password',this)"><i
                 class="fa fa-eye"></i> Show</button>
           </div>
@@ -5473,7 +5510,8 @@
         <div class="form-group">
           <label>Confirm Password *</label>
           <div class="token-wrap">
-            <input type="password" id="sr_password2" placeholder="Re-enter password" oninput="validateRealtimeConfirmPassword('sr_password', 'sr_password2', 'sr_password2_hint')">
+            <input type="password" id="sr_password2" placeholder="Re-enter password"
+              oninput="validateRealtimeConfirmPassword('sr_password', 'sr_password2', 'sr_password2_hint')">
             <button class="token-toggle" type="button" onclick="togglePwVis('sr_password2',this)"><i
                 class="fa fa-eye"></i> Show</button>
           </div>
@@ -5551,6 +5589,15 @@
         <div class="form-group">
           <label><i class="fa fa-building" style="color:var(--green)"></i> Society *</label>
           <div style="position:relative;width:100%">
+            <select id="sr_society_select"
+              onchange="handleFormSocietyDropdownChange('sr_society_select', 'sr_society_custom_group', 'sr_society')">
+              <option value="Prateek Laurel">Prateek Laurel</option>
+              <option value="RG Residency">RG Residency</option>
+              <option value="Amrapali Zodiac">Amrapali Zodiac</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div id="sr_society_custom_group" style="display:none;margin-top:8px;position:relative;width:100%">
             <input type="text" id="sr_society" placeholder="Search area, street, society…" autocomplete="off"
               oninput="onSocietyManualSearch('sr_society', 'sr_society_suggestions')"
               onfocus="onSocietyManualSearch('sr_society', 'sr_society_suggestions')">
@@ -5865,12 +5912,12 @@
         </button>
 
         <!-- Logo & Brand -->
-        <a class="brand" href="#" onclick="goUser()">
+        <a class="brand" href="#" onclick="goUser(event)">
           <div class="logo-wrap"><img src="newlogo.png.jpeg" alt="TynTron Logo"
               style="width:100%;height:100%;object-fit:cover"></div>
           <div class="brand-text">
             <h1><span class="brand-home">Tyn</span><span class="brand-biz">Tron</span></h1>
-            <p>For the Residents, By the Residents</p>
+            <p>By the Residents, For the Residents of the community</p>
           </div>
         </a>
       </div>
@@ -5901,7 +5948,7 @@
   <div class="left-sidebar-overlay" id="leftSidebarOverlay" onclick="if(event.target===this)closeLeftSidebar()">
     <div class="left-sidebar-drawer" id="leftSidebarDrawer">
       <div class="sidebar-header">
-        <div class="sidebar-brand">
+        <div class="sidebar-brand" style="cursor:pointer" onclick="goUser(event)">
           <div style="width:34px;height:34px;border-radius:8px;overflow:hidden;background:#fff;padding:2px"><img
               src="newlogo.png.jpeg" alt="Logo" style="width:100%;height:100%;object-fit:cover"></div>
           <h2>TynTron Menu</h2>
@@ -6988,23 +7035,32 @@
 
       <!-- Prefer to talk directly? -->
       <div style="border:1.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:18px">
-        <div style="font-size:.75rem;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">
+        <div
+          style="font-size:.75rem;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">
           Prefer to Connect Directly?</div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <div style="display:flex;align-items:center;gap:10px">
             <span style="font-weight:700;color:var(--green-dark);min-width:96px">8368205272</span>
-            <a href="tel:8368205272" class="btn btn-sm btn-ghost" style="flex:1;justify-content:center"><i class="fa fa-phone"></i> Call</a>
-            <a href="https://wa.me/918368205272" target="_blank" class="btn btn-sm btn-ghost" style="flex:1;justify-content:center;color:#1a8c3f;border-color:#25d366"><i class="fab fa-whatsapp"></i> WhatsApp</a>
+            <a href="tel:8368205272" class="btn btn-sm btn-ghost" style="flex:1;justify-content:center"><i
+                class="fa fa-phone"></i> Call</a>
+            <a href="https://wa.me/918368205272" target="_blank" class="btn btn-sm btn-ghost"
+              style="flex:1;justify-content:center;color:#1a8c3f;border-color:#25d366"><i class="fab fa-whatsapp"></i>
+              WhatsApp</a>
           </div>
           <div style="display:flex;align-items:center;gap:10px">
             <span style="font-weight:700;color:var(--green-dark);min-width:96px">9310280988</span>
-            <a href="tel:9310280988" class="btn btn-sm btn-ghost" style="flex:1;justify-content:center"><i class="fa fa-phone"></i> Call</a>
-            <a href="https://wa.me/919310280988" target="_blank" class="btn btn-sm btn-ghost" style="flex:1;justify-content:center;color:#1a8c3f;border-color:#25d366"><i class="fab fa-whatsapp"></i> WhatsApp</a>
+            <a href="tel:9310280988" class="btn btn-sm btn-ghost" style="flex:1;justify-content:center"><i
+                class="fa fa-phone"></i> Call</a>
+            <a href="https://wa.me/919310280988" target="_blank" class="btn btn-sm btn-ghost"
+              style="flex:1;justify-content:center;color:#1a8c3f;border-color:#25d366"><i class="fab fa-whatsapp"></i>
+              WhatsApp</a>
           </div>
         </div>
       </div>
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;color:var(--text-muted);font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em">
-        <div style="flex:1;height:1px;background:var(--border)"></div>OR fill out the form<div style="flex:1;height:1px;background:var(--border)"></div>
+      <div
+        style="display:flex;align-items:center;gap:10px;margin-bottom:18px;color:var(--text-muted);font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em">
+        <div style="flex:1;height:1px;background:var(--border)"></div>OR fill out the form<div
+          style="flex:1;height:1px;background:var(--border)"></div>
       </div>
 
       <div class="form-group">
@@ -8299,7 +8355,7 @@
       if (_customerPage === 'orders') renderOrdersPage();
       // Same staleness issue if they logged in via "Login to Order" from an open vendor
       // detail view — refresh it so the prefilled order form replaces the login prompt.
-      if (_menuVendor) openMenuModal(_menuVendor.id);
+      if (_menuVendor) openMenuModal(_menuVendor.id, true);
       if (typeof checkPendingNotifIntentOnLogin === 'function') checkPendingNotifIntentOnLogin();
       // If login happened because Ask TynTron needed a verified mobile number mid-conversation
       // (request_login action), pick the chat back up right where it left off.
@@ -9186,7 +9242,7 @@
       if (nameEl) nameEl.value = 'Vikram Singh (Test)';
       if (mobEl) mobEl.value = '9876543210';
       if (emailEl) emailEl.value = 'driver.test@tyntron.com';
-      if (socEl) socEl.value = typeof selectedSociety === 'string' ? selectedSociety : (selectedSociety?.name || 'Prateek Laurel');
+      setFormSocietyValue('drv_reg_society_select', 'drv_reg_society_custom_group', 'drv_reg_society', typeof selectedSociety === 'string' ? selectedSociety : (selectedSociety?.name || 'Prateek Laurel'));
       if (addrEl) addrEl.value = 'Tower C-502';
       if (carEl) carEl.value = 'Ertiga (White)';
       if (plateEl) plateEl.value = 'DL10 AB 0001';
@@ -9288,7 +9344,7 @@
       const name = (document.getElementById('drv_reg_name').value || '').trim();
       const mobile = (document.getElementById('drv_reg_mobile').value || '').trim();
       const email = (document.getElementById('drv_reg_email')?.value || '').trim();
-      const society = (document.getElementById('drv_reg_society').value || '').trim();
+      const society = getFormSocietyValue('drv_reg_society_select', 'drv_reg_society');
       const address = (document.getElementById('drv_reg_address').value || '').trim();
       const carModel = (document.getElementById('drv_reg_carModel').value || '').trim();
       const carPlate = (document.getElementById('drv_reg_carPlate').value || '').trim();
@@ -10119,7 +10175,7 @@
       if (nameEl) nameEl.value = currentDriver.name || '';
       if (mobEl) mobEl.value = currentDriver.mobile || '';
       if (emailEl) emailEl.value = currentDriver.email || '';
-      if (socEl) socEl.value = currentDriver.society || (typeof selectedSociety === 'string' ? selectedSociety : (selectedSociety?.name || 'Prateek Laurel'));
+      setFormSocietyValue('drv_edit_society_select', 'drv_edit_society_custom_group', 'drv_edit_society', currentDriver.society || (typeof selectedSociety === 'string' ? selectedSociety : (selectedSociety?.name || 'Prateek Laurel')));
       if (addrEl) addrEl.value = currentDriver.address || '';
       if (carEl) carEl.value = currentDriver.carModel || '';
       if (plateEl) plateEl.value = currentDriver.carPlate || '';
@@ -10136,7 +10192,7 @@
 
       const name = (document.getElementById('drv_edit_name').value || '').trim();
       const email = (document.getElementById('drv_edit_email').value || '').trim();
-      const society = (document.getElementById('drv_edit_society').value || '').trim();
+      const society = getFormSocietyValue('drv_edit_society_select', 'drv_edit_society');
       const address = (document.getElementById('drv_edit_address').value || '').trim();
       const carModel = (document.getElementById('drv_edit_carModel').value || '').trim();
       const carPlate = (document.getElementById('drv_edit_carPlate').value || '').trim();
@@ -14271,11 +14327,14 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
     /* ═══════════ MENU MODAL + ORDERING ═══════════ */
     let _menuVendor = null, _menuQtys = {}, _catCfg = null;
 
-    function openMenuModal(vendorId) {
+    function openMenuModal(vendorId, preserveQtys = false) {
+      const isSameVendor = _menuVendor && _menuVendor.id === vendorId;
       _menuVendor = getBrowseData().find(d => d.id === vendorId);
       if (!_menuVendor) return;
       _catCfg = getCatConfig(_menuVendor.cat);
-      _menuQtys = {};
+      if (!preserveQtys && !isSameVendor) {
+        _menuQtys = {};
+      }
       document.getElementById('menuModalTitle').textContent = _menuVendor.venture;
       document.getElementById('menuModalSpec').textContent = _menuVendor.speciality || '';
       document.getElementById('menuModalTerm').textContent = _catCfg.modalTerm;
@@ -14406,8 +14465,6 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
         document.getElementById('menuFlatRow').style.display = 'none';
       } else {
         list.innerHTML = modalInfoBannerHTML + menu.map(it => {
-          const typeInfo = getOfferingTypeInfo(it.type || 'item');
-          const badgeHtml = `<span style="background:${typeInfo.bg};color:${typeInfo.color};border:1px solid ${typeInfo.border};font-size:.64rem;padding:1px 5px;border-radius:8px;font-weight:700;margin-left:6px;display:inline-flex;align-items:center;gap:3px"><i class="fa ${typeInfo.icon}"></i> ${typeInfo.label}</span>`;
           const isEnquiryOffering = (!it.price || it.price <= 0);
 
           const actionWidget = isEnquiryOffering ? `
@@ -14427,7 +14484,7 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
       <div class="menu-item-row" style="${isShopClosed ? 'opacity:0.75' : ''}">
         ${(it.image || it.img) ? `<img src="${esc(it.image || it.img)}" onclick="event.stopPropagation();openImagePreview('${esc(it.image || it.img)}', '${esc(it.name)}')" style="width:48px;height:48px;object-fit:cover;border-radius:8px;flex-shrink:0;cursor:pointer;transition:transform .15s ease" onmouseover="this.style.transform='scale(1.08)'" onmouseout="this.style.transform='scale(1)'" title="Click to preview image" alt="${esc(it.name)}"/>` : ''}
         <div style="flex:1;min-width:0">
-          <div class="menu-item-name">${esc(it.name)} ${badgeHtml}</div>
+          <div class="menu-item-name">${esc(it.name)}</div>
           ${it.desc ? `<div class="menu-item-desc">${esc(it.desc)}</div>` : ''}
         </div>
         <div style="display:flex;align-items:center;flex-shrink:0;gap:6px">
@@ -14719,18 +14776,19 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
       let introHeader = '';
       let totalFooter = '';
       let toastMsg = 'Sent via WhatsApp! ✓';
+      const promoTag = `\n\n🌐 _Ordered via TynTron — By the residents, For the residents of the community_`;
 
       if (isEnquiryOnly) {
-        introHeader = "Hi! I'd like to enquire about the following offerings 💬";
-        totalFooter = `\n\n🏠 Address: ${address}\n👤 Name: ${name}\n📱 Mobile: ${mobile}\n\nPlease share details and availability. Thank you!`;
+        introHeader = "Hi! I'd like to enquire about the following offerings via TynTron 💬";
+        totalFooter = `\n\n🏠 Address: ${address}\n👤 Name: ${name}\n📱 Mobile: ${mobile}${promoTag}\n\nPlease share details and availability. Thank you!`;
         toastMsg = 'Enquiry sent via WhatsApp! ✓';
       } else if (isMixed) {
-        introHeader = "Hi! I'd like to place an order & enquiry 🛒💬";
-        totalFooter = `\n\n💰 *Priced Items Total: ₹${total}*\n🏠 Address: ${address}\n👤 Name: ${name}\n📱 Mobile: ${mobile}\n\nPlease confirm availability and details. Thank you!`;
+        introHeader = "Hi! I'd like to place an order & enquiry via TynTron 🛒💬";
+        totalFooter = `\n\n💰 *Priced Items Total: ₹${total}*\n🏠 Address: ${address}\n👤 Name: ${name}\n📱 Mobile: ${mobile}${promoTag}\n\nPlease confirm availability and details. Thank you!`;
         toastMsg = 'Order & Enquiry sent via WhatsApp! ✓';
       } else {
-        introHeader = _catCfg.waIntro || "Hi! I'd like to place an order 🛒";
-        totalFooter = `\n\n💰 *Total: ₹${total}*\n🏠 Address: ${address}\n👤 Name: ${name}\n📱 Mobile: ${mobile}\n\nPlease confirm. Thank you!`;
+        introHeader = _catCfg.waIntro ? `${_catCfg.waIntro} via TynTron` : "Hi! I'd like to place an order via TynTron 🛒";
+        totalFooter = `\n\n💰 *Total: ₹${total}*\n🏠 Address: ${address}\n👤 Name: ${name}\n📱 Mobile: ${mobile}${promoTag}\n\nPlease confirm. Thank you!`;
         toastMsg = 'Order sent via WhatsApp! ✓';
       }
 
@@ -14882,9 +14940,23 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
       renderAll();
       showToast('Exited admin mode');
     }
-    function goUser() {
-      switchPanel('customer');
+    function goUser(e) {
+      if (e && e.preventDefault) e.preventDefault();
+      document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+      closeLeftSidebar();
+      if (_menuVendor || typeof closeVendorDetail === 'function') {
+        closeVendorDetail();
+      }
+      switchCustomerPage('home');
+      if (typeof backToSocieties === 'function') {
+        backToSocieties();
+      }
       if (typeof filterCat === 'function') filterCat('All');
+      const sq = document.getElementById('searchQuery');
+      if (sq) {
+        sq.value = '';
+        if (typeof filterVendors === 'function') filterVendors('');
+      }
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -15084,22 +15156,68 @@ Together, we grow stronger — one order at a time.`;
     // Once GPS detection resolves, this holds the societies within 5km — so any LATER call
     // to buildSocietySelector() (e.g. after Firestore config loads) still respects it instead
     // of racing back to the full list.
+    const PRE_ENABLED_SOCIETIES = ['Prateek Laurel', 'RG Residency', 'Amrapali Zodiac'];
+
+    function handleFormSocietyDropdownChange(selectId, customGroupId, inputId) {
+      const sel = document.getElementById(selectId);
+      const group = document.getElementById(customGroupId);
+      const input = document.getElementById(inputId);
+      if (!sel || !group) return;
+      if (sel.value === 'Other') {
+        group.style.display = 'block';
+        if (input) {
+          if (PRE_ENABLED_SOCIETIES.includes(input.value)) {
+            input.value = '';
+          }
+          input.focus();
+        }
+      } else {
+        group.style.display = 'none';
+        if (input) {
+          input.value = sel.value;
+        }
+      }
+    }
+
+    function getFormSocietyValue(selectId, inputId, fallback = 'Prateek Laurel') {
+      const sel = document.getElementById(selectId);
+      const input = document.getElementById(inputId);
+      if (sel && sel.value && sel.value !== 'Other') {
+        return sel.value;
+      }
+      if (input && input.value && input.value.trim()) {
+        return input.value.trim();
+      }
+      return fallback;
+    }
+
+    function setFormSocietyValue(selectId, customGroupId, inputId, societyVal) {
+      const sel = document.getElementById(selectId);
+      const group = document.getElementById(customGroupId);
+      const input = document.getElementById(inputId);
+      const val = (societyVal || '').trim();
+
+      if (!val || PRE_ENABLED_SOCIETIES.includes(val)) {
+        const finalVal = val || 'Prateek Laurel';
+        if (sel) sel.value = finalVal;
+        if (group) group.style.display = 'none';
+        if (input) input.value = finalVal;
+      } else {
+        if (sel) sel.value = 'Other';
+        if (group) group.style.display = 'block';
+        if (input) input.value = val;
+      }
+    }
+
     let _nearbySocieties = null;
     function buildSocietySelector(filterList) {
       const list = filterList || _nearbySocieties || _societyList();
-      ['societySelect', 'f_society', 'sr_society', 'drv_reg_society', 'drv_edit_society'].forEach(id => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        if (el.tagName === 'SELECT') {
-          const cur = el.value || selectedSociety;
-          const finalList = list.length ? list : _societyList(); // never render an empty dropdown
-          el.innerHTML = finalList.map(s => `<option value="${s.name}"${s.name === cur ? ' selected' : ''}>${s.name}</option>`).join('');
-        } else if (el.tagName === 'INPUT') {
-          if (!el.value && selectedSociety) {
-            el.value = selectedSociety;
-          }
-        }
-      });
+      const el = document.getElementById('societySelect');
+      if (el && el.tagName === 'SELECT') {
+        const cur = el.value || selectedSociety;
+        const finalList = list.length ? list : _societyList(); // never render an empty dropdown
+        el.innerHTML = finalList.map(s => `<option value="${s.name}"${s.name === cur ? ' selected' : ''}>${s.name}</option>`).join('');
+      }
       renderSocietyBoxes(list.length ? list : _societyList());
     }
 
@@ -16862,7 +16980,7 @@ Together, we grow stronger — one order at a time.`;
       initCustomSelect('f_subcategory');
       resetForm();
       buildSocietySelector();
-      const fSoc = document.getElementById('f_society'); if (fSoc) fSoc.value = selectedSociety || 'Prateek Laurel';
+      setFormSocietyValue('f_society_select', 'f_society_custom_group', 'f_society', selectedSociety || 'Prateek Laurel');
       document.getElementById('tileModal').classList.add('open');
       setTimeout(() => document.getElementById('f_venture').focus(), 120);
     }
@@ -16979,7 +17097,7 @@ Together, we grow stronger — one order at a time.`;
       document.getElementById('f_url').value = item.url || '';
       pendingImg = null;
       buildSocietySelector();
-      const fSoc = document.getElementById('f_society'); if (fSoc) fSoc.value = item.society || 'Prateek Laurel';
+      setFormSocietyValue('f_society_select', 'f_society_custom_group', 'f_society', item.society || 'Prateek Laurel');
       const existing = item.image || IMGS[id] || null;
       setPreview(existing);
       document.getElementById('tileModal').classList.add('open');
@@ -17060,7 +17178,7 @@ Together, we grow stronger — one order at a time.`;
         video: document.getElementById('f_video').value.trim(),
         url: document.getElementById('f_url').value.trim(),
         image: pendingImg === '__remove__' ? '' : (pendingImg || prevImage),
-        society: (document.getElementById('f_society') || {}).value || 'Prateek Laurel',
+        society: getFormSocietyValue('f_society_select', 'f_society'),
         ownerUid: prevItem ? prevItem.ownerUid : null,
         active: prevItem && prevItem.active !== undefined ? prevItem.active : true,
         subscriptionStatus: prevItem ? prevItem.subscriptionStatus || 'active' : 'active',
@@ -17136,6 +17254,12 @@ Together, we grow stronger — one order at a time.`;
       if (!ok) return;
       DATA = DATA.filter(d => d.id !== id);
       delete IMGS[id];
+      if (Array.isArray(SITE_CONFIG.featuredVendorIds)) {
+        SITE_CONFIG.featuredVendorIds = SITE_CONFIG.featuredVendorIds.filter(x => x !== id);
+      }
+      if (SITE_CONFIG.adTypes && SITE_CONFIG.adTypes[id]) {
+        delete SITE_CONFIG.adTypes[id];
+      }
       saveData(DATA);
       renderAll();
       if (isAdmin) renderAdminTab(_adminTab);
@@ -17265,15 +17389,7 @@ Together, we grow stronger — one order at a time.`;
 
       srUpdateAddSection();
       buildSocietySelector();
-      const srSocietyInput = document.getElementById('sr_society');
-      if (srSocietyInput && !srSocietyInput.value) {
-        if (srSocietyInput.tagName === 'SELECT') {
-          srSocietyInput.insertAdjacentHTML('afterbegin', '<option value="">— Select your society —</option>');
-          srSocietyInput.value = '';
-        } else {
-          srSocietyInput.value = selectedSociety || '';
-        }
-      }
+      setFormSocietyValue('sr_society_select', 'sr_society_custom_group', 'sr_society', selectedSociety || 'Prateek Laurel');
       const hideSubAtReg = (SITE_CONFIG.subscriptionShowTiming === 'login' || SITE_CONFIG.subscriptionShowTiming === 'hidden');
       const step5Sec = document.getElementById('sr_step5_section');
       const submitBtn = document.getElementById('sr_submitBtn');
@@ -17744,7 +17860,7 @@ Together, we grow stronger — one order at a time.`;
       const currAddress = (document.getElementById('sr_currAddress')?.value || '').trim();
       const password = document.getElementById('sr_password')?.value || '';
       const password2 = document.getElementById('sr_password2')?.value || '';
-      const society = document.getElementById('sr_society')?.value || '';
+      const society = getFormSocietyValue('sr_society_select', 'sr_society');
 
       if (!_srEmailOtp.verified) { errEl.textContent = 'Please verify your email first.'; errEl.style.display = 'block'; return; }
       const emailCheck = await checkBusinessEmailStatus(_srEmailOtp.email || (document.getElementById('sr_email')?.value || '').trim());
@@ -19440,7 +19556,7 @@ Together, we grow stronger — one order at a time.`;
       const currAddress = (document.getElementById('sr_currAddress')?.value || '').trim();
       const password = document.getElementById('sr_password')?.value || '';
       const password2 = document.getElementById('sr_password2')?.value || '';
-      const society = document.getElementById('sr_society')?.value || '';
+      const society = getFormSocietyValue('sr_society_select', 'sr_society');
 
       if (!_srEmailOtp.verified) { errEl.textContent = 'Please verify your email first.'; errEl.style.display = 'block'; return; }
       const emailCheck = await checkBusinessEmailStatus(_srEmailOtp.email || (document.getElementById('sr_email')?.value || '').trim());
@@ -19584,7 +19700,7 @@ Together, we grow stronger — one order at a time.`;
           phone: (document.getElementById('sr_phone')?.value || '').trim() || _vnMobile || '',
           permAddress: (document.getElementById('sr_permAddress')?.value || '').trim(),
           currAddress: (document.getElementById('sr_currAddress')?.value || '').trim(),
-          society: document.getElementById('sr_society')?.value || 'Prateek Laurel',
+          society: getFormSocietyValue('sr_society_select', 'sr_society'),
           cat: finalSrCat,
           subCat: finalSrSubCat,
           addressProofType: document.getElementById('sr_addressProofType')?.value || '',
@@ -19615,7 +19731,7 @@ Together, we grow stronger — one order at a time.`;
         }
 
         // Best-effort — never block the seller's own submission on this.
-        _notifyAdminNewBusinessRequest(reqData).catch(() => {});
+        _notifyAdminNewBusinessRequest(reqData).catch(() => { });
 
         _srqAll = await fsLoadBusinessRequests();
 
@@ -21990,27 +22106,27 @@ Together, we grow stronger — one order at a time.`;
                 </thead>
                 <tbody>
                   ${logs.map(l => {
-                    const isCustomer = l.type === 'customer_deletion' || (!l.vendorId && !l.ventureName && l.targetMobile);
-                    const typeBadge = isCustomer
-                      ? `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:12px;font-size:0.72rem;font-weight:700;background:#e0f2fe;color:#0369a1;margin-bottom:4px"><i class="fa fa-user"></i> Customer</span>`
-                      : `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:12px;font-size:0.72rem;font-weight:700;background:#fef3c7;color:#92400e;margin-bottom:4px"><i class="fa fa-store"></i> Business Account</span>`;
-                    
-                    let targetNameStr = l.targetName || l.ventureName || l.name;
-                    if (!targetNameStr || targetNameStr === 'undefined') {
-                      targetNameStr = (l.targetMobile && l.targetMobile !== 'undefined' && l.targetMobile !== '—') ? l.targetMobile
-                        : ((l.targetEmail && l.targetEmail !== 'undefined' && l.targetEmail !== '—') ? l.targetEmail : (isCustomer ? 'Customer' : 'Seller Account'));
-                    }
+        const isCustomer = l.type === 'customer_deletion' || (!l.vendorId && !l.ventureName && l.targetMobile);
+        const typeBadge = isCustomer
+          ? `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:12px;font-size:0.72rem;font-weight:700;background:#e0f2fe;color:#0369a1;margin-bottom:4px"><i class="fa fa-user"></i> Customer</span>`
+          : `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:12px;font-size:0.72rem;font-weight:700;background:#fef3c7;color:#92400e;margin-bottom:4px"><i class="fa fa-store"></i> Business Account</span>`;
 
-                    let contactDetails = [];
-                    if (l.targetMobile && l.targetMobile !== '—' && l.targetMobile !== 'undefined') {
-                      contactDetails.push(`<i class="fa fa-phone" style="font-size:0.7rem"></i> ${esc(l.targetMobile)}`);
-                    }
-                    if (l.targetEmail && l.targetEmail !== '—' && l.targetEmail !== 'undefined') {
-                      contactDetails.push(`<i class="fa fa-envelope" style="font-size:0.7rem"></i> ${esc(l.targetEmail)}`);
-                    }
-                    const contactStr = contactDetails.length ? contactDetails.join(' &nbsp;•&nbsp; ') : '—';
+        let targetNameStr = l.targetName || l.ventureName || l.name;
+        if (!targetNameStr || targetNameStr === 'undefined') {
+          targetNameStr = (l.targetMobile && l.targetMobile !== 'undefined' && l.targetMobile !== '—') ? l.targetMobile
+            : ((l.targetEmail && l.targetEmail !== 'undefined' && l.targetEmail !== '—') ? l.targetEmail : (isCustomer ? 'Customer' : 'Seller Account'));
+        }
 
-                    return `<tr>
+        let contactDetails = [];
+        if (l.targetMobile && l.targetMobile !== '—' && l.targetMobile !== 'undefined') {
+          contactDetails.push(`<i class="fa fa-phone" style="font-size:0.7rem"></i> ${esc(l.targetMobile)}`);
+        }
+        if (l.targetEmail && l.targetEmail !== '—' && l.targetEmail !== 'undefined') {
+          contactDetails.push(`<i class="fa fa-envelope" style="font-size:0.7rem"></i> ${esc(l.targetEmail)}`);
+        }
+        const contactStr = contactDetails.length ? contactDetails.join(' &nbsp;•&nbsp; ') : '—';
+
+        return `<tr>
                       <td>
                         ${typeBadge}<br>
                         <strong style="font-size:0.9rem;color:var(--text)">${esc(targetNameStr)}</strong><br>
@@ -22021,7 +22137,7 @@ Together, we grow stronger — one order at a time.`;
                       <td style="font-size:0.82rem;color:var(--green-dark);font-weight:700">${esc(l.deletedByAdminMobile || l.adminMobile || '—')}</td>
                       <td style="font-size:0.78rem;color:var(--text-muted)">${esc(l.createdAt ? new Date(l.createdAt).toLocaleString() : 'Recently')}</td>
                     </tr>`;
-                  }).join('')}
+      }).join('')}
                 </tbody>
               </table>
             </div>` : `<div class="empty-state" style="padding:20px"><i class="fa fa-clipboard-list"></i><p>No deletion history logged yet.</p></div>`}
@@ -22659,7 +22775,25 @@ Together, we grow stronger — one order at a time.`;
       showToast('Config saved ✓');
     }
 
+    function sanitizeAdConfig() {
+      const validVendorIds = new Set((DATA || []).map(v => v.id));
+      if (Array.isArray(SITE_CONFIG.featuredVendorIds)) {
+        SITE_CONFIG.featuredVendorIds = SITE_CONFIG.featuredVendorIds.filter(id => validVendorIds.has(id));
+      } else {
+        SITE_CONFIG.featuredVendorIds = [];
+      }
+      if (SITE_CONFIG.adTypes && typeof SITE_CONFIG.adTypes === 'object') {
+        const cleanTypes = {};
+        Object.keys(SITE_CONFIG.adTypes).forEach(id => {
+          if (validVendorIds.has(id)) cleanTypes[id] = SITE_CONFIG.adTypes[id];
+        });
+        SITE_CONFIG.adTypes = cleanTypes;
+      }
+      return SITE_CONFIG.featuredVendorIds;
+    }
+
     function renderAdminAds(c) {
+      sanitizeAdConfig();
       const featured = SITE_CONFIG.featuredVendorIds || [];
       const adTypes = SITE_CONFIG.adTypes || {};
       c.innerHTML = `<div class="s-card">
@@ -22697,6 +22831,7 @@ Together, we grow stronger — one order at a time.`;
       if (c) renderAdminAds(c);
     }
     function toggleAdVendor(id, cb) {
+      sanitizeAdConfig();
       let f = SITE_CONFIG.featuredVendorIds || [];
       if (cb.checked) { if (!f.includes(id)) f.push(id); }
       else { f = f.filter(x => x !== id); }
@@ -22705,7 +22840,7 @@ Together, we grow stronger — one order at a time.`;
       if (c) renderAdminAds(c);
     }
     async function saveAdSettings() {
-      const ids = SITE_CONFIG.featuredVendorIds || [];
+      const ids = sanitizeAdConfig();
       const types = SITE_CONFIG.adTypes || {};
       await fsSaveConfig({ featuredVendorIds: ids, adTypes: types });
       if (typeof initAd === 'function') initAd();
@@ -22765,7 +22900,7 @@ Together, we grow stronger — one order at a time.`;
 
         // 1. Delete main document from 'customers' collection
         if (docId) {
-          await db.collection('customers').doc(docId).delete().catch(() => {});
+          await db.collection('customers').doc(docId).delete().catch(() => { });
         }
 
         // 2. Delete any matching docs in 'customers' by mobile or email
@@ -22774,7 +22909,7 @@ Together, we grow stronger — one order at a time.`;
           if (mobSnap && !mobSnap.empty) {
             const batch = db.batch();
             mobSnap.docs.forEach(d => batch.delete(d.ref));
-            await batch.commit().catch(() => {});
+            await batch.commit().catch(() => { });
           }
         }
         if (email) {
@@ -22782,7 +22917,7 @@ Together, we grow stronger — one order at a time.`;
           if (emSnap && !emSnap.empty) {
             const batch = db.batch();
             emSnap.docs.forEach(d => batch.delete(d.ref));
-            await batch.commit().catch(() => {});
+            await batch.commit().catch(() => { });
           }
         }
 
@@ -22803,7 +22938,7 @@ Together, we grow stronger — one order at a time.`;
           if (snap && !snap.empty) {
             const batch = db.batch();
             snap.docs.forEach(d => batch.delete(d.ref));
-            await batch.commit().catch(() => {});
+            await batch.commit().catch(() => { });
           }
         }
 
@@ -22816,7 +22951,7 @@ Together, we grow stronger — one order at a time.`;
           if (snap && !snap.empty) {
             const batch = db.batch();
             snap.docs.forEach(d => batch.delete(d.ref));
-            await batch.commit().catch(() => {});
+            await batch.commit().catch(() => { });
           }
         }
 
@@ -22902,15 +23037,15 @@ Together, we grow stronger — one order at a time.`;
       <table class="menu-table" style="width:100%">
         <thead><tr><th>Name</th><th>Email</th><th>Mobile</th><th>Address</th><th>Orders</th><th>Total Spend</th><th style="text-align:center">Action</th></tr></thead>
         <tbody>${customers.length ? customers.map(cu => {
-          const displayEmail = (cu.email && cu.email.includes('@')) ? esc(cu.email) : '—';
-          const displayMobile = esc(cu.mobile || '—');
-          const ordersCount = (cu.email && orderCountKey[cu.email]) || (cu.mobile && orderCountKey[cu.mobile]) || 0;
-          const spendTotal = (cu.email && spendKey[cu.email]) || (cu.mobile && spendKey[cu.mobile]) || 0;
-          const docIdEsc = (cu.id || cu.mobile || cu.email || '').replace(/'/g, "\\'");
-          const nameEsc = esc((cu.name || 'Customer').replace(/'/g, "\\'"));
-          const mobEsc = esc((cu.mobile || '').replace(/'/g, "\\'"));
-          const emailEsc = esc((cu.email || '').replace(/'/g, "\\'"));
-          return `<tr>
+        const displayEmail = (cu.email && cu.email.includes('@')) ? esc(cu.email) : '—';
+        const displayMobile = esc(cu.mobile || '—');
+        const ordersCount = (cu.email && orderCountKey[cu.email]) || (cu.mobile && orderCountKey[cu.mobile]) || 0;
+        const spendTotal = (cu.email && spendKey[cu.email]) || (cu.mobile && spendKey[cu.mobile]) || 0;
+        const docIdEsc = (cu.id || cu.mobile || cu.email || '').replace(/'/g, "\\'");
+        const nameEsc = esc((cu.name || 'Customer').replace(/'/g, "\\'"));
+        const mobEsc = esc((cu.mobile || '').replace(/'/g, "\\'"));
+        const emailEsc = esc((cu.email || '').replace(/'/g, "\\'"));
+        return `<tr>
             <td style="font-weight:600">${esc(cu.name || '—')}</td>
             <td>${displayEmail}</td>
             <td>${displayMobile}</td>
@@ -22923,7 +23058,7 @@ Together, we grow stronger — one order at a time.`;
               </button>
             </td>
           </tr>`;
-        }).join('') : `<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">No customers yet.</td></tr>`}</tbody>
+      }).join('') : `<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">No customers yet.</td></tr>`}</tbody>
       </table>
     </div>
   </div>`;
