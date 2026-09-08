@@ -2965,10 +2965,11 @@
       }
     }
 
-    /* ── ADVERTISEMENT GRID — just the images, no card/panel behind them. Every 3rd item
-   is "big" (full width), the other two of each trio are "small" (side by side). No
-   fixed box height — each image keeps its own natural aspect ratio (width:100%;
-   height:auto), so there's never any letterboxing or empty background to show. */
+    /* ── ADVERTISEMENT GRID — just the images, no card/panel behind them. Every box is the
+   same fixed 4:3 size (matching the mandatory registration-time crop, see openImageCropper's
+   aspectRatio), so the grid is uniform now that every uploaded business photo already shares
+   that ratio. object-fit:contain rather than cover, so nothing gets cropped a second time if
+   an older/edge-case image isn't exactly 4:3. */
     .ad-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -2976,14 +2977,14 @@
       max-width: 1000px;
       margin: 24px auto 0;
       padding: 0 20px 4px;
-      align-items: start
     }
 
     .ad-box {
       cursor: pointer;
       border-radius: 18px;
       overflow: hidden;
-      transition: transform .15s ease
+      transition: transform .15s ease;
+      aspect-ratio: 4 / 3
     }
 
     .ad-box:active {
@@ -3001,12 +3002,9 @@
 
     .ad-box img {
       width: 100%;
-      height: auto;
+      height: 100%;
+      object-fit: contain;
       display: block
-    }
-
-    .ad-box.big {
-      grid-column: 1/-1
     }
 
     /* ── FULL-SCREEN STATES (location splash + no-internet) ── */
@@ -18162,9 +18160,9 @@ Together, we grow stronger — one order at a time.`;
         grid.innerHTML = '';
         if (!items.length) { grid.style.display = 'none'; return; }
         grid.style.display = '';
-        items.forEach((item, i) => {
+        items.forEach((item) => {
           const box = document.createElement('div');
-          box.className = 'ad-box ' + (i % 3 === 0 ? 'big' : 'small');
+          box.className = 'ad-box';
           box.innerHTML = imgHTML(item);
           box.addEventListener('click', () => { openMenuModal(item.id); });
           grid.appendChild(box);
