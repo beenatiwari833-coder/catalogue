@@ -7840,7 +7840,7 @@
       try {
         await emailjs.init({ publicKey: ejsPubKey });
         await emailjs.send(ejsService, ejsTemplate, {
-          from_name: 'TynTron', from_email: 'noreply@tyntron.co.in', mobile: '',
+          from_name: 'TynTron', from_email: 'noreply@tyntron.com', mobile: '',
           subject, message, to_email: email
         });
         return { ok: true };
@@ -7864,7 +7864,7 @@
       try {
         await emailjs.init({ publicKey: ejsPubKey });
         await emailjs.send(ejsService, ejsTemplate, {
-          from_name: reqData.venture || 'A new business', from_email: 'noreply@tyntron.co.in',
+          from_name: reqData.venture || 'A new business', from_email: 'noreply@tyntron.com',
           mobile: reqData.mobile || reqData.phone || '',
           subject: `New seller request for approval: ${reqData.venture || 'Untitled business'}`,
           message: `A service provider has submitted a new registration on TynTron and is waiting for admin approval.\n\n`
@@ -7901,7 +7901,7 @@
         await emailjs.init({ publicKey: ejsPubKey });
         await emailjs.send(ejsService, ejsTemplate, {
           from_name: 'TynTron Moderation',
-          from_email: 'noreply@tyntron.co.in',
+          from_email: 'noreply@tyntron.com',
           to_email: email,
           subject,
           message
@@ -7926,7 +7926,7 @@
       try {
         await emailjs.init({ publicKey: ejsPubKey });
         await emailjs.send(ejsService, ejsTemplate, {
-          from_name: 'TynTron Admin', from_email: 'noreply@tyntron.co.in', mobile: '',
+          from_name: 'TynTron Admin', from_email: 'noreply@tyntron.com', mobile: '',
           subject, message, to_email: email
         });
         return { ok: true };
@@ -8071,7 +8071,7 @@
       try {
         await emailjs.init({ publicKey: ejsPubKey });
         await emailjs.send(ejsService, ejsTemplate, {
-          from_name: 'TynTron', from_email: 'noreply@tyntron.co.in',
+          from_name: 'TynTron', from_email: 'noreply@tyntron.com',
           mobile: '', subject: 'Your TynTron Verification Code',
           message: `Your verification code is ${code}. It expires in 15 minutes.`,
           passcode: code, time: expiryTime, otp_code: code, to_email: email
@@ -8595,7 +8595,7 @@
       try {
         await emailjs.init({ publicKey: ejsPubKey });
         await emailjs.send(ejsService, ejsTemplate, {
-          from_name: 'TynTron', from_email: 'noreply@tyntron.co.in',
+          from_name: 'TynTron', from_email: 'noreply@tyntron.com',
           mobile: '', subject: 'Your TynTron Seller Registration Code',
           message: `Your verification code is ${code}. It expires in 15 minutes.`,
           passcode: code, time: new Date(expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), otp_code: code, to_email: email
@@ -9129,7 +9129,7 @@
       try {
         await emailjs.init({ publicKey: ejsPubKey });
         await emailjs.send(ejsService, ejsTemplate, {
-          from_name: 'TynTron', from_email: 'noreply@tyntron.co.in',
+          from_name: 'TynTron', from_email: 'noreply@tyntron.com',
           mobile: '', subject: 'Your TynTron Driver Registration Verification Code',
           message: `Your verification code is ${code}. It expires in 15 minutes.`,
           passcode: code, time: new Date(expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), otp_code: code, to_email: email
@@ -12458,7 +12458,7 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
           await emailjs.init({ publicKey: ejsPubKey });
           await emailjs.send(ejsService, ejsTemplate, {
             from_name: 'TynTron',
-            from_email: 'noreply@tyntron.co.in',
+            from_email: 'noreply@tyntron.com',
             to_email: email,
             subject: 'Your TynTron Password Reset OTP: ' + _businessResetOtp,
             message: `Your TynTron password reset verification code is ${_businessResetOtp}. Enter this 6-digit OTP code in the app to reset your password. Code expires in 15 minutes.`,
@@ -13350,7 +13350,7 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
         await emailjs.init({ publicKey: ejsPubKey });
         await emailjs.send(ejsService, ejsTemplate, {
           from_name: 'TynTron Broadcast',
-          from_email: 'noreply@tyntron.co.in',
+          from_email: 'noreply@tyntron.com',
           subject: `[TynTron Announcement] ${notif.title}`,
           message: notif.body.replace(/<[^>]*>?/gm, ''),
           to_email: SITE_CONFIG.contactEmail || 'info@tyntron.com'
@@ -15466,7 +15466,7 @@ Together, we grow stronger — one order at a time.`;
             await emailjs.init({ publicKey: ejsPubKey });
             await emailjs.send(ejsService, ejsTemplate, {
               from_name: userName || 'TynTron Customer',
-              from_email: userEmail || 'noreply@tyntron.co.in',
+              from_email: userEmail || 'noreply@tyntron.com',
               mobile: userMobile || 'Not provided',
               subject: `📍 Service Expansion Request: ${serviceName} in ${locationName}`,
               message: `Service Expansion Alert!\n\nA user requested service expansion on TynTron:\n\n`
@@ -17542,7 +17542,7 @@ Together, we grow stronger — one order at a time.`;
       try {
         await emailjs.init({ publicKey: ejsPubKey });
         await emailjs.send(ejsService, ejsTemplate, {
-          from_name: 'TynTron', from_email: 'noreply@tyntron.co.in',
+          from_name: 'TynTron', from_email: 'noreply@tyntron.com',
           mobile: '', subject: 'Your TynTron Business Registration Code',
           message: `Your verification code is ${code}. It expires in 15 minutes.`,
           passcode: code, time: new Date(expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), otp_code: code, to_email: email
@@ -19860,7 +19860,7 @@ Together, we grow stronger — one order at a time.`;
             await emailjs.init({ publicKey: ejsPubKey });
             await emailjs.send(ejsService, ejsTemplate, {
               from_name: vendor.venture || 'TynTron',
-              from_email: 'noreply@tyntron.co.in',
+              from_email: 'noreply@tyntron.com',
               mobile: req.customerMobile || '',
               subject: subject,
               message: message,
