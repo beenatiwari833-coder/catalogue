@@ -15735,18 +15735,30 @@ Together, we grow stronger — one order at a time.`;
         // config and only the DEFAULT_SOCIETIES fallback ever shows up).
         if (window._configLoadPromise) await window._configLoadPromise;
 
-        // Societies TynTron already has content for, within 5km (always shown first).
-        const configuredNearby = _societyList().filter(s => {
-          if (!s.lat || !s.lng) return false;
-          return _haversineDist(lat, lng, +s.lat, +s.lng) <= 5000;
-        });
+        // Societies TynTron already has content for, within 5km.
+        const configuredNearby = _societyList()
+          .filter(s => !!(s.lat && s.lng))
+          .map(s => ({ name: s.name, dist: _haversineDist(lat, lng, +s.lat, +s.lng) }))
+          .filter(s => s.dist <= 5000);
 
         // Any OTHER nearby society/community discovered via Google Places, even if
         // TynTron has no vendors there yet (selecting one shows a friendly empty state).
+        // Only excludes names already covered by configuredNearby (the ones that actually
+        // qualified above) -- not the full society list. A configured society with missing/
+        // wrong lat/lng gets excluded from configuredNearby for being unverifiable, but must
+        // still be eligible here, or it becomes invisible through *both* paths at once: too
+        // "already configured" to be discovered, yet too coordinate-less to be shown as
+        // configured. That's exactly what was happening to RG Residency.
         const discovered = await _placesNearbySocieties(lat, lng);
-        const configuredNames = new Set(_societyList().map(s => s.name.toLowerCase()));
-        const discoveredOnly = discovered.filter(d => !configuredNames.has(d.name.toLowerCase()));
-        const merged = [...configuredNearby, ...discoveredOnly.map(d => ({ name: d.name }))];
+        const configuredNearbyNames = new Set(configuredNearby.map(s => s.name.toLowerCase()));
+        const discoveredOnly = discovered
+          .filter(d => !configuredNearbyNames.has(d.name.toLowerCase()))
+          .map(d => ({ name: d.name, dist: _haversineDist(lat, lng, +d.lat, +d.lng) }));
+
+        // One combined list, nearest first, regardless of which path found it.
+        const merged = [...configuredNearby, ...discoveredOnly]
+          .sort((a, b) => a.dist - b.dist)
+          .map(s => ({ name: s.name }));
 
         if (merged.length) {
           _nearbySocieties = merged;
