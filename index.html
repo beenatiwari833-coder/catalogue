@@ -15755,10 +15755,18 @@ Together, we grow stronger — one order at a time.`;
           .filter(d => !configuredNearbyNames.has(d.name.toLowerCase()))
           .map(d => ({ name: d.name, dist: _haversineDist(lat, lng, +d.lat, +d.lng) }));
 
-        // One combined list, nearest first, regardless of which path found it.
-        const merged = [...configuredNearby, ...discoveredOnly]
-          .sort((a, b) => a.dist - b.dist)
-          .map(s => ({ name: s.name }));
+        // Configured societies (the ones TynTron actually has real business content for)
+        // always list first, nearest-first among themselves -- never crowded out by
+        // content-less Places discoveries. A dense area can easily surface a dozen+ nearby
+        // places by name search alone; without this priority, enough of them ranking
+        // fractionally closer than a real society's own registered point could push it past
+        // the display limit entirely, which is exactly what started happening to Prateek
+        // Laurel itself once RG Residency's fix stopped over-filtering discoveredOnly.
+        // Discovered-only results are appended after, also nearest-first among themselves.
+        const merged = [
+          ...configuredNearby.slice().sort((a, b) => a.dist - b.dist),
+          ...discoveredOnly.slice().sort((a, b) => a.dist - b.dist)
+        ].map(s => ({ name: s.name }));
 
         if (merged.length) {
           _nearbySocieties = merged;
