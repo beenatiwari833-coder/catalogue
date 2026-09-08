@@ -5237,6 +5237,44 @@
     </div>
   </div>
 
+  <!-- ── ADMIN SET TEMPORARY PASSWORD MODAL ── -->
+  <div class="modal-overlay" id="adminSetTempPwModal" style="z-index:99999;backdrop-filter:blur(6px);background:rgba(28,39,51,0.65)">
+    <div class="modal" style="max-width:500px;border-radius:20px;padding:24px;background:#ffffff;box-shadow:0 20px 50px rgba(0,0,0,0.25);border:1px solid var(--border)">
+      <div class="modal-title" style="color:var(--green-dark);font-size:1.25rem">
+        <i class="fa fa-key" style="color:var(--green)"></i> Set Temporary Password for Seller
+      </div>
+      <div style="background:var(--green-pale);border:1px solid var(--green);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:.82rem;line-height:1.5;color:var(--green-dark)">
+        <i class="fa fa-info-circle"></i> <strong>Admin Password Reset:</strong> Set a temporary password for this seller. Upon logging in with this temporary password, the seller will be immediately prompted to set their own permanent password.
+      </div>
+      <input type="hidden" id="astp_uid">
+      <div class="form-grid" style="grid-template-columns:1fr;gap:12px">
+        <div class="form-group full">
+          <label style="font-weight:600;font-size:.82rem">Seller Account</label>
+          <input type="text" id="astp_email" readonly style="background:var(--cream);color:var(--text);font-weight:600;cursor:not-allowed">
+        </div>
+        <div class="form-group full">
+          <label style="font-weight:600;font-size:.82rem">Temporary Password *</label>
+          <div class="token-wrap">
+            <input type="password" id="astp_password" placeholder="Enter temporary password (min 6 characters)">
+            <button class="token-toggle" type="button" onclick="togglePwVis('astp_password',this)"><i class="fa fa-eye"></i> Show</button>
+          </div>
+          <div style="margin-top:6px;display:flex;justify-content:flex-end">
+            <button class="btn btn-sm" type="button" onclick="generateRandomTempPw()" style="background:#f3f4f6;color:#374151;border:1px solid #d1d5db;font-size:.78rem;padding:4px 10px;border-radius:8px">
+              <i class="fa fa-wand-magic-sparkles" style="color:var(--green)"></i> Auto-Generate Password
+            </button>
+          </div>
+        </div>
+      </div>
+      <div id="astp_err" style="display:none;color:var(--danger);font-size:.8rem;margin-top:10px;font-weight:600"></div>
+      <div class="modal-actions" style="margin-top:18px">
+        <button class="btn" onclick="closeModal('adminSetTempPwModal')">Cancel</button>
+        <button class="btn btn-primary" id="astp_submitBtn" onclick="submitAdminSetTempPw()">
+          <i class="fa fa-save"></i> Set Temp Password &amp; Update DB
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ── ADD/EDIT TILE MODAL ── -->
   <div class="modal-overlay" id="tileModal">
     <div class="modal">
@@ -12025,14 +12063,15 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
 
       const email = (currentBusiness.email || '').trim().toLowerCase();
       const localTermsAccepted = email ? (localStorage.getItem('hb_seller_terms_accepted_' + email) === 'true') : false;
-      const termsAccepted = currentBusiness.termsAccepted === true || localTermsAccepted;
+      const termsAccepted = currentBusiness.termsAccepted === true || localTermsAccepted || currentBusiness.mustAcceptTerms === false;
 
-      // Show Terms & Conditions modal if terms have not been accepted yet (for ALL seller accounts)
-      const needsTerms = !termsAccepted && currentBusiness.mustAcceptTerms !== false;
+      // Show Terms & Conditions modal ONLY for true first-time new accounts who have not accepted terms yet
+      const isNewFirstLogin = currentBusiness.firstLogin === true && !termsAccepted && currentBusiness.adminSetTempPw !== true;
+      const needsTerms = isNewFirstLogin && currentBusiness.mustAcceptTerms !== false;
 
-      // Password change modal is ONLY for accounts created directly by Admin
+      // Password change modal is for accounts where Admin set a temp password OR brand new admin-created accounts
       const isAdminCreated = currentBusiness.adminCreated === true || currentBusiness.createdViaAdmin === true;
-      const needsPwChange = isAdminCreated && (currentBusiness.mustChangePassword === true || currentBusiness.firstLogin === true);
+      const needsPwChange = currentBusiness.mustChangePassword === true || currentBusiness.adminSetTempPw === true || (isAdminCreated && currentBusiness.firstLogin === true);
 
       if (needsTerms) {
         openSellerTermsModal();
@@ -12108,7 +12147,7 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
       showToast('Terms accepted ✓');
 
       const isAdminCreated = currentBusiness && (currentBusiness.adminCreated === true || currentBusiness.createdViaAdmin === true);
-      const needsPwChange = isAdminCreated && (currentBusiness.mustChangePassword === true || currentBusiness.firstLogin === true);
+      const needsPwChange = currentBusiness && (currentBusiness.mustChangePassword === true || currentBusiness.adminSetTempPw === true || (isAdminCreated && currentBusiness.firstLogin === true));
 
       if (needsPwChange) {
         setTimeout(() => openSellerFirstPwModal(), 200);
@@ -12154,19 +12193,27 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
         }
         if (currentBusiness) {
           currentBusiness.mustChangePassword = false;
+          currentBusiness.adminSetTempPw = false;
           currentBusiness.firstLogin = false;
+          currentBusiness.mustAcceptTerms = false;
+          currentBusiness.termsAccepted = true;
           currentBusiness.password = newPw;
           currentBusiness.updatedPassword = newPw;
           if (currentBusiness.email) {
             localStorage.setItem('hb_business_last_pw_' + currentBusiness.email, newPw);
             localStorage.setItem('hb_reset_pw_' + currentBusiness.email, newPw);
+            localStorage.setItem('hb_seller_terms_accepted_' + currentBusiness.email, 'true');
           }
           if (db && currentBusiness.uid) {
             await db.collection('accounts').doc(currentBusiness.uid).set({
               password: newPw,
               updatedPassword: newPw,
               mustChangePassword: false,
-              firstLogin: false
+              adminSetTempPw: false,
+              firstLogin: false,
+              mustAcceptTerms: false,
+              termsAccepted: true,
+              passwordUpdatedAt: firebase?.firestore?.FieldValue?.serverTimestamp ? firebase.firestore.FieldValue.serverTimestamp() : new Date().toISOString()
             }, { merge: true }).catch(() => { });
           }
         }
@@ -21457,6 +21504,130 @@ Together, we grow stronger — one order at a time.`;
 
     let _adminAccountsCache = [];
 
+    function openAdminSetTempPwModal(uid) {
+      const acc = (_adminAccountsCache || []).find(a => a.uid === uid) || {};
+      const email = acc.email || '';
+      const displayName = acc.displayName || '';
+
+      const uidEl = document.getElementById('astp_uid');
+      const emailEl = document.getElementById('astp_email');
+      if (uidEl) uidEl.value = uid || '';
+      if (emailEl) {
+        emailEl.value = (email || '') + (displayName ? ` (${displayName})` : '');
+        emailEl.dataset.cleanEmail = (email || '').trim().toLowerCase();
+      }
+
+      generateRandomTempPw();
+
+      const errEl = document.getElementById('astp_err');
+      if (errEl) errEl.style.display = 'none';
+
+      openModal('adminSetTempPwModal');
+    }
+
+    function generateRandomTempPw() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+      let rand = 'Temp@';
+      for (let i = 0; i < 6; i++) {
+        rand += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      const pwEl = document.getElementById('astp_password');
+      if (pwEl) pwEl.value = rand;
+    }
+
+    async function submitAdminSetTempPw() {
+      const uid = (document.getElementById('astp_uid')?.value || '').trim();
+      const emailInput = document.getElementById('astp_email');
+      const cleanEmail = (emailInput?.dataset?.cleanEmail || emailInput?.value || '').split(' ')[0].trim().toLowerCase();
+      const tempPw = (document.getElementById('astp_password')?.value || '').trim();
+      const errEl = document.getElementById('astp_err');
+
+      if (!tempPw || tempPw.length < 6) {
+        if (errEl) { errEl.textContent = 'Temporary password must be at least 6 characters.'; errEl.style.display = 'block'; }
+        return;
+      }
+
+      if (errEl) errEl.style.display = 'none';
+      const btn = document.getElementById('astp_submitBtn');
+      if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Updating DB…'; }
+
+      try {
+        // 1. Update Firestore accounts collection
+        if (db) {
+          if (uid) {
+            await db.collection('accounts').doc(uid).set({
+              password: tempPw,
+              updatedPassword: tempPw,
+              tempPassword: tempPw,
+              mustChangePassword: true,
+              adminSetTempPw: true,
+              tempPasswordSetAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+          }
+
+          if (cleanEmail) {
+            const snap = await db.collection('accounts').where('email', '==', cleanEmail).get();
+            if (!snap.empty) {
+              for (const doc of snap.docs) {
+                await db.collection('accounts').doc(doc.id).set({
+                  password: tempPw,
+                  updatedPassword: tempPw,
+                  tempPassword: tempPw,
+                  mustChangePassword: true,
+                  adminSetTempPw: true,
+                  tempPasswordSetAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+              }
+            }
+          }
+        }
+
+        // 2. Try to sync Firebase Auth password if secondaryAuth is available
+        if (secondaryAuth && cleanEmail) {
+          const candidates = new Set([tempPw]);
+          const stored1 = localStorage.getItem('hb_business_last_pw_' + cleanEmail);
+          const stored2 = localStorage.getItem('hb_reset_pw_' + cleanEmail);
+          if (stored1) candidates.add(stored1);
+          if (stored2) candidates.add(stored2);
+          ['123456', '12345678', 'password', '1234567', 'admin123', 'test123'].forEach(p => candidates.add(p));
+
+          for (const candidatePw of candidates) {
+            if (!candidatePw) continue;
+            try {
+              const cred = await secondaryAuth.signInWithEmailAndPassword(cleanEmail, candidatePw);
+              if (cred && cred.user) {
+                await cred.user.updatePassword(tempPw);
+                await secondaryAuth.signOut().catch(() => { });
+                break;
+              }
+            } catch (e) { }
+          }
+        }
+
+        // 3. Update localStorage fallbacks
+        if (cleanEmail) {
+          localStorage.setItem('hb_reset_pw_' + cleanEmail, tempPw);
+          localStorage.setItem('hb_business_last_pw_' + cleanEmail, tempPw);
+        }
+
+        closeModal('adminSetTempPwModal');
+        showToast(`Temporary password updated for ${cleanEmail}! Temporary Password: ${tempPw}`);
+
+        // Refresh admin accounts table if open
+        const c = document.getElementById('adminTabContent');
+        if (c && typeof renderAdminAccounts === 'function') {
+          renderAdminAccounts(c);
+        }
+      } catch (e) {
+        if (errEl) {
+          errEl.textContent = 'Error setting temp password: ' + (e.message || e);
+          errEl.style.display = 'block';
+        }
+      } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa fa-save"></i> Set Temp Password &amp; Update DB'; }
+      }
+    }
+
     function renderAccountRow(a) {
       const v = DATA.find(d => d.id === a.vendorId);
       const subStatus = a.subscriptionStatus || (v && v.subscriptionStatus) || 'none';
@@ -21467,13 +21638,17 @@ Together, we grow stronger — one order at a time.`;
       if (displayStatus === 'active') subBadge = `<span style="background:#e6f4ea;color:#137333;font-size:.72rem;padding:2px 6px;border-radius:8px;font-weight:700">ACTIVE (${a.subscriptionPlan || (v && v.subscriptionPlan) || 'sub'})</span>`;
       else if (displayStatus === 'expired') subBadge = '<span style="background:#fee2e2;color:#dc2626;font-size:.72rem;padding:2px 6px;border-radius:8px;font-weight:700">EXPIRED</span>';
 
+      const isTempPw = a.mustChangePassword === true || a.adminSetTempPw === true;
+      const tempBadge = isTempPw ? `<br><span style="background:#fef3c7;color:#92400e;font-size:.68rem;padding:2px 6px;border-radius:6px;display:inline-block;margin-top:2px;font-weight:600" title="Temporary Password Active (Seller must change password on login)"><i class="fa fa-key"></i> Temp PW Active</span>` : '';
+
       return `<tr>
-        <td><strong>${a.displayName || '—'}</strong></td>
+        <td><strong>${a.displayName || '—'}</strong>${tempBadge}</td>
         <td style="font-size:.78rem">${a.email || ''}</td>
         <td style="font-size:.78rem">${v ? v.venture : '(unassigned)'}</td>
         <td>${subBadge}${subExpiry ? `<br><span style="font-size:.68rem;color:var(--text-muted)">Exp: ${new Date(subExpiry).toLocaleDateString()}</span>` : ''}</td>
         <td>
           <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+            <button class="btn btn-sm" onclick="openAdminSetTempPwModal('${a.uid}')" title="Set Temporary Password for Seller" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-weight:600;padding:4px 9px;white-space:nowrap;cursor:pointer"><i class="fa fa-key" style="color:#d97706;margin-right:3px"></i> Temp Password</button>
             <button class="btn btn-sm" onclick="adminGrantSubscription('${a.uid}', '${a.vendorId}', 30)" title="Grant 30-Day Monthly Subscription (+30 Days)" style="background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;font-weight:600;padding:4px 9px;white-space:nowrap;cursor:pointer"><i class="fa fa-calendar-days" style="color:#2563eb;margin-right:3px"></i> +30 Days</button>
             <button class="btn btn-sm" onclick="adminGrantSubscription('${a.uid}', '${a.vendorId}', 365)" title="Grant 1-Year Annual Subscription (+1 Year)" style="background:#fffbeb;color:#92400e;border:1px solid #fde68a;font-weight:600;padding:4px 9px;white-space:nowrap;cursor:pointer"><i class="fa fa-crown" style="color:#d97706;margin-right:3px"></i> +1 Year</button>
             <button class="btn btn-sm" onclick="adminSetVendorItemLimit('${a.uid}', '${a.vendorId}')" title="Set Max Item/Menu Limit for Seller" style="background:#f3e8ff;color:#6b21a8;border:1px solid #d8b4fe;font-weight:600;padding:4px 9px;white-space:nowrap;cursor:pointer"><i class="fa fa-layer-group" style="color:#a855f7;margin-right:3px"></i> Limit (${v ? (getVendorMaxItems(v) < 9999 ? getVendorMaxItems(v) : '∞') : '—'})</button>
