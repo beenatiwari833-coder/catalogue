@@ -6888,6 +6888,8 @@
             style="display:none;background:var(--danger);color:#fff;font-size:.65rem;padding:1px 6px;border-radius:10px;margin-left:2px"></span></button>
         <button class="admin-tab-btn" data-tab="carpool" onclick="switchAdminTab('carpool')"><i class="fa fa-car-side"
             style="color:var(--green)"></i> Carpool Rides</button>
+        <button class="admin-tab-btn" data-tab="failures" onclick="switchAdminTab('failures')"><i class="fa fa-bug"
+            style="color:#ef4444"></i> Failure Logs</button>
       </div>
       <div id="adminTabContent"></div>
     </div>
@@ -7912,9 +7914,20 @@
         showToast('⚠️ Database is unreachable. Cannot save vendor details.');
         throw new Error('Database unreachable');
       }
-      const ok = await ensureAdminAuth();
+      const ok = await ensureVendorOrAdminAuth();
       if (!ok) throw new Error('Not authenticated');
-      const uid = window._adminUid || auth?.currentUser?.uid || null;
+      if (auth && (!auth.currentUser || auth.currentUser.isAnonymous)) {
+        if (currentBusiness && currentBusiness.email && (currentBusiness.password || currentBusiness.updatedPassword)) {
+          try {
+            await auth.signInWithEmailAndPassword(currentBusiness.email, currentBusiness.password || currentBusiness.updatedPassword);
+          } catch (authErr) {
+            await auth.signInAnonymously().catch(() => { });
+          }
+        } else {
+          await auth.signInAnonymously().catch(() => { });
+        }
+      }
+      const uid = window._adminUid || auth?.currentUser?.uid || currentBusiness?.uid || null;
       const toWrite = uid ? { ...data, ownerUid: data.ownerUid || uid } : data;
       await db.collection('vendors').doc(toWrite.id).set(toWrite);
     }
@@ -8064,6 +8077,169 @@
       }
     }
 
+    /* ═══════════ FAILURE NOTIFICATION EMAIL & LOGGING SYSTEM ═══════════ */
+    const _recentFailureEmailHashes = new Map();
+    let _localFailureLogsCache = [];
+    try {
+      const storedLogs = localStorage.getItem('hb_failure_logs');
+      if (storedLogs) _localFailureLogsCache = JSON.parse(storedLogs);
+    } catch (e) { }
+
+    async function notifyTechnicalFailure(errorOrMsg, context, userInfo = {}) {
+      try {
+        // 1. Admin Control Toggle (Default: Enabled/True)
+        if (SITE_CONFIG.enableFailureNotificationEmail === false) {
+          return;
+        }
+
+        // 2. Explicit Scope Exclusion: Search-related exceptions are strictly excluded
+        const contextLower = String(context || '').toLowerCase();
+        if (contextLower.includes('search')) {
+          return;
+        }
+
+        // 3. Format exception details
+        let errorMessage = '';
+        let stackTrace = '';
+        let errorType = 'TechnicalError';
+
+        if (errorOrMsg instanceof Error) {
+          errorMessage = errorOrMsg.message || String(errorOrMsg);
+          stackTrace = errorOrMsg.stack || '';
+          errorType = errorOrMsg.name || 'Error';
+        } else if (typeof errorOrMsg === 'object' && errorOrMsg !== null) {
+          errorMessage = errorOrMsg.message || errorOrMsg.reason || errorOrMsg.text || JSON.stringify(errorOrMsg);
+          stackTrace = errorOrMsg.stack || errorOrMsg.code || '';
+          errorType = errorOrMsg.code || errorOrMsg.name || 'ObjectError';
+        } else {
+          errorMessage = String(errorOrMsg || 'Unknown Technical Failure');
+        }
+
+        // 4. Rate Limiting / Throttling (60-second duplicate error window per context+message)
+        const errHash = `${context}_${errorMessage}`;
+        const now = Date.now();
+        const lastSent = _recentFailureEmailHashes.get(errHash);
+        if (lastSent && (now - lastSent < 60000)) {
+          console.warn(`[FailureNotification] Duplicate error email throttled: ${errHash}`);
+          return;
+        }
+        _recentFailureEmailHashes.set(errHash, now);
+
+        // 5. Active User Information extraction
+        const activeUser = currentCustomer || currentBusiness || (typeof auth !== 'undefined' && auth && auth.currentUser ? { uid: auth.currentUser.uid, email: auth.currentUser.email } : null);
+
+        const combinedUserInfo = {
+          name: userInfo.name || (activeUser ? activeUser.name || activeUser.venture || activeUser.contact : 'N/A'),
+          email: userInfo.email || (activeUser ? activeUser.email : 'N/A'),
+          mobile: userInfo.mobile || userInfo.phone || (activeUser ? activeUser.mobile || activeUser.phone : 'N/A'),
+          vendorId: userInfo.vendorId || (activeUser ? activeUser.vendorId || activeUser.id : 'N/A'),
+          uid: userInfo.uid || (typeof auth !== 'undefined' && auth && auth.currentUser ? auth.currentUser.uid : 'N/A'),
+          extraData: userInfo.extraData || userInfo.formData || (typeof userInfo === 'object' ? { ...userInfo } : {})
+        };
+
+        // Sanitize passwords out of extra data
+        if (combinedUserInfo.extraData && typeof combinedUserInfo.extraData === 'object') {
+          const cleanData = { ...combinedUserInfo.extraData };
+          delete cleanData.password;
+          delete cleanData.pw;
+          delete cleanData.tempPassword;
+          delete cleanData.vnPassword;
+          combinedUserInfo.extraData = cleanData;
+        }
+
+        const timestampStr = new Date().toLocaleString();
+        const recipientEmail = (SITE_CONFIG.failureNotificationRecipient || 'info@tintron.com').trim();
+
+        const logEntry = {
+          id: 'fail_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+          context: context || 'General Exception',
+          errorMessage,
+          errorType,
+          stackTrace,
+          userInfo: combinedUserInfo,
+          recipient: recipientEmail,
+          pageUrl: window.location.href,
+          timestamp: timestampStr,
+          ts: Date.now()
+        };
+
+        // Cache locally for instant UI reflection in Admin panel
+        _localFailureLogsCache.unshift(logEntry);
+        if (_localFailureLogsCache.length > 100) _localFailureLogsCache.pop();
+        try { localStorage.setItem('hb_failure_logs', JSON.stringify(_localFailureLogsCache.slice(0, 50))); } catch (e) { }
+
+        // Save failure event to Firestore `failure_logs` collection for audit
+        if (typeof db !== 'undefined' && db) {
+          try {
+            await db.collection('failure_logs').add({
+              ...logEntry,
+              createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+          } catch (dbErr) {
+            console.warn('[FailureNotification] Failed to record log to Firestore:', dbErr.message);
+          }
+        }
+
+        // 6. Send notification email to info@tintron.com via EmailJS
+        const ejsPubKey = SITE_CONFIG.ejsPublicKey || '';
+        const ejsService = SITE_CONFIG.ejsServiceId || '';
+        const ejsTemplate = SITE_CONFIG.ejsBusinessTemplateId || SITE_CONFIG.ejsTemplateId || '';
+
+        const emailMessage = `⚠️ TECHNICAL FAILURE NOTIFICATION ALERT ⚠️\n\n` +
+          `📌 Context / Action: ${context}\n` +
+          `⏱️ Timestamp: ${timestampStr}\n` +
+          `📍 Screen URL: ${window.location.href}\n\n` +
+          `❌ EXCEPTION DETAILS:\n` +
+          `• Action/Module: ${context}\n` +
+          `• Error Type/Code: ${errorType}\n` +
+          `• Error Message: ${errorMessage}\n` +
+          `• Stack Trace: ${stackTrace || 'N/A'}\n\n` +
+          `👤 AFFECTED USER INFORMATION:\n` +
+          `• Name: ${combinedUserInfo.name}\n` +
+          `• Email: ${combinedUserInfo.email}\n` +
+          `• Mobile / Phone: ${combinedUserInfo.mobile}\n` +
+          `• Vendor ID / UID: ${combinedUserInfo.vendorId} / ${combinedUserInfo.uid}\n` +
+          `• Form / Partial Data: ${JSON.stringify(combinedUserInfo.extraData)}\n\n` +
+          `Please contact the affected customer/vendor directly to assist with resolving this issue.`;
+
+        if (ejsPubKey && ejsService && ejsTemplate && typeof emailjs !== 'undefined') {
+          await emailjs.init({ publicKey: ejsPubKey });
+          await emailjs.send(ejsService, ejsTemplate, {
+            from_name: 'TynTron Technical Failure System',
+            from_email: 'noreply@tyntron.com',
+            to_email: recipientEmail,
+            subject: `[ALERT] API/DB Technical Failure: ${context}`,
+            message: emailMessage,
+            mobile: combinedUserInfo.mobile !== 'N/A' ? combinedUserInfo.mobile : ''
+          });
+          console.log(`[FailureNotification] Email alert successfully dispatched to ${recipientEmail}`);
+        } else {
+          console.warn(`[FailureNotification] Failure logged to DB, but EmailJS credentials not set in Site Config.`);
+        }
+
+      } catch (err) {
+        // Non-breaking guarantee: NEVER crash caller application workflow
+        console.error('[FailureNotification] Internal error while dispatching failure email:', err);
+      }
+    }
+
+    // Global Error Listeners (excluding search)
+    window.addEventListener('unhandledrejection', function (evt) {
+      const reason = evt.reason || {};
+      const msg = reason.message || String(reason);
+      if (msg.includes('search') || msg.includes('Search')) return;
+      notifyTechnicalFailure(reason, 'General Exceptions — Unhandled Promise Rejection');
+    });
+
+    window.addEventListener('error', function (evt) {
+      if (!evt.error && !evt.message) return;
+      const msg = evt.message || (evt.error && evt.error.message) || '';
+      if (msg.includes('search') || msg.includes('Search')) return;
+      if (evt.target && evt.target.tagName && (evt.target.tagName === 'IMG' || evt.target.tagName === 'SCRIPT')) return;
+      notifyTechnicalFailure(evt.error || msg, 'General Exceptions — Uncaught Script Error');
+    });
+
+
     async function fsLoadConfig() {
       if (!db) {
         showToast('⚠️ Database is unreachable. Cannot load site configuration.');
@@ -8090,6 +8266,12 @@
       document.getElementById('reAuthModal').classList.add('open');
       setTimeout(() => { const el = document.getElementById(savedEmail ? 'reAuthPw' : 'reAuthEmail'); if (el) el.focus(); }, 120);
       return new Promise((resolve, reject) => { _reAuthResolve = resolve; _reAuthReject = reject; });
+    }
+
+    function ensureVendorOrAdminAuth() {
+      if (!auth) return Promise.resolve(false);
+      if (isAdmin || currentBusiness || (auth.currentUser && !auth.currentUser.isAnonymous)) return Promise.resolve(true);
+      return ensureAdminAuth();
     }
 
     async function _reAuthSubmit() {
@@ -8142,6 +8324,7 @@
         const ok = await ensureAdminAuth();
         if (ok) await db.collection('config').doc('site').set(SITE_CONFIG, { merge: true });
       } catch (e) {
+        notifyTechnicalFailure(e, 'General Exceptions — Firestore Save Config', patch);
         showToast('⚠️ Database error saving site config: ' + e.message);
       }
     }
@@ -8224,6 +8407,7 @@
         if (onSent) onSent();
         return true;
       } catch (e) {
+        notifyTechnicalFailure(e, 'Login — Customer Email OTP Dispatch API', { email });
         showToast('Could not send verification email: ' + (e.text || e.message || 'unknown error'));
         return false;
       }
@@ -8312,7 +8496,10 @@
           return true;
         }
         throw new Error(data?.message || data?.responseDescription || 'VerifyNow returned failure');
-      } catch (e) { showToast('Could not send mobile OTP: ' + e.message); console.warn('sendMobileOtp error:', e); return false; }
+      } catch (e) {
+        notifyTechnicalFailure(e, 'Login / OTP — MessageCentral Mobile OTP Send API', { mobile });
+        showToast('Could not send mobile OTP: ' + e.message); console.warn('sendMobileOtp error:', e); return false;
+      }
     }
 
     async function verifyMobileOtp(code) {
@@ -8336,7 +8523,10 @@
           return true;
         }
         return false;
-      } catch (e) { showToast('Mobile verification failed: ' + e.message); return false; }
+      } catch (e) {
+        notifyTechnicalFailure(e, 'Login / OTP — MessageCentral Mobile OTP Validation API', { mobile: _vnMobile });
+        showToast('Mobile verification failed: ' + e.message); return false;
+      }
     }
 
     async function fsSaveCustomerProfile(profile) {
@@ -8349,7 +8539,9 @@
         const toWrite = { ...data, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
         if (!snap.exists) toWrite.createdAt = firebase.firestore.FieldValue.serverTimestamp();
         await ref.set(toWrite, { merge: true });
-      } catch (e) { }
+      } catch (e) {
+        notifyTechnicalFailure(e, 'Address Management / Customer Profile Registration', profile);
+      }
       return data;
     }
 
@@ -11314,7 +11506,7 @@
         <div style="border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
           <div>
             <div style="font-weight:700;font-size:.7rem;color:var(--green-dark);text-transform:uppercase;letter-spacing:.04em">${esc(a.label || 'Address')}</div>
-            <div style="font-size:.84rem;color:var(--text)">${esc(a.address)}</div>
+            <div style="font-size:.84rem;color:var(--text);margin-top:2px">${esc(a.address)}</div>
           </div>
           <div style="display:flex;gap:2px;flex-shrink:0">
             <button class="btn btn-ghost btn-sm" onclick="openAddAddressForm(${i})"><i class="fa fa-pen"></i></button>
@@ -12112,19 +12304,21 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
       const localTermsAccepted = email ? (localStorage.getItem('hb_seller_terms_accepted_' + email) === 'true') : false;
       const termsAccepted = currentBusiness.termsAccepted === true || localTermsAccepted || currentBusiness.mustAcceptTerms === false;
 
-      // Show Terms & Conditions modal ONLY for true first-time new accounts who have not accepted terms yet
-      const isNewFirstLogin = currentBusiness.firstLogin === true && !termsAccepted && currentBusiness.adminSetTempPw !== true;
+      const isAdminCreated = currentBusiness.adminCreated === true || currentBusiness.createdViaAdmin === true;
+      const isTempPwUsed = (currentBusiness.tempPassword && (currentBusiness.password === currentBusiness.tempPassword || currentBusiness.tempPassword === localStorage.getItem('hb_business_last_pw_' + email)))
+                        || currentBusiness.mustChangePassword === true || currentBusiness.mustChangePassword === 'true'
+                        || currentBusiness.adminSetTempPw === true || currentBusiness.adminSetTempPw === 'true';
+
+      const needsPwChange = isTempPwUsed || (isAdminCreated && currentBusiness.firstLogin === true);
+
+      const isNewFirstLogin = currentBusiness.firstLogin === true && !termsAccepted && !isTempPwUsed;
       const needsTerms = isNewFirstLogin && currentBusiness.mustAcceptTerms !== false;
 
-      // Password change modal is for accounts where Admin set a temp password OR brand new admin-created accounts
-      const isAdminCreated = currentBusiness.adminCreated === true || currentBusiness.createdViaAdmin === true;
-      const needsPwChange = currentBusiness.mustChangePassword === true || currentBusiness.adminSetTempPw === true || (isAdminCreated && currentBusiness.firstLogin === true);
-
-      if (needsTerms) {
-        openSellerTermsModal();
-        return true;
-      } else if (needsPwChange) {
+      if (needsPwChange) {
         openSellerFirstPwModal();
+        return true;
+      } else if (needsTerms) {
+        openSellerTermsModal();
         return true;
       }
       return false;
@@ -12527,6 +12721,7 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
         updatePanelTabs();
         switchPanel('business');
       } catch (e) {
+        notifyTechnicalFailure(e, 'Login — Business Login Exception', { email: cleanEmail });
         if (errEl) {
           errEl.textContent = 'Invalid email or password';
           errEl.style.display = 'block';
@@ -14442,7 +14637,7 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
       const savedAddresses = currentCustomer ? (currentCustomer.addresses || []) : [];
       if (savedAddresses.length) {
         addrPicker.style.display = 'block';
-        addrPicker.innerHTML = savedAddresses.map((a, i) => `<option value="${i}">${esc(a.label || 'Address')} — ${esc(a.address)}</option>`).join('')
+        addrPicker.innerHTML = savedAddresses.map((a, i) => `<option value="${i}">${esc(a.label || 'Address')} — ${esc(a.society ? a.society + ', ' : '')}${esc(a.address)}</option>`).join('')
           + `<option value="new">+ Use a different address</option>`;
         document.getElementById('menuCustomerAddress').value = savedAddresses[0].address;
       } else {
@@ -18764,8 +18959,123 @@ Together, we grow stronger — one order at a time.`;
         case 'subscriptions': renderAdminSubscriptions(c); break;
         case 'notifications': renderAdminNotifications(c); break;
         case 'carpool': renderAdminCarpool(c); break;
+        case 'failures': renderAdminFailureLogs(c); break;
       }
     }
+
+    async function renderAdminFailureLogs(container) {
+      if (!container) return;
+      const esc = s => (s || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      container.innerHTML = `<div class="s-card"><p style="color:var(--text-muted)"><i class="fa fa-spinner fa-spin"></i> Loading Technical Failure Logs…</p></div>`;
+
+      let logs = [..._localFailureLogsCache];
+      if (typeof db !== 'undefined' && db) {
+        try {
+          const snap = await db.collection('failure_logs').orderBy('createdAt', 'desc').limit(50).get();
+          if (!snap.empty) {
+            logs = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+          }
+        } catch (e) {
+          console.warn('Could not fetch failure logs from Firestore:', e.message);
+        }
+      }
+
+      const isEnabled = SITE_CONFIG.enableFailureNotificationEmail !== false;
+      const recipient = SITE_CONFIG.failureNotificationRecipient || 'info@tintron.com';
+
+      container.innerHTML = `
+        <div class="s-card">
+          <div class="s-card-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+            <span><i class="fa fa-bug" style="color:#ef4444"></i> Technical Failure &amp; Error Notification Logs</span>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-sm btn-outline" onclick="triggerTestFailureNotification()"><i class="fa fa-paper-plane"></i> Send Test Notification</button>
+              <button class="btn btn-sm btn-danger" onclick="clearAdminFailureLogs()"><i class="fa fa-trash"></i> Clear Logs</button>
+            </div>
+          </div>
+          <div style="background:var(--cream);border-radius:10px;padding:12px 16px;margin-bottom:16px;border:1.5px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+            <div>
+              <span style="font-weight:700;font-size:0.9rem">Notification Status: </span>
+              <span class="badge ${isEnabled ? 'badge-approved' : 'badge-rejected'}" style="margin-left:4px;font-size:0.8rem">
+                ${isEnabled ? '✓ ENABLED (Emails Active)' : '✕ DISABLED (No Emails/Tracking)'}
+              </span>
+              <div style="font-size:0.78rem;color:var(--text-muted);margin-top:4px">Recipient Email: <strong>${esc(recipient)}</strong></div>
+            </div>
+            <button class="btn btn-sm btn-ghost" onclick="switchAdminTab('features')"><i class="fa fa-gear"></i> Configure Settings</button>
+          </div>
+
+          ${logs.length === 0 ? `
+            <div style="text-align:center;padding:30px;color:var(--text-muted)">
+              <i class="fa fa-circle-check" style="font-size:2rem;color:var(--green);margin-bottom:8px;display:block"></i>
+              No technical failures recorded. All API and Database operations are running smoothly!
+            </div>
+          ` : `
+            <div style="overflow-x:auto">
+              <table class="menu-table" style="width:100%;font-size:0.82rem">
+                <thead>
+                  <tr>
+                    <th>Timestamp</th>
+                    <th>Context / Action</th>
+                    <th>Exception Details</th>
+                    <th>Affected User Information</th>
+                    <th>Recipient</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${logs.map(log => `
+                    <tr>
+                      <td style="white-space:nowrap;font-size:0.76rem;color:var(--text-muted)">${esc(log.timestamp || (log.ts ? new Date(log.ts).toLocaleString() : '—'))}</td>
+                      <td><span style="font-weight:700;color:#b91c1c">${esc(log.context)}</span></td>
+                      <td style="max-width:280px;word-break:break-word">
+                        <div style="font-weight:600;color:var(--text)">${esc(log.errorMessage)}</div>
+                        ${log.errorType ? `<span style="font-size:0.72rem;color:var(--text-muted)">[${esc(log.errorType)}]</span>` : ''}
+                      </td>
+                      <td style="font-size:0.78rem">
+                        <div><strong>Name:</strong> ${esc(log.userInfo?.name || 'N/A')}</div>
+                        <div><strong>Email:</strong> ${esc(log.userInfo?.email || 'N/A')}</div>
+                        <div><strong>Mobile:</strong> ${esc(log.userInfo?.mobile || 'N/A')}</div>
+                      </td>
+                      <td style="font-size:0.76rem">${esc(log.recipient || recipient)}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+    async function triggerTestFailureNotification() {
+      showToast('Sending test technical failure notification email...');
+      await notifyTechnicalFailure(
+        new Error('Test API / Database Connection Exception (Diagnostic Verification)'),
+        'System Diagnostic Verification Test',
+        { name: 'Admin Test User', email: SITE_CONFIG.failureNotificationRecipient || 'info@tintron.com', mobile: '9999999999', extraData: { testMode: true } }
+      );
+      showToast('Test failure notification sent & logged! ✓');
+      const c = document.getElementById('adminTabContent');
+      if (c) renderAdminFailureLogs(c);
+    }
+
+    async function clearAdminFailureLogs() {
+      if (!confirm('Are you sure you want to clear all recorded technical failure logs?')) return;
+      _localFailureLogsCache = [];
+      try { localStorage.removeItem('hb_failure_logs'); } catch (e) { }
+      if (typeof db !== 'undefined' && db) {
+        try {
+          const snap = await db.collection('failure_logs').get();
+          const batch = db.batch();
+          snap.docs.forEach(d => batch.delete(d.ref));
+          await batch.commit();
+        } catch (e) {
+          console.warn('Error clearing Firestore failure logs:', e.message);
+        }
+      }
+      showToast('Failure logs cleared.');
+      const c = document.getElementById('adminTabContent');
+      if (c) renderAdminFailureLogs(c);
+    }
+
 
     function renderAdminCarpool(container) {
       if (!container) return;
@@ -22921,6 +23231,24 @@ Together, we grow stronger — one order at a time.`;
           </label>
         </div>
       </div>
+
+      <!-- 7. Technical Failure Notification Emails (API & Database Errors) -->
+      <div style="background:var(--cream);border-radius:12px;padding:16px;border:1.5px solid var(--border)">
+        <div style="font-weight:700;font-size:.95rem;margin-bottom:8px;color:var(--text);display:flex;align-items:center;gap:8px">
+          <i class="fa fa-envelope-circle-check" style="color:#ef4444;font-size:1.1rem"></i> Failure Notification Emails (API &amp; Database Errors)
+        </div>
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600;font-size:.88rem;margin-bottom:10px">
+          <input type="checkbox" id="cfg_enableFailureNotificationEmail" ${SITE_CONFIG.enableFailureNotificationEmail !== false ? 'checked' : ''} style="accent-color:var(--green);width:18px;height:18px">
+          Enable Failure Tracking &amp; Email Notifications (ON = Active, OFF = Disabled)
+        </label>
+        <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:10px;line-height:1.4">
+          When enabled, technical failures (API or database errors) encountered during Customer/Vendor Registration, Login, Address Management, or general application usage will automatically email exception details and user info to the recipient address below. Search-related exceptions are explicitly excluded.
+        </p>
+        <div class="form-group" style="margin:0;max-width:380px">
+          <label style="font-size:.78rem;font-weight:600">Recipient Email Address</label>
+          <input id="cfg_failureNotificationRecipient" placeholder="info@tintron.com" value="${esc(SITE_CONFIG.failureNotificationRecipient || 'info@tintron.com')}" style="padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:.84rem;width:100%">
+        </div>
+      </div>
     </div>
 
     <div style="margin-top:24px;text-align:right">
@@ -23042,6 +23370,8 @@ Together, we grow stronger — one order at a time.`;
       const showBusinessCanDeliver = document.getElementById('cfg_showBusinessCanDeliver')?.checked !== false;
       const showDriverLogin = document.getElementById('cfg_showDriverLogin')?.checked !== false;
       const showBusinessOperatingSchedule = document.getElementById('cfg_showBusinessOperatingSchedule')?.checked !== false;
+      const enableFailureNotificationEmail = document.getElementById('cfg_enableFailureNotificationEmail')?.checked !== false;
+      const failureNotificationRecipient = (document.getElementById('cfg_failureNotificationRecipient')?.value || 'info@tintron.com').trim();
 
       const subTimingRadio = document.querySelector('input[name="cfg_subscriptionShowTiming"]:checked');
       const subscriptionShowTiming = subTimingRadio ? subTimingRadio.value : 'registration';
@@ -23054,6 +23384,8 @@ Together, we grow stronger — one order at a time.`;
       SITE_CONFIG.showDriverLogin = showDriverLogin;
       SITE_CONFIG.showBusinessOperatingSchedule = showBusinessOperatingSchedule;
       SITE_CONFIG.subscriptionShowTiming = subscriptionShowTiming;
+      SITE_CONFIG.enableFailureNotificationEmail = enableFailureNotificationEmail;
+      SITE_CONFIG.failureNotificationRecipient = failureNotificationRecipient;
 
       await fsSaveConfig({
         showCarpool,
@@ -23063,7 +23395,9 @@ Together, we grow stronger — one order at a time.`;
         showBusinessCanDeliver,
         showDriverLogin,
         showBusinessOperatingSchedule,
-        subscriptionShowTiming
+        subscriptionShowTiming,
+        enableFailureNotificationEmail,
+        failureNotificationRecipient
       });
 
       applyFooterLinks();
@@ -23560,7 +23894,7 @@ Together, we grow stronger — one order at a time.`;
     <div class="s-card-title"><i class="fa fa-address-book" style="color:var(--green)"></i> Registered Customers (${customers.length})</div>
     <div style="overflow-x:auto">
       <table class="menu-table" style="width:100%">
-        <thead><tr><th>Name</th><th>Email</th><th>Mobile</th><th>Address</th><th>Orders</th><th>Total Spend</th><th style="text-align:center">Action</th></tr></thead>
+        <thead><tr><th>Name</th><th>Email</th><th>Mobile</th><th>Society</th><th>Address</th><th>Orders</th><th>Total Spend</th><th style="text-align:center">Action</th></tr></thead>
         <tbody>${customers.length ? customers.map(cu => {
         const displayEmail = (cu.email && cu.email.includes('@')) ? esc(cu.email) : '—';
         const displayMobile = esc(cu.mobile || '—');
@@ -23574,6 +23908,7 @@ Together, we grow stronger — one order at a time.`;
             <td style="font-weight:600">${esc(cu.name || '—')}</td>
             <td>${displayEmail}</td>
             <td>${displayMobile}</td>
+            <td style="font-weight:600;color:var(--green-dark)">${esc(cu.society || '—')}</td>
             <td style="font-size:.78rem">${esc(cu.address) || '—'}</td>
             <td style="text-align:center;font-weight:700;color:${ordersCount > 0 ? 'var(--green)' : 'var(--text-muted)'}">${ordersCount}</td>
             <td style="text-align:center">₹${spendTotal}</td>
@@ -23583,7 +23918,7 @@ Together, we grow stronger — one order at a time.`;
               </button>
             </td>
           </tr>`;
-      }).join('') : `<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">No customers yet.</td></tr>`}</tbody>
+      }).join('') : `<tr><td colspan="8" style="text-align:center;color:var(--text-muted)">No customers yet.</td></tr>`}</tbody>
       </table>
     </div>
   </div>`;
