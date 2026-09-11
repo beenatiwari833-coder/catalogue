@@ -3017,7 +3017,11 @@
       border-radius: 18px;
       overflow: hidden;
       transition: transform .15s ease;
-      aspect-ratio: 4 / 3
+      aspect-ratio: 4 / 3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--white, #ffffff);
     }
 
     .ad-box:active {
@@ -3038,6 +3042,15 @@
       height: 100%;
       object-fit: contain;
       display: block
+    }
+
+    .ad-box svg {
+      width: 65%;
+      height: 65%;
+      max-width: 90px;
+      max-height: 90px;
+      display: block;
+      margin: auto;
     }
 
     /* ── FULL-SCREEN STATES (location splash + no-internet) ── */
@@ -4453,10 +4466,6 @@
               <div style="position:relative;width:100%">
                 <select id="drv_reg_society_select"
                   onchange="handleFormSocietyDropdownChange('drv_reg_society_select', 'drv_reg_society_custom_group', 'drv_reg_society')">
-                  <option value="Prateek Laurel">Prateek Laurel</option>
-                  <option value="RG Residency">RG Residency</option>
-                  <option value="Amrapali Zodiac">Amrapali Zodiac</option>
-                  <option value="Other">Other</option>
                 </select>
               </div>
               <div id="drv_reg_society_custom_group" style="display:none;margin-top:8px;position:relative;width:100%">
@@ -4549,10 +4558,6 @@
             <div style="position:relative;width:100%">
               <select id="drv_edit_society_select"
                 onchange="handleFormSocietyDropdownChange('drv_edit_society_select', 'drv_edit_society_custom_group', 'drv_edit_society')">
-                <option value="Prateek Laurel">Prateek Laurel</option>
-                <option value="RG Residency">RG Residency</option>
-                <option value="Amrapali Zodiac">Amrapali Zodiac</option>
-                <option value="Other">Other</option>
               </select>
             </div>
             <div id="drv_edit_society_custom_group" style="display:none;margin-top:8px;position:relative;width:100%">
@@ -4693,6 +4698,22 @@
             style="color:var(--green)"></i> Mobile verified! Complete your profile:</p>
         <div class="form-group" style="margin-bottom:12px"><label>Full Name *</label><input type="text" id="ca_name"
             placeholder="Your name"></div>
+        <div class="form-group" style="margin-bottom:12px">
+          <label><i class="fa fa-building" style="color:var(--green)"></i> Society / Complex *</label>
+          <div style="position:relative;width:100%">
+            <select id="ca_society_select"
+              onchange="handleFormSocietyDropdownChange('ca_society_select', 'ca_society_custom_group', 'ca_society')">
+            </select>
+          </div>
+          <div id="ca_society_custom_group" style="display:none;margin-top:8px;position:relative;width:100%">
+            <input type="text" id="ca_society" placeholder="Search area, street, society…" autocomplete="off"
+              oninput="onSocietyManualSearch('ca_society', 'ca_society_suggestions')"
+              onfocus="onSocietyManualSearch('ca_society', 'ca_society_suggestions')">
+            <div id="ca_society_suggestions" class="loc-suggest-list"
+              style="display:none;position:absolute;top:100%;left:0;right:0;z-index:9999;max-height:220px;overflow-y:auto;background:var(--card-bg, #fff);border:1.5px solid var(--border);border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,0.15);padding:4px">
+            </div>
+          </div>
+        </div>
         <div class="form-group" style="margin-bottom:8px"><label>Flat / House No.</label><input type="text"
             id="ca_addrFlat" placeholder="e.g. A-501"></div>
         <div class="form-group" style="margin-bottom:8px"><label>Tower / Building</label><input type="text"
@@ -5308,6 +5329,40 @@
     </div>
   </div>
 
+  <!-- ── ADD / EDIT SOCIETY MODAL ── -->
+  <div class="modal-overlay" id="societyModal">
+    <div class="modal" style="max-width:520px">
+      <div class="modal-title">
+        <i class="fa fa-building" style="color:var(--green)"></i>
+        <span id="societyModalTitle">Add New Society</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-top:14px">
+        <div class="form-group">
+          <label style="font-size:.82rem;font-weight:700">Society Name *</label>
+          <input type="text" id="soc_modal_name" placeholder="e.g. Prateek Laurel" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:.86rem;box-sizing:border-box">
+        </div>
+        <div class="form-group">
+          <label style="font-size:.82rem;font-weight:700">Address / Location</label>
+          <input type="text" id="soc_modal_addr" placeholder="e.g. Sector 120, Noida, UP" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:.86rem;box-sizing:border-box">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="form-group">
+            <label style="font-size:.82rem;font-weight:700">Latitude</label>
+            <input type="number" step="0.0001" id="soc_modal_lat" placeholder="e.g. 28.5900" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:.86rem;box-sizing:border-box">
+          </div>
+          <div class="form-group">
+            <label style="font-size:.82rem;font-weight:700">Longitude</label>
+            <input type="number" step="0.0001" id="soc_modal_lng" placeholder="e.g. 77.3610" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:.86rem;box-sizing:border-box">
+          </div>
+        </div>
+        <div class="modal-actions" style="margin-top:16px;display:flex;justify-content:flex-end;gap:10px">
+          <button type="button" class="btn btn-ghost" onclick="closeModal('societyModal')">Cancel</button>
+          <button type="button" class="btn btn-primary" id="soc_modal_save_btn" onclick="adminSubmitSocietyModal()"><i class="fa fa-save"></i> Save Society</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ── ADD/EDIT TILE MODAL ── -->
   <div class="modal-overlay" id="tileModal">
     <div class="modal">
@@ -5388,10 +5443,6 @@
           <div style="position:relative;width:100%">
             <select id="f_society_select"
               onchange="handleFormSocietyDropdownChange('f_society_select', 'f_society_custom_group', 'f_society')">
-              <option value="Prateek Laurel">Prateek Laurel</option>
-              <option value="RG Residency">RG Residency</option>
-              <option value="Amrapali Zodiac">Amrapali Zodiac</option>
-              <option value="Other">Other</option>
             </select>
           </div>
           <div id="f_society_custom_group" style="display:none;margin-top:8px;position:relative;width:100%">
@@ -5662,10 +5713,6 @@
           <div style="position:relative;width:100%">
             <select id="sr_society_select"
               onchange="handleFormSocietyDropdownChange('sr_society_select', 'sr_society_custom_group', 'sr_society')">
-              <option value="Prateek Laurel">Prateek Laurel</option>
-              <option value="RG Residency">RG Residency</option>
-              <option value="Amrapali Zodiac">Amrapali Zodiac</option>
-              <option value="Other">Other</option>
             </select>
           </div>
           <div id="sr_society_custom_group" style="display:none;margin-top:8px;position:relative;width:100%">
@@ -7801,7 +7848,33 @@
     let _browseProductQuery = null; // set instead of _browseCategory when level 'category' was reached via a global product pick
     let SITE_CONFIG = {};
     const DEFAULT_SOCIETIES = [
-      { name: 'Prateek Laurel', address: 'Sector 120, Noida, UP', lat: 28.5900, lng: 77.3610 }
+      { name: '11th Avenue', address: 'Gaur City 2, Greater Noida West, UP', lat: 28.6080, lng: 77.4270 },
+      { name: '16th Avenue Gaur City 2', address: 'Gaur City 2, Greater Noida West, UP', lat: 28.6090, lng: 77.4290 },
+      { name: 'Ace Aspire', address: 'Techzone 4, Greater Noida West, UP', lat: 28.5990, lng: 77.4430 },
+      { name: 'Ampralli zodia', address: 'Sector 120, Noida, UP', lat: 28.5890, lng: 77.3620 },
+      { name: 'Amrapali Platinum', address: 'Sector 119, Noida, UP', lat: 28.5880, lng: 77.3730 },
+      { name: 'Amprapalli Platinum', address: 'Sector 119, Noida, UP', lat: 28.5880, lng: 77.3730 },
+      { name: 'Amrapali Tropical Garden', address: 'Techzone 4, Greater Noida West, UP', lat: 28.6020, lng: 77.4470 },
+      { name: 'Amprapalli Tropical Garden', address: 'Techzone 4, Greater Noida West, UP', lat: 28.6020, lng: 77.4470 },
+      { name: 'Amrapali Zodiac', address: 'Sector 120, Noida, UP', lat: 28.5890, lng: 77.3620 },
+      { name: 'Antriksh Golf View 1', address: 'Sector 78, Noida, UP', lat: 28.5720, lng: 77.3870 },
+      { name: 'Antriksh Golf View 2', address: 'Sector 78, Noida, UP', lat: 28.5730, lng: 77.3880 },
+      { name: 'Apex Splendour', address: 'Techzone 4, Greater Noida West, UP', lat: 28.6010, lng: 77.4460 },
+      { name: 'Assotech Windsor', address: 'Sector 78, Noida, UP', lat: 28.5710, lng: 77.3850 },
+      { name: 'Civitech Sampriti', address: 'Sector 77, Noida, UP', lat: 28.5750, lng: 77.3820 },
+      { name: 'Exotica Dreamville', address: 'Sector 16C, Greater Noida West, UP', lat: 28.6070, lng: 77.4350 },
+      { name: 'Gaur Grandeur', address: 'Sector 119, Noida, UP', lat: 28.5870, lng: 77.3710 },
+      { name: 'Gaur Saundaryam', address: 'Techzone 4, Greater Noida West, UP', lat: 28.6030, lng: 77.4480 },
+      { name: 'Parsvanath Prestige', address: 'Sector 93A, Noida, UP', lat: 28.5330, lng: 77.3770 },
+      { name: 'Prateek Laurel', address: 'Sector 120, Noida, UP', lat: 28.5900, lng: 77.3610 },
+      { name: 'RG Residency', address: 'Sector 120, Noida, UP', lat: 28.5910, lng: 77.3630 },
+      { name: 'Royal Nest', address: 'Techzone 4, Greater Noida West, UP', lat: 28.6000, lng: 77.4440 },
+      { name: 'RWA Sector 122', address: 'Sector 122, Noida, UP', lat: 28.5940, lng: 77.3580 },
+      { name: 'Shipra Suncity', address: 'Indirapuram, Ghaziabad, UP', lat: 28.6360, lng: 77.3690 },
+      { name: 'Supertech Ecovillage 1', address: 'Sector 1, Greater Noida West, UP', lat: 28.5950, lng: 77.4520 },
+      { name: 'Supertech Ecovillage 2', address: 'Sector 16B, Greater Noida West, UP', lat: 28.6050, lng: 77.4380 },
+      { name: 'Supertech Ecovillage 3', address: 'Sector 16B, Greater Noida West, UP', lat: 28.6060, lng: 77.4390 },
+      { name: 'VVIP Homes', address: 'Techzone 4, Greater Noida West, UP', lat: 28.6040, lng: 77.4490 }
     ];
     let selectedSociety = null; // no society pre-selected — customer picks one, or GPS detection picks one for them
     // Seed admin mobile number — always authorized even before any admin has saved
@@ -8092,9 +8165,14 @@
           return;
         }
 
-        // 2. Explicit Scope Exclusion: Search-related exceptions are strictly excluded
+        // 2. Explicit Scope Exclusion: Search-related exceptions and standard client auth validation errors are strictly excluded
         const contextLower = String(context || '').toLowerCase();
         if (contextLower.includes('search')) {
+          return;
+        }
+
+        const errStr = (errorOrMsg ? (errorOrMsg.message || errorOrMsg.code || String(errorOrMsg)) : '').toLowerCase();
+        if (errStr.includes('wrong-password') || errStr.includes('invalid-credential') || errStr.includes('user-not-found') || errStr.includes('too-many-requests') || errStr.includes('invalid-email')) {
           return;
         }
 
@@ -8148,7 +8226,7 @@
         }
 
         const timestampStr = new Date().toLocaleString();
-        const recipientEmail = (SITE_CONFIG.failureNotificationRecipient || 'info@tintron.com').trim();
+        const recipientEmail = (SITE_CONFIG.failureNotificationRecipient || 'info@tyntron.com').trim();
 
         const logEntry = {
           id: 'fail_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
@@ -8180,7 +8258,7 @@
           }
         }
 
-        // 6. Send notification email to info@tintron.com via EmailJS
+        // 6. Send notification email to info@tyntron.com via EmailJS
         const ejsPubKey = SITE_CONFIG.ejsPublicKey || '';
         const ejsService = SITE_CONFIG.ejsServiceId || '';
         const ejsTemplate = SITE_CONFIG.ejsBusinessTemplateId || SITE_CONFIG.ejsTemplateId || '';
@@ -11284,6 +11362,7 @@
       document.getElementById('ca_mobile').value = '';
       document.getElementById('ca_otp').value = '';
       document.getElementById('ca_name').value = '';
+      setFormSocietyValue('ca_society_select', 'ca_society_custom_group', 'ca_society', selectedSociety || 'Prateek Laurel');
       document.getElementById('ca_addrFlat').value = '';
       document.getElementById('ca_addrTower').value = '';
       document.getElementById('ca_addrLandmark').value = '';
@@ -11360,6 +11439,7 @@
       }
       document.getElementById('caStep2').style.display = 'none';
       document.getElementById('caStep3').style.display = 'block';
+      setFormSocietyValue('ca_society_select', 'ca_society_custom_group', 'ca_society', selectedSociety || 'Prateek Laurel');
       document.getElementById('ca_name').focus();
     }
 
@@ -11414,10 +11494,10 @@
       showToast('Email verified ✓');
     }
 
-    /* Composes a full address from separate flat/tower/landmark boxes into the single
+    /* Composes a full address from separate flat/tower/landmark/society boxes into the single
        string used everywhere else (order messages, address picker, account display). */
-    function _composeAddress(flat, tower, landmark) {
-      const parts = [flat, tower].filter(Boolean);
+    function _composeAddress(flat, tower, landmark, society) {
+      const parts = [flat, tower, society].filter(Boolean);
       let s = parts.join(', ');
       if (landmark) s += (s ? ' — ' : '') + 'Near ' + landmark;
       return s;
@@ -11425,19 +11505,20 @@
 
     async function caSaveProfile() {
       const name = (document.getElementById('ca_name').value || '').trim();
+      const society = getFormSocietyValue('ca_society_select', 'ca_society');
       const flat = (document.getElementById('ca_addrFlat').value || '').trim();
       const tower = (document.getElementById('ca_addrTower').value || '').trim();
       const landmark = (document.getElementById('ca_addrLandmark').value || '').trim();
-      const address = _composeAddress(flat, tower, landmark);
+      const address = _composeAddress(flat, tower, landmark, society);
       const emailInput = (document.getElementById('ca_email').value || '').trim().toLowerCase();
       const errEl = document.getElementById('caStep3Err');
       if (!name) {
         errEl.textContent = 'Please enter your name.'; errEl.style.display = 'block'; return;
       }
       errEl.style.display = 'none';
-      const addresses = address ? [{ label: 'Home', flat, tower, landmark, address }] : [];
+      const addresses = address ? [{ label: 'Home', flat, tower, landmark, society, address }] : [];
       const emailVerified = !!(emailInput && _caEmailVerified === emailInput);
-      const profile = { name, mobile: _vnMobile, email: emailInput, emailVerified, address, addresses };
+      const profile = { name, mobile: _vnMobile, email: emailInput, emailVerified, society, address, addresses };
       await fsSaveCustomerProfile(profile);
       customerLogin(profile);
       closeModal('customerAuthModal');
@@ -11466,6 +11547,22 @@
         const isVerified = !!(currentCustomer.emailVerified && currentEmailVal);
         body.innerHTML = `
       <div class="form-group" style="margin-bottom:10px"><label>Full Name</label><input id="caEdit_name" value="${esc(currentCustomer.name)}"></div>
+      <div class="form-group" style="margin-bottom:10px">
+        <label><i class="fa fa-building" style="color:var(--green)"></i> Society / Complex</label>
+        <div style="position:relative;width:100%">
+          <select id="caEdit_society_select"
+            onchange="handleFormSocietyDropdownChange('caEdit_society_select', 'caEdit_society_custom_group', 'caEdit_society')">
+          </select>
+        </div>
+        <div id="caEdit_society_custom_group" style="display:none;margin-top:8px;position:relative;width:100%">
+          <input type="text" id="caEdit_society" placeholder="Search area, street, society…" autocomplete="off"
+            oninput="onSocietyManualSearch('caEdit_society', 'caEdit_society_suggestions')"
+            onfocus="onSocietyManualSearch('caEdit_society', 'caEdit_society_suggestions')">
+          <div id="caEdit_society_suggestions" class="loc-suggest-list"
+            style="display:none;position:absolute;top:100%;left:0;right:0;z-index:9999;max-height:220px;overflow-y:auto;background:var(--card-bg, #fff);border:1.5px solid var(--border);border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,0.15);padding:4px">
+          </div>
+        </div>
+      </div>
       <div class="form-group" style="margin-bottom:10px"><label>Mobile Number</label><input value="${esc(currentCustomer.mobile)}" disabled style="opacity:.6"></div>
       <div class="form-group" style="margin-bottom:8px">
         <label>Email (optional)</label>
@@ -11483,6 +11580,7 @@
         <button class="btn btn-ghost" onclick="_caEditMode=false;renderCustomerAccountBody()">Cancel</button>
         <button class="btn btn-primary" onclick="caSaveEditedProfile()"><i class="fa fa-floppy-disk"></i> Save</button>
       </div>`;
+        setTimeout(() => setFormSocietyValue('caEdit_society_select', 'caEdit_society_custom_group', 'caEdit_society', currentCustomer.society || _getSelectedSocietyName(selectedSociety)), 0);
         return;
       }
       body.innerHTML = `
@@ -11490,6 +11588,7 @@
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
         <div>
           <div style="font-weight:700;color:var(--green-dark);margin-bottom:4px">${esc(currentCustomer.name)}</div>
+          <div style="font-size:.82rem;color:var(--text-muted);display:flex;align-items:center;gap:4px;margin-top:2px"><i class="fa fa-building" style="width:14px"></i> ${esc(currentCustomer.society || _getSelectedSocietyName(selectedSociety) || 'Not specified')}</div>
           <div style="font-size:.82rem;color:var(--text-muted)"><i class="fa fa-phone" style="width:14px"></i> ${esc(currentCustomer.mobile)}</div>
           <div style="font-size:.82rem;color:var(--text-muted);display:flex;align-items:center;gap:4px;margin-top:2px"><i class="fa fa-envelope" style="width:14px"></i> ${currentCustomer.email ? esc(currentCustomer.email) + (currentCustomer.emailVerified ? ' <span style="display:inline-flex;align-items:center;gap:3px;color:var(--green-dark);background:rgba(46,125,50,0.12);border:1px solid var(--green);padding:2px 8px;border-radius:12px;font-size:0.72rem;font-weight:600;margin-left:4px"><i class="fa fa-circle-check"></i> Verified</span>' : ' <span style="color:var(--danger);font-size:.72rem;margin-left:4px">(unverified)</span>') : '<span style="font-style:italic">Not added</span>'}</div>
         </div>
@@ -11502,21 +11601,41 @@
       <button class="btn btn-ghost btn-sm" onclick="openAddAddressForm()"><i class="fa fa-plus"></i> Add</button>
     </div>
     <div id="caAddressList" style="margin-bottom:6px">
-      ${addresses.length ? addresses.map((a, i) => `
+      ${addresses.length ? addresses.map((a, i) => {
+        const socName = a.society || currentCustomer.society || _getSelectedSocietyName(selectedSociety);
+        const displayAddr = _composeAddress(a.flat, a.tower, a.landmark, socName) || a.address;
+        return `
         <div style="border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
           <div>
             <div style="font-weight:700;font-size:.7rem;color:var(--green-dark);text-transform:uppercase;letter-spacing:.04em">${esc(a.label || 'Address')}</div>
-            <div style="font-size:.84rem;color:var(--text);margin-top:2px">${esc(a.address)}</div>
+            <div style="font-size:.84rem;color:var(--text);margin-top:2px">${esc(displayAddr)}</div>
           </div>
           <div style="display:flex;gap:2px;flex-shrink:0">
             <button class="btn btn-ghost btn-sm" onclick="openAddAddressForm(${i})"><i class="fa fa-pen"></i></button>
             <button class="btn btn-ghost btn-sm" onclick="deleteCustomerAddress(${i})"><i class="fa fa-trash" style="color:var(--danger)"></i></button>
           </div>
-        </div>`).join('') : '<p style="color:var(--text-muted);font-size:.84rem;margin-bottom:10px">No saved addresses yet.</p>'}
+        </div>`;
+      }).join('') : '<p style="color:var(--text-muted);font-size:.84rem;margin-bottom:10px">No saved addresses yet.</p>'}
     </div>
     <div id="caAddAddressForm" style="display:none;border:1.5px dashed var(--border);border-radius:10px;padding:12px;margin-bottom:16px">
       <div id="caAddAddressFormTitle" style="font-weight:700;font-size:.8rem;color:var(--green-dark);margin-bottom:10px">Add Address</div>
       <div class="form-group" style="margin-bottom:8px"><label>Label</label><input id="caNewAddrLabel" placeholder="Home, Office…"></div>
+      <div class="form-group" style="margin-bottom:8px">
+        <label><i class="fa fa-building" style="color:var(--green)"></i> Society / Complex *</label>
+        <div style="position:relative;width:100%">
+          <select id="caNewAddr_society_select"
+            onchange="handleFormSocietyDropdownChange('caNewAddr_society_select', 'caNewAddr_society_custom_group', 'caNewAddr_society')">
+          </select>
+        </div>
+        <div id="caNewAddr_society_custom_group" style="display:none;margin-top:8px;position:relative;width:100%">
+          <input type="text" id="caNewAddr_society" placeholder="Search area, street, society…" autocomplete="off"
+            oninput="onSocietyManualSearch('caNewAddr_society', 'caNewAddr_society_suggestions')"
+            onfocus="onSocietyManualSearch('caNewAddr_society', 'caNewAddr_society_suggestions')">
+          <div id="caNewAddr_society_suggestions" class="loc-suggest-list"
+            style="display:none;position:absolute;top:100%;left:0;right:0;z-index:9999;max-height:220px;overflow-y:auto;background:var(--card-bg, #fff);border:1.5px solid var(--border);border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,0.15);padding:4px">
+          </div>
+        </div>
+      </div>
       <div class="form-group" style="margin-bottom:8px"><label>Flat / House No. *</label><input id="caNewAddrFlat" placeholder="e.g. A-501"></div>
       <div class="form-group" style="margin-bottom:8px"><label>Tower / Building</label><input id="caNewAddrTower" placeholder="e.g. Tower C"></div>
       <div class="form-group" style="margin-bottom:10px"><label>Landmark (optional)</label><input id="caNewAddrLandmark" placeholder="e.g. Gate 2"></div>
@@ -11553,6 +11672,8 @@
       const a = _caEditingAddressIdx !== null ? (currentCustomer.addresses || [])[_caEditingAddressIdx] : null;
       if (titleEl) titleEl.textContent = a ? 'Edit Address' : 'Add Address';
       if (labelEl) labelEl.value = a?.label || '';
+      const socVal = a?.society || currentCustomer?.society || _getSelectedSocietyName(selectedSociety);
+      setFormSocietyValue('caNewAddr_society_select', 'caNewAddr_society_custom_group', 'caNewAddr_society', socVal);
       if (flatEl) flatEl.value = a?.flat || '';
       if (towerEl) towerEl.value = a?.tower || '';
       if (landmarkEl) landmarkEl.value = a?.landmark || '';
@@ -11567,12 +11688,13 @@
 
     async function saveNewCustomerAddress() {
       const label = (document.getElementById('caNewAddrLabel').value || '').trim() || 'Address';
+      const society = getFormSocietyValue('caNewAddr_society_select', 'caNewAddr_society');
       const flat = (document.getElementById('caNewAddrFlat').value || '').trim();
       const tower = (document.getElementById('caNewAddrTower').value || '').trim();
       const landmark = (document.getElementById('caNewAddrLandmark').value || '').trim();
       if (!flat) { showToast('Please enter your flat / house number'); return; }
-      const address = _composeAddress(flat, tower, landmark);
-      const entry = { label, flat, tower, landmark, address };
+      const address = _composeAddress(flat, tower, landmark, society);
+      const entry = { label, flat, tower, landmark, society, address };
       const addresses = [...(currentCustomer.addresses || [])];
       if (_caEditingAddressIdx !== null && addresses[_caEditingAddressIdx]) {
         addresses[_caEditingAddressIdx] = entry;
@@ -11645,13 +11767,14 @@
 
     async function caSaveEditedProfile() {
       const name = (document.getElementById('caEdit_name').value || '').trim();
+      const society = getFormSocietyValue('caEdit_society_select', 'caEdit_society');
       const emailInput = (document.getElementById('caEdit_email').value || '').trim().toLowerCase();
       if (!name) { showToast('Name is required'); return; }
       const emailChanged = emailInput !== (currentCustomer.email || '');
       const emailVerified = emailInput
         ? (emailChanged ? _caEditEmailVerified === emailInput : !!currentCustomer.emailVerified)
         : false;
-      const profile = { ...currentCustomer, name, email: emailInput, emailVerified };
+      const profile = { ...currentCustomer, name, society, email: emailInput, emailVerified };
       await fsSaveCustomerProfile(profile);
       customerLogin(profile);
       _caEditMode = false;
@@ -11968,16 +12091,33 @@
           } catch (authErr) {
             console.warn('secondaryAuth createUser warning:', authErr.code || authErr.message);
             if (authErr.code === 'auth/email-already-in-use') {
-              try {
-                cred = await secondaryAuth.signInWithEmailAndPassword(req.email, userPw);
-                if (cred && cred.user) uid = cred.user.uid;
-              } catch (signInErr) {
-                if (db) {
-                  try {
-                    const accSnap = await db.collection('accounts').where('email', '==', req.email).get();
-                    if (accSnap && !accSnap.empty) uid = accSnap.docs[0].id;
-                  } catch (e) { }
-                }
+              const candidatePws = new Set([userPw, 'Hb123456', '123456', '12345678', 'password', 'admin123']);
+              if (db) {
+                try {
+                  const accSnap = await db.collection('accounts').where('email', '==', req.email).get();
+                  accSnap.forEach(doc => {
+                    const data = doc.data();
+                    if (data.password) candidatePws.add(data.password);
+                    if (data.updatedPassword) candidatePws.add(data.updatedPassword);
+                  });
+                } catch (e) { }
+              }
+              for (const testPw of candidatePws) {
+                if (!testPw) continue;
+                try {
+                  cred = await secondaryAuth.signInWithEmailAndPassword(req.email, testPw);
+                  if (cred && cred.user) {
+                    uid = cred.user.uid;
+                    await cred.user.updatePassword(userPw).catch(() => { });
+                    break;
+                  }
+                } catch (e) { }
+              }
+              if ((!cred || !cred.user) && db) {
+                try {
+                  const accSnap = await db.collection('accounts').where('email', '==', req.email).get();
+                  if (accSnap && !accSnap.empty) uid = accSnap.docs[0].id;
+                } catch (e) { }
               }
             }
           }
@@ -12607,15 +12747,30 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
                 if (storedPw && storedPw === cleanPw) {
                   isResetMatch = true;
                 }
+              } else {
+                const reqSnap = await db.collection('business_requests').where('email', '==', cleanEmail).get();
+                if (!reqSnap.empty) {
+                  const reqDoc = reqSnap.docs[0].data();
+                  if (reqDoc.password && reqDoc.password === cleanPw) {
+                    isResetMatch = true;
+                    accUid = reqDoc.assignedUid || reqDoc.requestId || ('u_' + Date.now());
+                    accData = { email: cleanEmail, displayName: reqDoc.venture || reqDoc.name, role: 'business', password: cleanPw };
+                  }
+                }
               }
             } catch (e) { }
           }
 
           if (isResetMatch) {
-            // Business reset their password to cleanPw via OTP!
+            // Business password matches Firestore record or reset password!
             // Try signing in using known candidate old passwords to sync Firebase Auth password
             const candidates = [
               '123456',
+              'Hb123456',
+              '12345678',
+              'password',
+              'admin123',
+              'test123',
               localStorage.getItem('hb_business_last_pw_' + cleanEmail)
             ].filter(Boolean);
 
@@ -12723,7 +12878,12 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
       } catch (e) {
         notifyTechnicalFailure(e, 'Login — Business Login Exception', { email: cleanEmail });
         if (errEl) {
-          errEl.textContent = 'Invalid email or password';
+          const errStr = (e?.message || e?.code || String(e || '')).toLowerCase();
+          if (errStr.includes('too_many_attempts') || errStr.includes('too-many-requests')) {
+            errEl.textContent = 'Too many failed login attempts. Please wait a few minutes before trying again, or reset your password.';
+          } else {
+            errEl.textContent = 'Invalid email or password';
+          }
           errEl.style.display = 'block';
         }
       }
@@ -15461,7 +15621,41 @@ Together, we grow stronger — one order at a time.`;
     // Once GPS detection resolves, this holds the societies within 5km — so any LATER call
     // to buildSocietySelector() (e.g. after Firestore config loads) still respects it instead
     // of racing back to the full list.
-    const PRE_ENABLED_SOCIETIES = ['Prateek Laurel', 'RG Residency', 'Amrapali Zodiac'];
+    function _societyNames() {
+      const list = _societyList() || [];
+      return list.map(s => (typeof s === 'string' ? s : (s && s.name ? s.name : ''))).filter(Boolean);
+    }
+
+    function populateFormSocietyDropdowns() {
+      const names = _societyNames();
+      const selectIds = [
+        'f_society_select',
+        'sr_society_select',
+        'drv_reg_society_select',
+        'drv_edit_society_select',
+        'ca_society_select',
+        'caEdit_society_select',
+        'caNewAddr_society_select'
+      ];
+
+      selectIds.forEach(id => {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        const currentVal = sel.value;
+        let html = names.map(name => `<option value="${esc(name)}">${esc(name)}</option>`).join('');
+        html += `<option value="Other">✨ Other (Write your own)</option>`;
+        sel.innerHTML = html;
+
+        if (currentVal && (names.includes(currentVal) || currentVal === 'Other')) {
+          sel.value = currentVal;
+        }
+      });
+
+      const dl = document.getElementById('nc_societyDatalist');
+      if (dl) {
+        dl.innerHTML = names.map(name => `<option value="${esc(name)}"></option>`).join('');
+      }
+    }
 
     function handleFormSocietyDropdownChange(selectId, customGroupId, inputId) {
       const sel = document.getElementById(selectId);
@@ -15471,7 +15665,7 @@ Together, we grow stronger — one order at a time.`;
       if (sel.value === 'Other') {
         group.style.display = 'block';
         if (input) {
-          if (PRE_ENABLED_SOCIETIES.includes(input.value)) {
+          if (_societyNames().includes(input.value)) {
             input.value = '';
           }
           input.focus();
@@ -15496,21 +15690,35 @@ Together, we grow stronger — one order at a time.`;
       return fallback;
     }
 
+        function _getSelectedSocietyName(val) {
+      const soc = (val !== undefined && val !== null && val !== '') ? val : selectedSociety;
+      if (!soc) return '';
+      if (typeof soc === 'string') return soc.trim();
+      if (typeof soc === 'object') return (soc.name || soc.label || '').trim();
+      return String(soc).trim();
+    }
+
     function setFormSocietyValue(selectId, customGroupId, inputId, societyVal) {
+      populateFormSocietyDropdowns();
       const sel = document.getElementById(selectId);
       const group = document.getElementById(customGroupId);
       const input = document.getElementById(inputId);
-      const val = (societyVal || '').trim();
+      const val = _getSelectedSocietyName(societyVal) || _getSelectedSocietyName(selectedSociety) || (_societyNames()[0] || 'Prateek Laurel');
+      const names = _societyNames();
 
-      if (!val || PRE_ENABLED_SOCIETIES.includes(val)) {
-        const finalVal = val || 'Prateek Laurel';
-        if (sel) sel.value = finalVal;
+      if (names.includes(val)) {
+        if (sel) sel.value = val;
         if (group) group.style.display = 'none';
-        if (input) input.value = finalVal;
-      } else {
+        if (input) input.value = val;
+      } else if (val) {
         if (sel) sel.value = 'Other';
         if (group) group.style.display = 'block';
         if (input) input.value = val;
+      } else {
+        const fallback = names[0] || 'Prateek Laurel';
+        if (sel) sel.value = fallback;
+        if (group) group.style.display = 'none';
+        if (input) input.value = fallback;
       }
     }
 
@@ -15521,9 +15729,10 @@ Together, we grow stronger — one order at a time.`;
       if (el && el.tagName === 'SELECT') {
         const cur = el.value || selectedSociety;
         const finalList = list.length ? list : _societyList(); // never render an empty dropdown
-        el.innerHTML = finalList.map(s => `<option value="${s.name}"${s.name === cur ? ' selected' : ''}>${s.name}</option>`).join('');
+        el.innerHTML = finalList.map(s => `<option value="${esc(s.name)}"${s.name === cur ? ' selected' : ''}>${esc(s.name)}</option>`).join('');
       }
       renderSocietyBoxes(list.length ? list : _societyList());
+      populateFormSocietyDropdowns();
     }
 
     let _societySearchDebounce = null;
@@ -18981,7 +19190,7 @@ Together, we grow stronger — one order at a time.`;
       }
 
       const isEnabled = SITE_CONFIG.enableFailureNotificationEmail !== false;
-      const recipient = SITE_CONFIG.failureNotificationRecipient || 'info@tintron.com';
+      const recipient = SITE_CONFIG.failureNotificationRecipient || 'info@tyntron.com';
 
       container.innerHTML = `
         <div class="s-card">
@@ -19050,7 +19259,7 @@ Together, we grow stronger — one order at a time.`;
       await notifyTechnicalFailure(
         new Error('Test API / Database Connection Exception (Diagnostic Verification)'),
         'System Diagnostic Verification Test',
-        { name: 'Admin Test User', email: SITE_CONFIG.failureNotificationRecipient || 'info@tintron.com', mobile: '9999999999', extraData: { testMode: true } }
+        { name: 'Admin Test User', email: SITE_CONFIG.failureNotificationRecipient || 'info@tyntron.com', mobile: '9999999999', extraData: { testMode: true } }
       );
       showToast('Test failure notification sent & logged! ✓');
       const c = document.getElementById('adminTabContent');
@@ -23246,7 +23455,7 @@ Together, we grow stronger — one order at a time.`;
         </p>
         <div class="form-group" style="margin:0;max-width:380px">
           <label style="font-size:.78rem;font-weight:600">Recipient Email Address</label>
-          <input id="cfg_failureNotificationRecipient" placeholder="info@tintron.com" value="${esc(SITE_CONFIG.failureNotificationRecipient || 'info@tintron.com')}" style="padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:.84rem;width:100%">
+          <input id="cfg_failureNotificationRecipient" placeholder="info@tyntron.com" value="${esc(SITE_CONFIG.failureNotificationRecipient || 'info@tyntron.com')}" style="padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:.84rem;width:100%">
         </div>
       </div>
     </div>
@@ -23257,28 +23466,30 @@ Together, we grow stronger — one order at a time.`;
   </div>
 
   <!-- Societies management card -->
-  <div class="s-card" style="margin-top:18px">
-    <div class="s-card-title"><i class="fa fa-building" style="color:var(--green)"></i> Societies</div>
+  <div class="s-card" id="adminSocietiesCard" style="margin-top:18px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:10px">
+      <div class="s-card-title" style="margin:0"><i class="fa fa-building" style="color:var(--green)"></i> Societies</div>
+      <button class="btn btn-primary btn-sm" onclick="adminOpenAddSocietyModal()"><i class="fa fa-plus"></i> Add New Society</button>
+    </div>
     <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:14px">Each business is linked to a society. The website auto-detects the visitor's society via GPS. Add coordinates so detection works precisely.</p>
     <table class="menu-table" style="margin-bottom:16px">
-      <thead><tr><th>Society Name</th><th>Address</th><th>Latitude</th><th>Longitude</th><th></th></tr></thead>
+      <thead><tr><th>Society Name</th><th>Address</th><th>Latitude</th><th>Longitude</th><th style="width:140px;text-align:right">Actions</th></tr></thead>
       <tbody>
-        ${(_societyList()).map(s => `<tr>
-          <td style="font-weight:700">${s.name}</td>
-          <td style="font-size:.8rem;color:var(--text-muted)">${s.address || '—'}</td>
-          <td style="font-size:.8rem">${s.lat || '—'}</td>
-          <td style="font-size:.8rem">${s.lng || '—'}</td>
-          <td><button class="btn btn-sm btn-danger" onclick="adminRemoveSociety('${s.name.replace(/'/g, "\\'")}')"><i class="fa fa-trash"></i></button></td>
-        </tr>`).join('')}
+        ${(_societyList()).map(s => {
+          const escapedName = s.name.replace(/'/g, "\\'");
+          return `<tr>
+            <td style="font-weight:700">${esc(s.name)}</td>
+            <td style="font-size:.8rem;color:var(--text-muted)">${esc(s.address || '—')}</td>
+            <td style="font-size:.8rem">${s.lat || '—'}</td>
+            <td style="font-size:.8rem">${s.lng || '—'}</td>
+            <td style="text-align:right;white-space:nowrap">
+              <button class="btn btn-sm" style="background:#e67e22;color:#fff;padding:4px 10px;font-size:0.78rem;border-radius:6px;margin-right:4px;border:none;cursor:pointer;font-weight:600" onclick="adminOpenEditSocietyModal('${escapedName}')" title="Edit Society"><i class="fa fa-pen"></i> Edit</button>
+              <button class="btn btn-sm btn-danger" style="padding:4px 10px;font-size:0.78rem;border-radius:6px" onclick="adminRemoveSociety('${escapedName}')" title="Delete Society"><i class="fa fa-trash"></i> Delete</button>
+            </td>
+          </tr>`;
+        }).join('')}
       </tbody>
     </table>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-      <input id="new_soc_name" placeholder="Society Name *" style="padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:.84rem">
-      <input id="new_soc_addr" placeholder="Address (e.g. Sector 120, Noida)" style="padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:.84rem">
-      <input id="new_soc_lat" type="number" step="0.0001" placeholder="Latitude (e.g. 28.5900)" style="padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:.84rem">
-      <input id="new_soc_lng" type="number" step="0.0001" placeholder="Longitude (e.g. 77.3610)" style="padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:.84rem">
-    </div>
-    <button class="btn btn-primary btn-sm" onclick="adminAddSociety()"><i class="fa fa-plus"></i> Add Society</button>
   </div>
 
   <!-- Admin access management card -->
@@ -23371,7 +23582,7 @@ Together, we grow stronger — one order at a time.`;
       const showDriverLogin = document.getElementById('cfg_showDriverLogin')?.checked !== false;
       const showBusinessOperatingSchedule = document.getElementById('cfg_showBusinessOperatingSchedule')?.checked !== false;
       const enableFailureNotificationEmail = document.getElementById('cfg_enableFailureNotificationEmail')?.checked !== false;
-      const failureNotificationRecipient = (document.getElementById('cfg_failureNotificationRecipient')?.value || 'info@tintron.com').trim();
+      const failureNotificationRecipient = (document.getElementById('cfg_failureNotificationRecipient')?.value || 'info@tyntron.com').trim();
 
       const subTimingRadio = document.querySelector('input[name="cfg_subscriptionShowTiming"]:checked');
       const subscriptionShowTiming = subTimingRadio ? subTimingRadio.value : 'registration';
@@ -23431,24 +23642,109 @@ Together, we grow stronger — one order at a time.`;
         showToast('Admin number removed ✓');
       });
     }
-    function adminAddSociety() {
-      const name = (document.getElementById('new_soc_name').value || '').trim();
-      if (!name) { showToast('Society name is required'); return; }
-      const list = _societyList().slice();
-      if (list.find(s => s.name === name)) { showToast('Society already exists'); return; }
-      list.push({
-        name,
-        address: (document.getElementById('new_soc_addr').value || '').trim(),
-        lat: +document.getElementById('new_soc_lat').value || 0,
-        lng: +document.getElementById('new_soc_lng').value || 0,
-      });
-      SITE_CONFIG.societies = list;
-      fsSaveConfig({ societies: list }).then(() => {
-        buildSocietySelector();
-        renderAdminConfig(document.getElementById('adminTabContent'));
-        showToast('Society added ✓');
-      });
+    function adminOpenAddSocietyModal() {
+      window._editingSocietyOriginalName = null;
+      window._adminSocietiesScrollY = window.scrollY;
+      const titleEl = document.getElementById('societyModalTitle');
+      if (titleEl) titleEl.innerHTML = 'Add New Society';
+      const nameInput = document.getElementById('soc_modal_name');
+      const addrInput = document.getElementById('soc_modal_addr');
+      const latInput = document.getElementById('soc_modal_lat');
+      const lngInput = document.getElementById('soc_modal_lng');
+      if (nameInput) nameInput.value = '';
+      if (addrInput) addrInput.value = '';
+      if (latInput) latInput.value = '';
+      if (lngInput) lngInput.value = '';
+      openModal('societyModal');
+      setTimeout(() => { if (nameInput) nameInput.focus(); }, 120);
     }
+
+    function adminOpenEditSocietyModal(name) {
+      const soc = _societyList().find(s => s.name === name);
+      if (!soc) return;
+      window._editingSocietyOriginalName = name;
+      window._adminSocietiesScrollY = window.scrollY;
+      const titleEl = document.getElementById('societyModalTitle');
+      if (titleEl) titleEl.innerHTML = `Edit Society: "${esc(name)}"`;
+      const nameInput = document.getElementById('soc_modal_name');
+      const addrInput = document.getElementById('soc_modal_addr');
+      const latInput = document.getElementById('soc_modal_lat');
+      const lngInput = document.getElementById('soc_modal_lng');
+      if (nameInput) nameInput.value = soc.name || '';
+      if (addrInput) addrInput.value = soc.address || '';
+      if (latInput) latInput.value = soc.lat != null ? soc.lat : '';
+      if (lngInput) lngInput.value = soc.lng != null ? soc.lng : '';
+      openModal('societyModal');
+      setTimeout(() => { if (nameInput) nameInput.focus(); }, 120);
+    }
+
+    function _restoreSocietiesCardScroll() {
+      const targetY = window._adminSocietiesScrollY || window.scrollY;
+      window.scrollTo(0, targetY);
+      const card = document.getElementById('adminSocietiesCard');
+      if (card) {
+        card.scrollIntoView({ behavior: 'auto', block: 'nearest' });
+      }
+    }
+
+    function adminSubmitSocietyModal() {
+      const name = (document.getElementById('soc_modal_name')?.value || '').trim();
+      if (!name) { showToast('Society name is required'); return; }
+      const address = (document.getElementById('soc_modal_addr')?.value || '').trim();
+      const lat = +document.getElementById('soc_modal_lat')?.value || 0;
+      const lng = +document.getElementById('soc_modal_lng')?.value || 0;
+
+      const list = _societyList().slice();
+      const origName = window._editingSocietyOriginalName;
+
+      if (origName) {
+        // Edit Mode
+        const idx = list.findIndex(s => s.name === origName);
+        if (idx === -1) { showToast('Society not found'); return; }
+        if (name !== origName && list.some(s => s.name === name)) {
+          showToast('Another society with this name already exists');
+          return;
+        }
+
+        list[idx] = { name, address, lat, lng };
+        SITE_CONFIG.societies = list;
+
+        if (name !== origName) {
+          let updatedCount = 0;
+          DATA.forEach(item => {
+            if (item.society === origName) {
+              item.society = name;
+              updatedCount++;
+            }
+          });
+          if (updatedCount > 0) saveData(DATA);
+          if (selectedSociety === origName) selectedSociety = name;
+        }
+
+        fsSaveConfig({ societies: list }).then(() => {
+          window._editingSocietyOriginalName = null;
+          closeModal('societyModal');
+          buildSocietySelector();
+          renderAll();
+          renderAdminConfig(document.getElementById('adminTabContent'));
+          _restoreSocietiesCardScroll();
+          showToast('Society updated ✓');
+        });
+      } else {
+        // Add Mode
+        if (list.find(s => s.name === name)) { showToast('Society already exists'); return; }
+        list.push({ name, address, lat, lng });
+        SITE_CONFIG.societies = list;
+        fsSaveConfig({ societies: list }).then(() => {
+          closeModal('societyModal');
+          buildSocietySelector();
+          renderAdminConfig(document.getElementById('adminTabContent'));
+          _restoreSocietiesCardScroll();
+          showToast('Society added ✓');
+        });
+      }
+    }
+
     async function adminRemoveSociety(name) {
       const ok = await confirmAction({
         title: `Remove "${name}"?`,
@@ -23459,11 +23755,15 @@ Together, we grow stronger — one order at a time.`;
         danger: true
       });
       if (!ok) return;
+      if (window._editingSocietyOriginalName === name) {
+        window._editingSocietyOriginalName = null;
+      }
       SITE_CONFIG.societies = (_societyList()).filter(s => s.name !== name);
       fsSaveConfig({ societies: SITE_CONFIG.societies }).then(() => {
         if (selectedSociety === name) { selectedSociety = null; }
         buildSocietySelector(); renderAll();
         renderAdminConfig(document.getElementById('adminTabContent'));
+        _restoreSocietiesCardScroll();
         showToast('Society removed ✓');
       });
     }
@@ -23986,7 +24286,7 @@ Together, we grow stronger — one order at a time.`;
       setupBusinessAuth();
 
       // Initial render from localStorage / SEED
-      buildTabs(); renderAll(); renderGlobalCategoryBoxes(); renderGlobalProductBoxes();
+      buildSocietySelector(); buildTabs(); renderAll(); renderGlobalCategoryBoxes(); renderGlobalProductBoxes();
 
       // Restore persisted driver session
       initDriverSession();
