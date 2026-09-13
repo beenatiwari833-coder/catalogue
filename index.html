@@ -5331,15 +5331,32 @@
 
   <!-- ── ADD / EDIT SOCIETY MODAL ── -->
   <div class="modal-overlay" id="societyModal">
-    <div class="modal" style="max-width:520px">
+    <div class="modal" style="max-width:540px">
       <div class="modal-title">
         <i class="fa fa-building" style="color:var(--green)"></i>
         <span id="societyModalTitle">Add New Society</span>
       </div>
       <div style="display:flex;flex-direction:column;gap:12px;margin-top:14px">
         <div class="form-group">
-          <label style="font-size:.82rem;font-weight:700">Society Name *</label>
+          <label style="font-size:.82rem;font-weight:700">Society Name (Internal/Display Name) *</label>
           <input type="text" id="soc_modal_name" placeholder="e.g. Prateek Laurel" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:.86rem;box-sizing:border-box">
+        </div>
+        <div class="form-group" style="position:relative">
+          <label style="font-size:.82rem;font-weight:700;display:flex;justify-content:space-between;align-items:center">
+            <span><i class="fa fa-map-location-dot" style="color:var(--green)"></i> Google Maps Society Name / Location Search</span>
+            <span style="font-size:0.75rem;font-weight:normal;color:var(--text-muted)">Auto-fetches Lat/Lng</span>
+          </label>
+          <div style="display:flex;gap:8px;margin-top:4px">
+            <input type="text" id="soc_modal_gmap_name" placeholder="e.g. Prateek Laurel society, Sector 120, Noida"
+              oninput="onSocietyGmapSearchInput()" onfocus="onSocietyGmapSearchInput()" autocomplete="off"
+              style="flex:1;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:.86rem;box-sizing:border-box">
+            <button type="button" class="btn btn-ghost btn-sm" id="soc_modal_fetch_btn" onclick="adminFetchSocietyGeocode()" title="Search location on Google Maps" style="white-space:nowrap;padding:8px 12px">
+              <i class="fa fa-magnifying-glass-location" style="color:var(--green)"></i> Fetch Coordinates
+            </button>
+          </div>
+          <div id="soc_modal_gmap_suggestions" class="loc-suggest-list"
+            style="display:none;position:absolute;top:100%;left:0;right:0;z-index:9999;max-height:220px;overflow-y:auto;background:var(--card-bg, #fff);border:1.5px solid var(--border);border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,0.15);padding:4px;margin-top:4px">
+          </div>
         </div>
         <div class="form-group">
           <label style="font-size:.82rem;font-weight:700">Address / Location</label>
@@ -5348,11 +5365,11 @@
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
           <div class="form-group">
             <label style="font-size:.82rem;font-weight:700">Latitude</label>
-            <input type="number" step="0.0001" id="soc_modal_lat" placeholder="e.g. 28.5900" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:.86rem;box-sizing:border-box">
+            <input type="number" step="0.000001" id="soc_modal_lat" placeholder="e.g. 28.5900" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:.86rem;box-sizing:border-box">
           </div>
           <div class="form-group">
             <label style="font-size:.82rem;font-weight:700">Longitude</label>
-            <input type="number" step="0.0001" id="soc_modal_lng" placeholder="e.g. 77.3610" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:.86rem;box-sizing:border-box">
+            <input type="number" step="0.000001" id="soc_modal_lng" placeholder="e.g. 77.3610" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:.86rem;box-sizing:border-box">
           </div>
         </div>
         <div class="modal-actions" style="margin-top:16px;display:flex;justify-content:flex-end;gap:10px">
@@ -14078,26 +14095,26 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
     }
 
     /* ═══════════ TYNTRON ROBUST MULTI-FIELD SEARCH ENGINE (PDF Specification Engine) ═══════════ */
+        /* ==================== ROBUST MULTI-FIELD SEARCH ENGINE ==================== */
     const TyntronSearchEngine = (() => {
       const STOP_WORDS = new Set([
-        "in", "at", "for", "near", "the", "a", "an", "of", "under", "below", "my", "by",
-        "from", "with", "is", "there", "any", "and", "or", "to", "want", "small", "large",
-        "this", "weekend", "delivered", "tower", "business", "me", "please", "can", "you", "find",
-        "looking", "get", "need", "rupees", "rs", "inr", "less", "than", "more", "above", "over"
+        'i', 'me', 'my', 'myself', 'we', 'our', 'you', 'your', 'want', 'need', 'show', 'buy', 'get', 'like',
+        'looking', 'for', 'find', 'search', 'give', 'can', 'would', 'will', 'should', 'please',
+        'in', 'at', 'near', 'by', 'from', 'under', 'below', 'less', 'than', 'above', 'over',
+        'a', 'an', 'the', 'for', 'with', 'and', 'or', 'of', 'to', 'is', 'are', 'be', 'do', 'does'
       ]);
 
       const SYNONYMS = {
-        "bday": "birthday",
-        "b'day": "birthday",
-        "soc": "society",
-        "veg": "vegetarian",
-        "nonveg": "non-vegetarian",
-        "non-veg": "non-vegetarian",
-        "tiffin": "tiffin service",
-        "tution": "coaching",
-        "tuition": "coaching",
-        "cakee": "cake",
-        "cak": "cake"
+        "cak": "cake", "cakes": "cake", "pastry": "cake", "pastries": "cake", "dessert": "cake", "desserts": "cake",
+        "bakery": "cake", "sweet": "cake", "sweets": "cake",
+        "gym": "fitness", "workout": "fitness", "exercise": "fitness",
+        "doc": "doctor", "physician": "doctor", "clinic": "doctor", "dentist": "doctor",
+        "clothing": "fashion", "apparel": "fashion", "wear": "fashion", "dress": "fashion", "clothes": "fashion",
+        "tiffin": "food", "mess": "food", "meal": "food", "thali": "food",
+        "xerox": "print", "photocopy": "print", "printing": "print",
+        "eggless": "eggless", "veg": "vegetarian", "vegetarian": "vegetarian",
+        "saloon": "salon", "parlour": "salon", "parlor": "salon", "haircut": "salon",
+        "class": "tuition", "classes": "tuition", "coaching": "tuition", "tutor": "tuition"
       };
 
       const FIELD_WEIGHTS = {
@@ -14110,23 +14127,29 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
         description: 8
       };
 
-      function Levenshtein(a, b) {
+      function DamerauLevenshtein(a, b) {
         if (a === b) return 0;
         if (!a.length) return b.length;
         if (!b.length) return a.length;
-        const m = [];
-        for (let i = 0; i <= b.length; i++) m[i] = [i];
-        for (let j = 0; j <= a.length; j++) m[0][j] = j;
-        for (let i = 1; i <= b.length; i++) {
-          for (let j = 1; j <= a.length; j++) {
-            if (b.charAt(i - 1) === a.charAt(j - 1)) {
-              m[i][j] = m[i - 1][j - 1];
-            } else {
-              m[i][j] = Math.min(m[i - 1][j - 1] + 1, m[i][j - 1] + 1, m[i - 1][j] + 1);
+
+        const d = [];
+        for (let i = 0; i <= a.length; i++) d[i] = [i];
+        for (let j = 0; j <= b.length; j++) d[0][j] = j;
+
+        for (let i = 1; i <= a.length; i++) {
+          for (let j = 1; j <= b.length; j++) {
+            const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+            d[i][j] = Math.min(
+              d[i - 1][j] + 1,
+              d[i][j - 1] + 1,
+              d[i - 1][j - 1] + cost
+            );
+            if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+              d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + cost);
             }
           }
         }
-        return m[b.length][a.length];
+        return d[a.length][b.length];
       }
 
       function normalize(str) {
@@ -14134,9 +14157,10 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
       }
 
       function stem(word) {
-        if (word.length > 4 && word.endsWith('s') && !word.endsWith('ss')) {
-          return word.slice(0, -1);
-        }
+        if (!word || word.length <= 3) return word;
+        if (word.endsWith('ies') && word.length > 5) return word.slice(0, -3) + 'y';
+        if (word.endsWith('es') && word.length > 4 && !word.endsWith('ss')) return word.slice(0, -2);
+        if (word.endsWith('s') && word.length > 3 && !word.endsWith('ss')) return word.slice(0, -1);
         return word;
       }
 
@@ -14149,8 +14173,9 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
         let minPrice = null;
         let societyIntent = null;
         let vendorIntent = null;
+        const tagsIntent = [];
 
-        // Price Intent Parsing: "under 500", "below 300", "less than 200", "above 100", "over 500", or standalone number
+        // 1. Price Intent Parsing: "under 500", "below 300", "less than 200", "above 100", "over 500"
         const priceUnderMatch = norm.match(/(?:under|below|less than|less|<=)\s*(\d+)/i);
         if (priceUnderMatch) {
           maxPrice = parseFloat(priceUnderMatch[1]);
@@ -14161,28 +14186,30 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
             minPrice = parseFloat(priceAboveMatch[1]);
             norm = norm.replace(priceAboveMatch[0], ' ');
           } else {
-            const standaloneNum = norm.match(/\b(\d{2,5})\b/);
-            if (standaloneNum && norm.replace(/\b\d{2,5}\b/, '').trim().length > 0) {
+            const standaloneNum = norm.match(/(\d{2,5})/);
+            if (standaloneNum && norm.replace(/\d{2,5}/, '').trim().length > 0) {
               maxPrice = parseFloat(standaloneNum[1]);
               norm = norm.replace(standaloneNum[0], ' ');
             }
           }
         }
 
-        // Society Intent Parsing: match against known societies
-        const societyPool = (typeof _nearbySocieties !== 'undefined' && _nearbySocieties.length) ? _nearbySocieties : (typeof _societyList === 'function' ? _societyList() : []);
-        const knownSocieties = societyPool.map(s => s.name);
+        // 2. Society Intent Parsing: match against known societies
+        const societyPool = (typeof _nearbySocieties !== 'undefined' && _nearbySocieties && _nearbySocieties.length)
+          ? _nearbySocieties
+          : (typeof _societyList === 'function' ? _societyList() : []);
+        const knownSocieties = societyPool.map(s => s.name || '');
 
         for (const socName of knownSocieties) {
+          if (!socName) continue;
           const socNorm = normalize(socName);
-          if (norm.includes(socNorm)) {
+          if (socNorm && norm.includes(socNorm)) {
             societyIntent = socName;
             norm = norm.replace(socNorm, ' ');
             break;
           }
         }
         if (!societyIntent) {
-          // Check for "in / at / near <word>"
           const locMatch = norm.match(/(?:in|at|near)\s+([a-z0-9\s]+)/i);
           if (locMatch) {
             const candidateLoc = locMatch[1].trim();
@@ -14194,8 +14221,23 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
           }
         }
 
-        // Tokenize remaining words
-        let tokens = norm.split(/\s+/).filter(Boolean).filter(t => !STOP_WORDS.has(t));
+        // 3. Vendor Intent Parsing: "by <vendor>", "from <vendor>"
+        const vendorMatch = norm.match(/(?:by|from)\s+([a-z0-9\s]+)/i);
+        if (vendorMatch) {
+          vendorIntent = vendorMatch[1].trim();
+          norm = norm.replace(vendorMatch[0], ' ');
+        }
+
+        // 4. Special Tag Detection
+        if (norm.includes('eggless')) {
+          tagsIntent.push('eggless');
+        }
+        if (norm.includes('veg') || norm.includes('vegetarian')) {
+          tagsIntent.push('vegetarian');
+        }
+
+        // 5. Tokenize remaining words
+        let tokens = norm.split(/\s+/).filter(Boolean).filter(t => t.length > 1 && !STOP_WORDS.has(t));
         tokens = tokens.map(t => SYNONYMS[t] || stem(t));
 
         return {
@@ -14204,7 +14246,8 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
           maxPrice,
           minPrice,
           societyIntent,
-          vendorIntent
+          vendorIntent,
+          tagsIntent
         };
       }
 
@@ -14215,30 +14258,31 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
 
         let maxTier = 0;
 
-        // 1. Exact phrase match (5.0x)
+        // Exact full phrase match (5.0x)
         const joinedQuery = tokens.join(' ');
         if (normField === joinedQuery || normField.includes(joinedQuery)) {
           maxTier = Math.max(maxTier, 5.0);
         }
 
-        // 2. All tokens in same field (4.0x)
+        // All tokens present in field (4.0x)
         const allInField = tokens.every(t => normField.includes(t));
         if (allInField) {
           maxTier = Math.max(maxTier, 4.0);
         }
 
-        // Individual token tier matching
+        // Individual token matching
         tokens.forEach(t => {
           fieldWords.forEach(fw => {
             if (fw === t) maxTier = Math.max(maxTier, 3.5);
-            else if (fw.startsWith(t)) maxTier = Math.max(maxTier, 2.2);
-            else if (fw.includes(t)) maxTier = Math.max(maxTier, 1.6);
+            else if (fw.startsWith(t)) maxTier = Math.max(maxTier, 2.5);
+            else if (fw.includes(t)) maxTier = Math.max(maxTier, 2.0);
             else {
-              // Fuzzy edit distance check (1.2x)
-              const dist = Levenshtein(t, fw);
-              const maxDist = t.length >= 4 ? 2 : 1;
-              if (dist <= maxDist) {
-                maxTier = Math.max(maxTier, 1.2);
+              const maxDist = t.length >= 7 ? 2 : (t.length >= 4 ? 1 : 0);
+              if (maxDist > 0) {
+                const dist = DamerauLevenshtein(t, fw);
+                if (dist <= maxDist) {
+                  maxTier = Math.max(maxTier, 1.8);
+                }
               }
             }
           });
@@ -14247,7 +14291,7 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
         return maxTier;
       }
 
-      function search(queryStr, dataSet = []) {
+      function search(queryStr, dataSet = [], options = {}) {
         const parsed = parseQuery(queryStr);
         if (!parsed) return { parsed: null, results: [] };
 
@@ -14257,28 +14301,43 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
           const society = vendor.society || 'Prateek Laurel';
           const menu = vendor.menu || [];
 
+          // Vendor level filter checks
+          if (options.cat && normalize(vendor.cat) !== normalize(options.cat)) return;
+          if (options.society && normalize(society) !== normalize(options.society)) return;
+
           // Evaluate menu items
           if (menu.length) {
             menu.forEach(item => {
               const itemPrice = +item.price || 0;
               if (parsed.maxPrice !== null && itemPrice > 0 && itemPrice > parsed.maxPrice) return;
               if (parsed.minPrice !== null && itemPrice > 0 && itemPrice < parsed.minPrice) return;
+              if (options.maxPrice && itemPrice > options.maxPrice) return;
+              if (options.minPrice && itemPrice < options.minPrice) return;
 
               const itemScore = scoreField(item.name, parsed.tokens) * FIELD_WEIGHTS.itemName;
               const catScore = scoreField(vendor.cat, parsed.tokens) * FIELD_WEIGHTS.category;
               const specScore = scoreField(vendor.speciality, parsed.tokens) * FIELD_WEIGHTS.subCategory;
+              const tagScore = scoreField(item.tags || item.desc, parsed.tokens) * FIELD_WEIGHTS.tags;
               const vendorScore = scoreField(vendor.venture, parsed.tokens) * FIELD_WEIGHTS.vendorName;
               const socScore = scoreField(society, parsed.tokens) * FIELD_WEIGHTS.societyName;
               const descScore = scoreField(item.desc || vendor.desc, parsed.tokens) * FIELD_WEIGHTS.description;
 
-              let score = itemScore + catScore + specScore + vendorScore + socScore + descScore;
+              let score = itemScore + catScore + specScore + tagScore + vendorScore + socScore + descScore;
+
+              // Exact Item Name Bonus
+              if (parsed.tokens.length && normalize(item.name) === parsed.tokens.join(' ')) {
+                score += 50;
+              }
 
               if (parsed.tokens.length >= 2 || parsed.societyIntent) {
                 score *= 1.3;
               }
 
-              // Cross-field Intent Bonus
+              // Intent Match Bonus
               if (parsed.societyIntent && normalize(society) === normalize(parsed.societyIntent)) {
+                score += 35;
+              }
+              if (parsed.vendorIntent && normalize(vendor.venture).includes(normalize(parsed.vendorIntent))) {
                 score += 35;
               }
 
@@ -14306,6 +14365,9 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
           if (parsed.societyIntent && normalize(society) === normalize(parsed.societyIntent)) {
             vScore += 35;
           }
+          if (parsed.vendorIntent && normalize(vendor.venture).includes(normalize(parsed.vendorIntent))) {
+            vScore += 35;
+          }
 
           if (vScore > 10) {
             results.push({
@@ -14320,7 +14382,17 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
         const finalResults = [];
         const seenKeys = new Set();
 
-        results.sort((a, b) => b.score - a.score);
+        // Sort results
+        if (options.sort === 'price_asc') {
+          results.sort((a, b) => ((a.item ? +a.item.price : 0) - (b.item ? +b.item.price : 0)));
+        } else if (options.sort === 'price_desc') {
+          results.sort((a, b) => ((b.item ? +b.item.price : 0) - (a.item ? +a.item.price : 0)));
+        } else if (options.sort === 'rating_desc') {
+          results.sort((a, b) => ((+b.vendor.rating || 0) - (+a.vendor.rating || 0)));
+        } else {
+          // Default: best match score
+          results.sort((a, b) => b.score - a.score);
+        }
 
         results.forEach(r => {
           const key = r.type === 'item' ? `${r.vendor.id}_item_${r.item.id || r.item.name}` : `${r.vendor.id}_vendor`;
@@ -23478,7 +23550,10 @@ Together, we grow stronger — one order at a time.`;
         ${(_societyList()).map(s => {
           const escapedName = s.name.replace(/'/g, "\\'");
           return `<tr>
-            <td style="font-weight:700">${esc(s.name)}</td>
+            <td style="font-weight:700">
+              <div>${esc(s.name)}</div>
+              ${s.googleMapName ? `<div style="font-size:0.73rem;color:var(--green-dark);font-weight:600;margin-top:2px"><i class="fa fa-map-location-dot"></i> ${esc(s.googleMapName)}</div>` : ''}
+            </td>
             <td style="font-size:.8rem;color:var(--text-muted)">${esc(s.address || '—')}</td>
             <td style="font-size:.8rem">${s.lat || '—'}</td>
             <td style="font-size:.8rem">${s.lng || '—'}</td>
@@ -23642,16 +23717,148 @@ Together, we grow stronger — one order at a time.`;
         showToast('Admin number removed ✓');
       });
     }
+        /* ==================== SOCIETY GOOGLE MAPS GEOCODING & AUTOCOMPLETE ==================== */
+    let _gmapSocietySearchDebounce = null;
+
+    async function adminFetchSocietyGeocode(overrideQuery) {
+      const gmapInput = document.getElementById('soc_modal_gmap_name');
+      const nameInput = document.getElementById('soc_modal_name');
+      const addrInput = document.getElementById('soc_modal_addr');
+      const latInput = document.getElementById('soc_modal_lat');
+      const lngInput = document.getElementById('soc_modal_lng');
+      const btn = document.getElementById('soc_modal_fetch_btn');
+
+      const q = (overrideQuery || gmapInput?.value || nameInput?.value || '').trim();
+      if (!q) {
+        showToast('Please enter a Google Maps society name to search');
+        return;
+      }
+
+      const key = (SITE_CONFIG.gmapsApiKey || '').trim();
+      if (!key) {
+        showToast('Google Maps API Key is missing. Please save it in Admin Settings.');
+        return;
+      }
+
+      if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Searching...'; }
+
+      try {
+        const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(q)}&key=${encodeURIComponent(key)}`;
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (data.status === 'OK' && data.results && data.results.length > 0) {
+          const first = data.results[0];
+          const loc = first.geometry?.location;
+          const formatted = first.formatted_address || q;
+
+          if (loc && loc.lat && loc.lng) {
+            if (latInput) latInput.value = (+loc.lat).toFixed(6);
+            if (lngInput) lngInput.value = (+loc.lng).toFixed(6);
+            if (addrInput && !addrInput.value) addrInput.value = formatted;
+            if (gmapInput && !gmapInput.value) gmapInput.value = q;
+            if (nameInput && !nameInput.value) {
+              const primaryName = first.address_components?.[0]?.long_name || q;
+              nameInput.value = primaryName;
+            }
+            showToast(`Location mapped! Lat: ${(loc.lat).toFixed(4)}, Lng: ${(loc.lng).toFixed(4)}`);
+          } else {
+            showToast('Found address but no coordinates returned.');
+          }
+        } else {
+          showToast(`Google Maps error: ${data.status || 'No results found'}`);
+        }
+      } catch (err) {
+        console.error('Society Geocode error:', err);
+        showToast('Geocoding search failed. Please check network/key.');
+      } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa fa-magnifying-glass-location" style="color:var(--green)"></i> Fetch Coordinates'; }
+      }
+    }
+
+    function onSocietyGmapSearchInput() {
+      clearTimeout(_gmapSocietySearchDebounce);
+      const input = document.getElementById('soc_modal_gmap_name');
+      const box = document.getElementById('soc_modal_gmap_suggestions');
+      if (!input || !box) return;
+
+      const q = input.value.trim();
+      if (!q || q.length < 3) {
+        box.style.display = 'none';
+        box.innerHTML = '';
+        return;
+      }
+
+      _gmapSocietySearchDebounce = setTimeout(async () => {
+        const key = (SITE_CONFIG.gmapsApiKey || '').trim();
+        if (!key) {
+          box.style.display = 'none';
+          return;
+        }
+
+        try {
+          const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(q)}&key=${encodeURIComponent(key)}`;
+          const res = await fetch(url);
+          const data = await res.json();
+
+          if (data.status === 'OK' && data.results && data.results.length > 0) {
+            let html = '';
+            data.results.slice(0, 5).forEach(item => {
+              const addr = item.formatted_address;
+              const lat = item.geometry?.location?.lat;
+              const lng = item.geometry?.location?.lng;
+              const name = item.address_components?.[0]?.long_name || q;
+
+              html += `<div class="loc-suggest-item" style="padding:8px 10px;cursor:pointer;border-bottom:1px solid var(--border);font-size:0.83rem;display:flex;align-items:center;gap:8px"
+                onmousedown="event.preventDefault();selectSocietyGmapSuggestion('${esc(name)}', '${esc(addr)}', ${lat}, ${lng})">
+                <i class="fa fa-location-dot" style="color:var(--green)"></i>
+                <div style="flex:1;min-width:0">
+                  <div style="font-weight:600">${esc(name)}</div>
+                  <div style="font-size:0.75rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(addr)}</div>
+                </div>
+              </div>`;
+            });
+            box.innerHTML = html;
+            box.style.display = 'block';
+          } else {
+            box.style.display = 'none';
+          }
+        } catch (e) {
+          box.style.display = 'none';
+        }
+      }, 300);
+    }
+
+    function selectSocietyGmapSuggestion(name, address, lat, lng) {
+      const gmapInput = document.getElementById('soc_modal_gmap_name');
+      const nameInput = document.getElementById('soc_modal_name');
+      const addrInput = document.getElementById('soc_modal_addr');
+      const latInput = document.getElementById('soc_modal_lat');
+      const lngInput = document.getElementById('soc_modal_lng');
+      const box = document.getElementById('soc_modal_gmap_suggestions');
+
+      if (gmapInput) gmapInput.value = `${name}, ${address}`;
+      if (nameInput && !nameInput.value) nameInput.value = name;
+      if (addrInput) addrInput.value = address;
+      if (latInput && lat) latInput.value = (+lat).toFixed(6);
+      if (lngInput && lng) lngInput.value = (+lng).toFixed(6);
+
+      if (box) { box.style.display = 'none'; box.innerHTML = ''; }
+      showToast(`Selected: ${name} (${lat ? lat.toFixed(4) : ''}, ${lng ? lng.toFixed(4) : ''})`);
+    }
+
     function adminOpenAddSocietyModal() {
       window._editingSocietyOriginalName = null;
       window._adminSocietiesScrollY = window.scrollY;
       const titleEl = document.getElementById('societyModalTitle');
       if (titleEl) titleEl.innerHTML = 'Add New Society';
       const nameInput = document.getElementById('soc_modal_name');
+      const gmapInput = document.getElementById('soc_modal_gmap_name');
       const addrInput = document.getElementById('soc_modal_addr');
       const latInput = document.getElementById('soc_modal_lat');
       const lngInput = document.getElementById('soc_modal_lng');
       if (nameInput) nameInput.value = '';
+      if (gmapInput) gmapInput.value = '';
       if (addrInput) addrInput.value = '';
       if (latInput) latInput.value = '';
       if (lngInput) lngInput.value = '';
@@ -23667,10 +23874,12 @@ Together, we grow stronger — one order at a time.`;
       const titleEl = document.getElementById('societyModalTitle');
       if (titleEl) titleEl.innerHTML = `Edit Society: "${esc(name)}"`;
       const nameInput = document.getElementById('soc_modal_name');
+      const gmapInput = document.getElementById('soc_modal_gmap_name');
       const addrInput = document.getElementById('soc_modal_addr');
       const latInput = document.getElementById('soc_modal_lat');
       const lngInput = document.getElementById('soc_modal_lng');
       if (nameInput) nameInput.value = soc.name || '';
+      if (gmapInput) gmapInput.value = soc.googleMapName || soc.address || soc.name || '';
       if (addrInput) addrInput.value = soc.address || '';
       if (latInput) latInput.value = soc.lat != null ? soc.lat : '';
       if (lngInput) lngInput.value = soc.lng != null ? soc.lng : '';
@@ -23690,6 +23899,7 @@ Together, we grow stronger — one order at a time.`;
     function adminSubmitSocietyModal() {
       const name = (document.getElementById('soc_modal_name')?.value || '').trim();
       if (!name) { showToast('Society name is required'); return; }
+      const googleMapName = (document.getElementById('soc_modal_gmap_name')?.value || '').trim();
       const address = (document.getElementById('soc_modal_addr')?.value || '').trim();
       const lat = +document.getElementById('soc_modal_lat')?.value || 0;
       const lng = +document.getElementById('soc_modal_lng')?.value || 0;
@@ -23706,7 +23916,7 @@ Together, we grow stronger — one order at a time.`;
           return;
         }
 
-        list[idx] = { name, address, lat, lng };
+        list[idx] = { name, googleMapName, address, lat, lng };
         SITE_CONFIG.societies = list;
 
         if (name !== origName) {
@@ -23733,7 +23943,7 @@ Together, we grow stronger — one order at a time.`;
       } else {
         // Add Mode
         if (list.find(s => s.name === name)) { showToast('Society already exists'); return; }
-        list.push({ name, address, lat, lng });
+        list.push({ name, googleMapName, address, lat, lng });
         SITE_CONFIG.societies = list;
         fsSaveConfig({ societies: list }).then(() => {
           closeModal('societyModal');
