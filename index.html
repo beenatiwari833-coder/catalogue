@@ -6487,6 +6487,12 @@
           <!-- Items / Menu -->
           <div id="menuItemsList" style="margin-bottom:14px"></div>
 
+          <!-- Coupon & Price Breakdown Box -->
+          <div id="couponCartSection" style="display:none;margin-bottom:14px;background:var(--cream);border:1.5px solid var(--border);border-radius:14px;padding:14px">
+            <div id="couponPillContainer" style="margin-bottom:8px"></div>
+            <div id="priceBreakdownContainer" style="font-size:0.86rem;line-height:1.7"></div>
+          </div>
+
           <!-- Customer details + action -->
           <div id="menuFlatRow" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
             <input type="text" id="menuCustomerName" placeholder="Your name *" maxlength="80"
@@ -6935,6 +6941,8 @@
           Site Config</button>
         <button class="admin-tab-btn" data-tab="features" onclick="switchAdminTab('features')"><i
             class="fa fa-eye-slash" style="color:var(--green)"></i> Hide / Show Features</button>
+        <button class="admin-tab-btn" data-tab="coupons" onclick="switchAdminTab('coupons')"><i
+            class="fa fa-ticket" style="color:var(--gold)"></i> Discounts &amp; Coupons</button>
         <button class="admin-tab-btn" data-tab="ads" onclick="switchAdminTab('ads')"><i class="fa fa-rectangle-ad"></i>
           Ads Carousel</button>
         <button class="admin-tab-btn" data-tab="stats" onclick="switchAdminTab('stats')"><i class="fa fa-chart-bar"></i>
@@ -7003,10 +7011,25 @@
             onchange="handleMenuItemImageUpload(this)">
         </div>
 
-        <div class="form-group"><label>Title / Name *</label><input id="mi_name"
-            placeholder="e.g. Chocolate Cake, Maths Tuition, Consultation" oninput="this.style.borderColor=''"></div>
-        <div class="form-group"><label id="mi_price_label">Cost / Price (₹) *</label><input id="mi_price" type="number"
-            min="0" placeholder="0" oninput="this.style.borderColor=''"></div>
+        <div class="form-group full"><label>Title / Name *</label><input id="mi_name"
+            placeholder="e.g. Premium Home Deep Cleaning, Cake, Consultation" oninput="this.style.borderColor=''"></div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px" class="form-group full">
+          <div>
+            <label id="mi_price_label">Original Baseline Rate (₹) *</label>
+            <input id="mi_original_price" type="number" min="0" step="0.01" placeholder="e.g. 1000" oninput="updateMenuItemEffectivePricePreview(); this.style.borderColor=''">
+            <input id="mi_price" type="hidden" value="0">
+          </div>
+          <div>
+            <label>Vendor Discount (%)</label>
+            <input id="mi_discount_percentage" type="number" min="0" max="100" step="0.5" placeholder="e.g. 15 (Optional)" value="0" oninput="updateMenuItemEffectivePricePreview()">
+          </div>
+        </div>
+
+        <div class="form-group full" id="mi_effective_preview_box" style="background:var(--green-pale,#FFF3E0);border:1px solid var(--green,#FF9933);border-radius:10px;padding:10px 14px;font-size:0.85rem;color:var(--green-dark,#B85C1A);display:none;margin-top:2px">
+          <i class="fa fa-tags"></i> <strong>Calculated Effective Display Rate:</strong> <span id="mi_effective_rate_val" style="font-weight:800;font-size:0.95rem">₹0.00</span>
+        </div>
+
         <div class="form-group full"><label>Description</label><textarea id="mi_desc" style="min-height:56px"
             placeholder="Detailed description (optional)"></textarea></div>
         <div class="form-group full" style="flex-direction:row;align-items:center;gap:10px">
@@ -7019,6 +7042,78 @@
         <button class="btn btn-primary" onclick="saveMenuItem()"><i class="fa fa-save"></i> Save Offering</button>
         <button class="btn btn-ghost" onclick="closeModal('menuItemModal')">Cancel</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ── ADD / EDIT COUPON MODAL (Admin & Vendor) ── -->
+  <div class="modal-overlay" id="couponEditModal" style="z-index:99999">
+    <div class="modal" style="max-width:480px;border-radius:18px">
+      <div class="modal-title" id="couponModalTitle"><i class="fa fa-ticket" style="color:var(--gold)"></i> Add / Edit Coupon</div>
+      <form id="couponEditForm" onsubmit="saveCouponForm(event);">
+        <input type="hidden" id="cpn_id">
+        <input type="hidden" id="cpn_creator_type" value="ADMIN">
+        <input type="hidden" id="cpn_vendor_id" value="">
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+          <div class="form-group">
+            <label style="font-size:.8rem;font-weight:700">Promo Code *</label>
+            <input type="text" id="cpn_code" required placeholder="e.g. TYNTRON20" style="text-transform:uppercase;font-weight:700;letter-spacing:1px;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px">
+          </div>
+          <div class="form-group">
+            <label style="font-size:.8rem;font-weight:700">Discount Type *</label>
+            <select id="cpn_discount_type" style="padding:8px 12px;border:1.5px solid var(--border);border-radius:8px">
+              <option value="PERCENTAGE">Percentage (%)</option>
+              <option value="FIXED">Fixed Amount (₹)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+          <div class="form-group">
+            <label style="font-size:.8rem;font-weight:700">Discount Value *</label>
+            <input type="number" id="cpn_discount_value" required min="1" step="0.01" placeholder="e.g. 15 or 50" style="padding:8px 12px;border:1.5px solid var(--border);border-radius:8px">
+          </div>
+          <div class="form-group">
+            <label style="font-size:.8rem;font-weight:700">Min Order Value (₹)</label>
+            <input type="number" id="cpn_min_order_value" min="0" step="1" placeholder="0" value="0" style="padding:8px 12px;border:1.5px solid var(--border);border-radius:8px">
+          </div>
+        </div>
+
+        <div class="form-group full" style="margin-bottom:12px">
+          <label style="font-size:.8rem;font-weight:700">Bank / Gateway Tie-up Identifier <span style="font-weight:400;color:var(--text-muted)">(Optional)</span></label>
+          <input type="text" id="cpn_bank_identifier" placeholder="e.g. GOOGLE_PAY, HDFC_CC (leave blank for all)" style="padding:8px 12px;border:1.5px solid var(--border);border-radius:8px">
+        </div>
+
+        <div class="form-group full" style="flex-direction:row;align-items:center;gap:10px;margin-bottom:16px">
+          <input type="checkbox" id="cpn_is_active" checked style="width:18px;height:18px;accent-color:var(--green);cursor:pointer">
+          <label for="cpn_is_active" style="font-size:.86rem;font-weight:600;cursor:pointer">Coupon is active &amp; redeemable</label>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" onclick="closeModal('couponEditModal')">Cancel</button>
+          <button type="button" class="btn btn-primary" onclick="saveCouponForm(event)"><i class="fa fa-save"></i> Save Coupon</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── CUSTOMER COUPON DRAWER / BOTTOM SHEET MODAL ── -->
+  <div class="modal-overlay" id="couponDrawerModal" style="z-index:99999" onclick="if(event.target===this)closeModal('couponDrawerModal')">
+    <div class="modal" style="max-width:500px;border-radius:20px;padding:20px;max-height:85vh;overflow-y:auto">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:1.5px solid var(--border)">
+        <div style="font-weight:800;font-size:1.1rem;color:var(--green-dark);display:flex;align-items:center;gap:8px">
+          <i class="fa fa-ticket" style="color:var(--gold)"></i> Applicable Coupons &amp; Offers
+        </div>
+        <button class="btn btn-sm btn-ghost" onclick="closeModal('couponDrawerModal')" style="font-size:1.2rem;padding:2px 8px"><i class="fa fa-xmark"></i></button>
+      </div>
+
+      <!-- Promo Code Manual Input Box -->
+      <div style="display:flex;gap:8px;margin-bottom:16px;background:var(--cream);padding:10px;border-radius:12px;border:1px solid var(--border)">
+        <input type="text" id="cd_manual_code" placeholder="Enter coupon code (e.g. GPAY10)" style="flex:1;text-transform:uppercase;font-weight:700;letter-spacing:1px;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px">
+        <button class="btn btn-primary btn-sm" onclick="applyManualCouponCode()"><i class="fa fa-check"></i> Apply</button>
+      </div>
+
+      <div id="cd_coupon_list_container"></div>
     </div>
   </div>
 
@@ -8346,6 +8441,555 @@
       } catch (e) {
         showToast('⚠️ Database error loading site config: ' + e.message);
       }
+    }
+
+    /* ═══════════ REDIS FEATURE FLAG CONTROLLER (ENABLE_DISCOUNTS_AND_COUPONS) ═══════════ */
+    const RedisFeatureFlagController = (() => {
+      const FLAG_KEY = 'ENABLE_DISCOUNTS_AND_COUPONS';
+      let _cachedFlagValue = true;
+
+      async function getFlag() {
+        try {
+          if (window.RedisMockStore && typeof window.RedisMockStore.get === 'function') {
+            const val = window.RedisMockStore.get(FLAG_KEY);
+            if (val !== undefined && val !== null) {
+              _cachedFlagValue = (val === true || val === 'true');
+              return _cachedFlagValue;
+            }
+          }
+        } catch (e) {
+          console.warn('[Redis] Cache lookup failed, falling back to DB:', e.message);
+        }
+
+        if (typeof SITE_CONFIG !== 'undefined' && SITE_CONFIG && SITE_CONFIG.ENABLE_DISCOUNTS_AND_COUPONS !== undefined) {
+          _cachedFlagValue = SITE_CONFIG.ENABLE_DISCOUNTS_AND_COUPONS !== false;
+          return _cachedFlagValue;
+        }
+
+        if (FB_READY && db) {
+          try {
+            const doc = await db.collection('config').doc('feature_flags').get();
+            if (doc.exists && doc.data()[FLAG_KEY] !== undefined) {
+              _cachedFlagValue = doc.data()[FLAG_KEY] !== false;
+              return _cachedFlagValue;
+            }
+          } catch (e) {
+            console.warn('[DB Fallback] Could not fetch feature flag from Firestore:', e.message);
+          }
+        }
+
+        return _cachedFlagValue !== false;
+      }
+
+      async function setFlag(enabled) {
+        const val = !!enabled;
+        _cachedFlagValue = val;
+
+        try {
+          if (window.RedisMockStore && typeof window.RedisMockStore.set === 'function') {
+            window.RedisMockStore.set(FLAG_KEY, val);
+          }
+        } catch (e) { }
+
+        if (typeof SITE_CONFIG !== 'undefined') {
+          SITE_CONFIG.ENABLE_DISCOUNTS_AND_COUPONS = val;
+        }
+
+        if (FB_READY && db) {
+          try {
+            await db.collection('config').doc('feature_flags').set({ [FLAG_KEY]: val }, { merge: true });
+            await db.collection('config').doc('site').set({ ENABLE_DISCOUNTS_AND_COUPONS: val }, { merge: true });
+          } catch (e) {
+            console.warn('[DB Fallback] Failed to save feature flag to Firestore:', e.message);
+          }
+        }
+
+        return val;
+      }
+
+      return {
+        getFlag,
+        setFlag,
+        get cachedValue() { return _cachedFlagValue; }
+      };
+    })();
+
+    function isDiscountsAndCouponsEnabled() {
+      if (typeof SITE_CONFIG !== 'undefined' && SITE_CONFIG.ENABLE_DISCOUNTS_AND_COUPONS !== undefined) {
+        return SITE_CONFIG.ENABLE_DISCOUNTS_AND_COUPONS !== false;
+      }
+      return RedisFeatureFlagController.cachedValue !== false;
+    }
+
+    function getOfferingPricing(item) {
+      if (!item) return { originalPrice: 0, discountPct: 0, effectivePrice: 0 };
+      const originalPrice = parseFloat(item.original_price != null ? item.original_price : (item.price || 0)) || 0;
+      const discountPct = parseFloat(item.discount_percentage || 0) || 0;
+      const effectivePrice = discountPct > 0 
+        ? parseFloat((originalPrice * (1 - discountPct / 100)).toFixed(2)) 
+        : originalPrice;
+      return { originalPrice, discountPct, effectivePrice };
+    }
+
+    /* ═══════════ DISCOUNT & COUPON ENGINE DATA STORE & HELPERS ═══════════ */
+    let _couponsList = [];
+
+    const DEFAULT_COUPONS = [
+      {
+        id: 'coup_tyntron20',
+        code: 'TYNTRON20',
+        creator_type: 'ADMIN',
+        vendor_id: null,
+        discount_type: 'PERCENTAGE',
+        discount_value: 20,
+        min_order_value: 200,
+        bank_identifier: null,
+        is_active: true,
+        created_at: new Date().toISOString()
+      },
+      {
+        id: 'coup_gpay10',
+        code: 'GPAY10',
+        creator_type: 'ADMIN',
+        vendor_id: null,
+        discount_type: 'PERCENTAGE',
+        discount_value: 10,
+        min_order_value: 300,
+        bank_identifier: 'GOOGLE_PAY',
+        is_active: true,
+        created_at: new Date().toISOString()
+      },
+      {
+        id: 'coup_welcome50',
+        code: 'WELCOME50',
+        creator_type: 'ADMIN',
+        vendor_id: null,
+        discount_type: 'FIXED',
+        discount_value: 50,
+        min_order_value: 250,
+        bank_identifier: null,
+        is_active: true,
+        created_at: new Date().toISOString()
+      }
+    ];
+
+    async function fsLoadCoupons() {
+      let loaded = [];
+      if (FB_READY && db) {
+        try {
+          const snap = await db.collection('coupons').get();
+          if (!snap.empty) {
+            loaded = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          }
+        } catch (e) {
+          console.warn('Error loading coupons from Firestore:', e.message);
+        }
+      }
+
+      if (!loaded.length) {
+        loaded = DEFAULT_COUPONS.slice();
+        if (FB_READY && db) {
+          loaded.forEach(c => {
+            db.collection('coupons').doc(c.id).set(c, { merge: true }).catch(() => {});
+          });
+        }
+      }
+
+      _couponsList = loaded;
+      return _couponsList;
+    }
+
+    function saveCouponsLocal(coupons) {
+      _couponsList = coupons;
+    }
+
+    async function fsSaveCoupon(coupon) {
+      if (!coupon.id) coupon.id = 'coup_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+      coupon.code = (coupon.code || '').trim().toUpperCase();
+      if (!coupon.code) throw new Error('Coupon code is required');
+
+      const existingIdx = _couponsList.findIndex(c => c.id === coupon.id);
+      if (existingIdx !== -1) {
+        _couponsList[existingIdx] = coupon;
+      } else {
+        _couponsList.push(coupon);
+      }
+
+      if (FB_READY && db) {
+        try {
+          await db.collection('coupons').doc(coupon.id).set(coupon, { merge: true });
+        } catch (e) {
+          console.warn('Could not sync coupon to Firestore:', e.message);
+        }
+      }
+      return coupon;
+    }
+
+    async function fsDeleteCoupon(couponId) {
+      _couponsList = _couponsList.filter(c => c.id !== couponId);
+
+      if (FB_READY && db) {
+        try { await db.collection('coupons').doc(couponId).delete(); } catch (e) {}
+      }
+    }
+
+    async function fsToggleCouponStatus(couponId, is_active) {
+      const c = _couponsList.find(x => x.id === couponId);
+      if (c) {
+        c.is_active = is_active;
+        if (FB_READY && db) {
+          try { await db.collection('coupons').doc(couponId).set({ is_active }, { merge: true }); } catch (e) {}
+        }
+      }
+    }
+
+    /* ═══════════ SERVER-SIDE PRICE & COUPON VERIFICATION ENGINE ═══════════ */
+    function serverSideValidateOrderPayload(vendorOrOpts, chosenItems, itemQtys, couponCode, paymentMode) {
+      let vendor, chosen, qtys, cCode, payMode;
+      if (vendorOrOpts && vendorOrOpts.vendor) {
+        vendor = vendorOrOpts.vendor;
+        chosen = vendorOrOpts.items || vendorOrOpts.chosenItems || [];
+        qtys = vendorOrOpts.itemQtys || _menuQtys;
+        cCode = vendorOrOpts.appliedCoupon ? (typeof vendorOrOpts.appliedCoupon === 'object' ? vendorOrOpts.appliedCoupon.code : vendorOrOpts.appliedCoupon) : vendorOrOpts.couponCode;
+        payMode = vendorOrOpts.paymentMode;
+      } else {
+        vendor = vendorOrOpts || {};
+        chosen = chosenItems || [];
+        qtys = itemQtys || {};
+        cCode = couponCode;
+        payMode = paymentMode;
+      }
+
+      const flagEnabled = isDiscountsAndCouponsEnabled();
+
+      let originalSubtotal = 0;
+      let vendorDiscountedSubtotal = 0;
+
+      const validatedItems = (chosen || []).map(rawItem => {
+        const authItem = (vendor.menu || []).find(m => m.id === rawItem.id) || rawItem;
+        const qty = Math.max(1, parseInt(qtys[authItem.id] || 1, 10));
+
+        const origPrice = parseFloat(authItem.original_price != null ? authItem.original_price : (authItem.price || 0)) || 0;
+        const discountPct = flagEnabled ? (parseFloat(authItem.discount_percentage || 0) || 0) : 0;
+        const effPrice = discountPct > 0 
+          ? parseFloat((origPrice * (1 - discountPct / 100)).toFixed(2)) 
+          : origPrice;
+
+        if (origPrice > 0) {
+          originalSubtotal += (origPrice * qty);
+          vendorDiscountedSubtotal += (effPrice * qty);
+        }
+
+        return {
+          id: authItem.id,
+          name: authItem.name,
+          type: authItem.type || 'item',
+          qty: qty,
+          original_price: origPrice,
+          discount_percentage: discountPct,
+          effective_price: effPrice,
+          itemTotal: effPrice * qty
+        };
+      });
+
+      const vendorMarkdownTotal = Math.max(0, originalSubtotal - vendorDiscountedSubtotal);
+
+      let appliedCoupon = null;
+      let couponDeduction = 0;
+      let couponError = null;
+
+      if (flagEnabled && cCode) {
+        const cleanCode = String(cCode).trim().toUpperCase();
+        const coupon = (_couponsList || []).find(c => c.code === cleanCode && c.is_active !== false);
+
+        if (!coupon) {
+          couponError = 'Invalid or expired coupon code.';
+        } else if (coupon.vendor_id && coupon.vendor_id !== vendor.id) {
+          couponError = 'This coupon is not valid for this vendor.';
+        } else if (coupon.min_order_value && vendorDiscountedSubtotal < coupon.min_order_value) {
+          couponError = `Minimum order value of ₹${coupon.min_order_value} required for coupon ${coupon.code}.`;
+        } else if (coupon.bank_identifier && payMode) {
+          const normCouponBank = coupon.bank_identifier.toUpperCase().replace(/[\s_]+/g, '');
+          const normPaymentMode = payMode.toUpperCase().replace(/[\s_]+/g, '');
+          if (!normPaymentMode.includes(normCouponBank)) {
+            couponError = `Coupon ${coupon.code} requires payment mode ${coupon.bank_identifier}.`;
+          } else {
+            appliedCoupon = coupon;
+            if (coupon.discount_type === 'PERCENTAGE') {
+              couponDeduction = parseFloat((vendorDiscountedSubtotal * (coupon.discount_value / 100)).toFixed(2));
+            } else {
+              couponDeduction = Math.min(vendorDiscountedSubtotal, parseFloat(coupon.discount_value));
+            }
+          }
+        } else {
+          appliedCoupon = coupon;
+          if (coupon.discount_type === 'PERCENTAGE') {
+            couponDeduction = parseFloat((vendorDiscountedSubtotal * (coupon.discount_value / 100)).toFixed(2));
+          } else {
+            couponDeduction = Math.min(vendorDiscountedSubtotal, parseFloat(coupon.discount_value));
+          }
+        }
+      }
+
+      const finalPayable = Math.max(0, parseFloat((vendorDiscountedSubtotal - couponDeduction).toFixed(2)));
+
+      return {
+        flagEnabled,
+        validatedItems,
+        originalSubtotal,
+        vendorMarkdownTotal,
+        subtotal: vendorDiscountedSubtotal,
+        appliedCoupon,
+        couponDeduction,
+        couponError,
+        finalPayable
+      };
+    }
+
+    /* ═══════════ COUPON UI & DRAWER CONTROLLERS ═══════════ */
+    let _appliedCoupon = null;
+
+    function openCouponEditModal(cpn) {
+      cpn = cpn || {};
+      document.getElementById('cpn_id').value = cpn.id || '';
+      document.getElementById('cpn_code').value = cpn.code || '';
+      document.getElementById('cpn_discount_type').value = cpn.discount_type || 'PERCENTAGE';
+      document.getElementById('cpn_discount_value').value = cpn.discount_value != null ? cpn.discount_value : '';
+      document.getElementById('cpn_min_order_value').value = cpn.min_order_value != null ? cpn.min_order_value : 0;
+      document.getElementById('cpn_bank_identifier').value = cpn.bank_identifier || '';
+      document.getElementById('cpn_is_active').checked = cpn.is_active !== false;
+      document.getElementById('cpn_creator_type').value = cpn.creator_type || 'ADMIN';
+      document.getElementById('cpn_vendor_id').value = cpn.vendor_id || '';
+      
+      const titleEl = document.getElementById('couponModalTitle');
+      if (titleEl) {
+        titleEl.innerHTML = `<i class="fa fa-ticket" style="color:var(--gold)"></i> ${cpn.id ? 'Edit Coupon' : 'Add New Coupon'}`;
+      }
+      openModal('couponEditModal');
+    }
+
+    function openCouponEditModalById(id) {
+      const cpn = (_couponsList || []).find(c => c.id === id);
+      if (cpn) openCouponEditModal(cpn);
+    }
+
+    async function saveCouponForm(e) {
+      if (e && e.preventDefault) e.preventDefault();
+      try {
+        const codeInput = document.getElementById('cpn_code');
+        const code = (codeInput ? codeInput.value : '').trim().toUpperCase();
+        if (!code) { showToast('Promo code is required'); return; }
+        
+        const valInput = document.getElementById('cpn_discount_value');
+        const val = parseFloat(valInput ? valInput.value : 0) || 0;
+        if (val <= 0) { showToast('Discount value must be greater than 0'); return; }
+
+        const minOrderInput = document.getElementById('cpn_min_order_value');
+        const bankInput = document.getElementById('cpn_bank_identifier');
+        const creatorTypeInput = document.getElementById('cpn_creator_type');
+        const vendorIdInput = document.getElementById('cpn_vendor_id');
+        const isActiveInput = document.getElementById('cpn_is_active');
+        const idInput = document.getElementById('cpn_id');
+        const discTypeInput = document.getElementById('cpn_discount_type');
+
+        const coupon = {
+          id: (idInput ? idInput.value : '') || ('coup_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4)),
+          code,
+          discount_type: (discTypeInput ? discTypeInput.value : '') || 'PERCENTAGE',
+          discount_value: val,
+          min_order_value: parseFloat(minOrderInput ? minOrderInput.value : 0) || 0,
+          bank_identifier: (bankInput ? bankInput.value : '').trim().toUpperCase() || null,
+          creator_type: (creatorTypeInput ? creatorTypeInput.value : '') || 'ADMIN',
+          vendor_id: (vendorIdInput ? vendorIdInput.value : '') || null,
+          is_active: isActiveInput ? isActiveInput.checked !== false : true,
+          created_at: new Date().toISOString()
+        };
+
+        await fsSaveCoupon(coupon);
+        closeModal('couponEditModal');
+        showToast('Coupon saved successfully! ✓');
+
+        if (typeof _adminTab !== 'undefined' && _adminTab === 'coupons') {
+          const c = document.getElementById('adminTabContent');
+          if (c) renderAdminCoupons(c);
+        }
+        if (typeof currentBusiness !== 'undefined' && currentBusiness) renderBusinessPanel();
+      } catch (err) {
+        console.error('Error saving coupon:', err);
+        showToast('Error saving coupon: ' + (err.message || err));
+      }
+    }
+
+    async function renderAdminCoupons(c) {
+      if (!c) return;
+      c.innerHTML = `<div class="s-card"><p style="color:var(--text-muted)"><i class="fa fa-spinner fa-spin"></i> Loading Coupons…</p></div>`;
+      const coupons = await fsLoadCoupons();
+      const esc = s => (s || '').replace(/"/g, '&quot;');
+      
+      let rowsHtml = coupons.map(cp => {
+        const isPct = cp.discount_type === 'PERCENTAGE';
+        const valStr = isPct ? `${cp.discount_value}% OFF` : `₹${cp.discount_value} OFF`;
+        const typeBadge = cp.creator_type === 'VENDOR' 
+          ? `<span style="background:#e0e7ff;color:#3730a3;font-size:0.7rem;padding:2px 8px;border-radius:10px;font-weight:700">VENDOR ${cp.vendor_id ? `(${cp.vendor_id})` : ''}</span>`
+          : `<span style="background:#fef3c7;color:#92400e;font-size:0.7rem;padding:2px 8px;border-radius:10px;font-weight:700">ADMIN / BANK</span>`;
+        
+        return `<tr>
+          <td style="font-weight:800;letter-spacing:0.5px;color:var(--green-dark)">${esc(cp.code)}</td>
+          <td>${typeBadge}</td>
+          <td style="font-weight:700;color:var(--gold)">${valStr}</td>
+          <td>₹${cp.min_order_value || 0}</td>
+          <td>${cp.bank_identifier ? `<span style="font-size:0.75rem;font-weight:600;background:#f3f4f6;padding:2px 6px;border-radius:4px"><i class="fa fa-building-columns"></i> ${esc(cp.bank_identifier)}</span>` : '—'}</td>
+          <td>
+            <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:0.8rem">
+              <input type="checkbox" ${cp.is_active !== false ? 'checked' : ''} onchange="adminToggleCoupon('${cp.id}', this.checked)" style="accent-color:var(--green)">
+              ${cp.is_active !== false ? '<span style="color:var(--green);font-weight:600">Active</span>' : '<span style="color:var(--text-muted)">Disabled</span>'}
+            </label>
+          </td>
+          <td style="text-align:right">
+            <button class="btn btn-sm" style="background:#e67e22;color:#fff;padding:4px 8px;font-size:0.75rem;border-radius:6px;margin-right:4px;border:none;cursor:pointer" onclick="openCouponEditModalById('${cp.id}')"><i class="fa fa-pen"></i></button>
+            <button class="btn btn-sm btn-danger" style="padding:4px 8px;font-size:0.75rem;border-radius:6px" onclick="adminDeleteCoupon('${cp.id}')"><i class="fa fa-trash"></i></button>
+          </td>
+        </tr>`;
+      }).join('');
+
+      c.innerHTML = `<div class="s-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div>
+            <h3 style="margin:0;font-size:1.1rem;color:var(--green-dark)"><i class="fa fa-ticket" style="color:var(--gold)"></i> Coupon Management</h3>
+            <p style="margin:4px 0 0;font-size:0.8rem;color:var(--text-muted)">Create and manage platform-wide (Admin/Bank) and Vendor-specific promotional coupons.</p>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openCouponEditModal({ creator_type: 'ADMIN', vendor_id: null })"><i class="fa fa-plus"></i> Add New Coupon</button>
+        </div>
+        <table class="menu-table">
+          <thead>
+            <tr><th>Code</th><th>Type</th><th>Discount</th><th>Min Order</th><th>Bank Tie-up</th><th>Status</th><th style="text-align:right">Actions</th></tr>
+          </thead>
+          <tbody>${rowsHtml || '<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">No coupons found. Click "Add New Coupon" to create one.</td></tr>'}</tbody>
+        </table>
+      </div>`;
+    }
+
+    async function adminToggleCoupon(id, isActive) {
+      await fsToggleCouponStatus(id, isActive);
+      showToast(isActive ? 'Coupon activated ✓' : 'Coupon disabled ✓');
+    }
+
+    async function adminDeleteCoupon(id) {
+      if (!confirm('Are you sure you want to delete this coupon?')) return;
+      await fsDeleteCoupon(id);
+      showToast('Coupon deleted ✓');
+      if (typeof _adminTab !== 'undefined' && _adminTab === 'coupons') {
+        const c = document.getElementById('adminTabContent');
+        if (c) renderAdminCoupons(c);
+      }
+      if (typeof currentBusiness !== 'undefined' && currentBusiness) renderBusinessPanel();
+    }
+
+    function openCouponDrawer() {
+      if (!_menuVendor) return;
+      const container = document.getElementById('cd_coupon_list_container');
+      if (!container) return;
+
+      const esc = s => (s || '').replace(/"/g, '&quot;');
+      const menu = (_menuVendor.menu || []).filter(it => it.available !== false);
+      let chosen = menu.filter(it => (_menuQtys[it.id] || 0) > 0 || (document.getElementById('chk_' + it.id)?.checked));
+
+      let vendorSubtotal = 0;
+      chosen.forEach(it => {
+        const q = (_menuQtys[it.id] || 1);
+        if (it.price && it.price > 0) {
+          const pricing = getOfferingPricing(it);
+          vendorSubtotal += pricing.effectivePrice * q;
+        }
+      });
+
+      const coupons = (_couponsList || []).filter(c => {
+        if (c.is_active === false) return false;
+        if (c.vendor_id && c.vendor_id !== _menuVendor.id) return false;
+        if (c.expiry_date && new Date(c.expiry_date) < new Date()) return false;
+        return true;
+      });
+
+      if (!coupons.length) {
+        container.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-muted)"><i class="fa fa-ticket" style="font-size:2rem;opacity:0.3;margin-bottom:8px"></i><p>No active coupons available right now for this vendor.</p></div>`;
+      } else {
+        container.innerHTML = coupons.map(c => {
+          const isMet = !c.min_order_value || vendorSubtotal >= c.min_order_value;
+          const isPct = c.discount_type === 'PERCENTAGE';
+          const discText = isPct ? `${c.discount_value}% OFF` : `₹${c.discount_value} OFF`;
+          const diff = (c.min_order_value || 0) - vendorSubtotal;
+
+          return `<div style="background:var(--cream);border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+            <div>
+              <div style="font-weight:800;font-size:0.95rem;color:var(--green-dark);letter-spacing:0.5px">${esc(c.code)} <span style="background:var(--gold);color:#fff;font-size:0.68rem;padding:2px 6px;border-radius:4px;margin-left:4px;font-weight:700">${discText}</span></div>
+              <div style="font-size:0.78rem;color:var(--text-muted);margin-top:2px">
+                ${c.min_order_value ? `Min order ₹${c.min_order_value}` : 'No min order required'}
+                ${c.bank_identifier ? ` • Valid on ${esc(c.bank_identifier)}` : ''}
+              </div>
+            </div>
+            <div>
+              ${isMet ? `<button class="btn btn-sm btn-primary" onclick="applyCouponFromDrawer('${c.code}')">Apply</button>` : `<button class="btn btn-sm btn-ghost" disabled style="opacity:0.6;font-size:0.75rem;cursor:not-allowed">Add ₹${diff.toFixed(0)} more</button>`}
+            </div>
+          </div>`;
+        }).join('');
+      }
+
+      openModal('couponDrawerModal');
+    }
+
+    function applyCouponFromDrawer(code) {
+      const coupon = (_couponsList || []).find(c => c.code === code.trim().toUpperCase());
+      if (!coupon) { showToast('Invalid coupon code'); return; }
+      _appliedCoupon = coupon;
+      closeModal('couponDrawerModal');
+      _updMenuTotal();
+      showToast(`Coupon ${coupon.code} applied! ✓`);
+    }
+
+    function removeCoupon() {
+      _appliedCoupon = null;
+      _updMenuTotal();
+      showToast('Coupon removed');
+    }
+
+    function applyManualCouponCode() {
+      const input = document.getElementById('cd_manual_code');
+      if (!input) return;
+      const code = input.value.trim().toUpperCase();
+      if (!code) { showToast('Please enter a coupon code'); return; }
+      
+      const coupon = (_couponsList || []).find(c => c.code === code && c.is_active !== false);
+      if (!coupon) { showToast('Invalid or inactive coupon code'); return; }
+      if (coupon.vendor_id && _menuVendor && coupon.vendor_id !== _menuVendor.id) {
+        showToast('This coupon is not valid for this vendor');
+        return;
+      }
+      _appliedCoupon = coupon;
+      input.value = '';
+      closeModal('couponDrawerModal');
+      _updMenuTotal();
+      showToast(`Coupon ${coupon.code} applied! ✓`);
+    }
+
+    function migrateDiscountsAndCoupons() {
+      if (Array.isArray(DATA)) {
+        DATA.forEach(v => {
+          if (Array.isArray(v.menu)) {
+            v.menu.forEach(item => {
+              if (item.original_price == null) {
+                item.original_price = item.price || 0;
+              }
+              if (item.discount_percentage == null) {
+                item.discount_percentage = 0;
+              }
+              const pricing = getOfferingPricing(item);
+              item.effective_price = pricing.effectivePrice;
+              item.price = pricing.effectivePrice;
+            });
+          }
+        });
+      }
+      fsLoadCoupons();
     }
 
     /* ── Re-auth on session expiry ── */
@@ -15009,7 +15653,22 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
           ${it.desc ? `<div class="menu-item-desc">${esc(it.desc)}</div>` : ''}
         </div>
         <div style="display:flex;align-items:center;flex-shrink:0;gap:6px">
-          ${it.price > 0 ? `<div class="menu-item-price">₹${it.price}</div>` : ''}
+          ${(() => {
+            if (it.price > 0) {
+              const pr = getOfferingPricing(it);
+              if (isDiscountsAndCouponsEnabled() && pr.discountPct > 0) {
+                return `<div class="menu-item-price" style="display:flex;flex-direction:column;align-items:flex-end">
+                  <div>
+                    <span style="font-size:0.75rem;text-decoration:line-through;color:var(--text-muted);margin-right:3px">₹${pr.originalPrice}</span>
+                    <span style="font-size:0.95rem;font-weight:700;color:var(--green)">₹${pr.effectivePrice}</span>
+                  </div>
+                  <span style="font-size:0.62rem;background:var(--green);color:#fff;padding:1px 5px;border-radius:4px;font-weight:700">${pr.discountPct}% OFF</span>
+                </div>`;
+              }
+              return `<div class="menu-item-price">₹${it.price}</div>`;
+            }
+            return '';
+          })()}
           ${actionWidget}
         </div>
       </div>`;
@@ -15185,7 +15844,9 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
         }
       }
 
-      let total = 0;
+      const flagEnabled = isDiscountsAndCouponsEnabled();
+      let originalSubtotal = 0;
+      let vendorDiscountedSubtotal = 0;
       let hasPricedSelected = false;
       let hasEnquirySelected = false;
 
@@ -15194,7 +15855,14 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
           const q = (_menuQtys[it.id] || (document.getElementById('chk_' + it.id)?.checked ? 1 : 0));
           if (it.price && it.price > 0) {
             hasPricedSelected = true;
-            total += (it.price * q);
+            const pricing = getOfferingPricing(it);
+            if (flagEnabled) {
+              originalSubtotal += pricing.originalPrice * q;
+              vendorDiscountedSubtotal += pricing.effectivePrice * q;
+            } else {
+              originalSubtotal += pricing.originalPrice * q;
+              vendorDiscountedSubtotal += pricing.originalPrice * q;
+            }
           } else {
             hasEnquirySelected = true;
           }
@@ -15206,17 +15874,88 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
         if (hasEnquiryInMenu) hasEnquirySelected = true;
       }
 
+      const vendorMarkdownTotal = Math.max(0, originalSubtotal - vendorDiscountedSubtotal);
+
+      let couponDeduction = 0;
+      if (flagEnabled && _appliedCoupon) {
+        if (_appliedCoupon.vendor_id && _appliedCoupon.vendor_id !== _menuVendor.id) {
+          _appliedCoupon = null;
+        } else if (_appliedCoupon.min_order_value && vendorDiscountedSubtotal < _appliedCoupon.min_order_value) {
+          couponDeduction = 0;
+        } else {
+          if (_appliedCoupon.discount_type === 'PERCENTAGE') {
+            couponDeduction = parseFloat((vendorDiscountedSubtotal * (_appliedCoupon.discount_value / 100)).toFixed(2));
+          } else {
+            couponDeduction = Math.min(vendorDiscountedSubtotal, parseFloat(_appliedCoupon.discount_value));
+          }
+        }
+      }
+
+      const finalPayable = Math.max(0, parseFloat((vendorDiscountedSubtotal - couponDeduction).toFixed(2)));
+
+      // Update coupon cart section in vendor detail view
+      const couponCartSec = document.getElementById('couponCartSection');
+      if (couponCartSec) {
+        if (flagEnabled && chosen.length > 0 && hasPricedSelected) {
+          couponCartSec.style.display = 'block';
+
+          const pillContainer = document.getElementById('couponPillContainer');
+          if (pillContainer) {
+            if (_appliedCoupon) {
+              pillContainer.innerHTML = `<div style="background:#ecfdf5;border:1.5px solid #10b981;padding:8px 12px;border-radius:10px;display:flex;align-items:center;justify-content:space-between">
+                <span style="font-size:0.85rem;font-weight:700;color:#065f46">
+                  🎟️ Coupon <strong>${(_appliedCoupon.code || '').replace(/"/g, '&quot;')}</strong> Applied (-₹${couponDeduction.toFixed(2)})
+                </span>
+                <button type="button" class="btn btn-sm btn-ghost" onclick="removeCoupon()" style="color:#b91c1c;font-size:0.78rem;padding:2px 8px"><i class="fa fa-xmark"></i> Remove</button>
+              </div>`;
+            } else {
+              pillContainer.innerHTML = `<button type="button" class="btn btn-sm btn-outline" onclick="openCouponDrawer()" style="width:100%;border-style:dashed;color:var(--green-dark);border-color:var(--green);font-weight:700;padding:8px;border-radius:10px;display:flex;align-items:center;justify-content:center;gap:6px">
+                <i class="fa fa-ticket" style="color:var(--gold)"></i> View Available Coupons &amp; Offers
+              </button>`;
+            }
+          }
+
+          const breakdownContainer = document.getElementById('priceBreakdownContainer');
+          if (breakdownContainer) {
+            breakdownContainer.innerHTML = `
+              <div style="display:flex;justify-content:space-between;color:var(--text-muted)">
+                <span>Item Subtotal:</span>
+                <span>₹${originalSubtotal.toFixed(2)}</span>
+              </div>
+              ${vendorMarkdownTotal > 0 ? `
+              <div style="display:flex;justify-content:space-between;color:var(--green);font-weight:600">
+                <span>Vendor Discount:</span>
+                <span>-₹${vendorMarkdownTotal.toFixed(2)}</span>
+              </div>` : ''}
+              ${couponDeduction > 0 ? `
+              <div style="display:flex;justify-content:space-between;color:var(--green);font-weight:600">
+                <span>Coupon Discount (${(_appliedCoupon.code || '').replace(/"/g, '&quot;')}):</span>
+                <span>-₹${couponDeduction.toFixed(2)}</span>
+              </div>` : ''}
+              <div style="display:flex;justify-content:space-between;font-weight:800;font-size:0.95rem;color:var(--green-dark);margin-top:4px;padding-top:4px;border-top:1px dashed var(--border)">
+                <span>Final Payable Amount:</span>
+                <span>₹${finalPayable.toFixed(2)}</span>
+              </div>
+            `;
+          }
+        } else {
+          couponCartSec.style.display = 'none';
+        }
+      }
+
+      const total = flagEnabled ? finalPayable : originalSubtotal;
+
       if (hasEnquirySelected && !hasPricedSelected) {
         btn.innerHTML = currentCustomer
           ? `<i class="${icon}"></i> Send Enquiry via WhatsApp`
           : `<i class="${icon}"></i> Login to Enquire`;
       } else if (hasPricedSelected && !hasEnquirySelected) {
         btn.innerHTML = currentCustomer
-          ? (total > 0 ? `<i class="${icon}"></i> Place Order via WhatsApp — ₹${total}` : `<i class="${icon}"></i> Place Order via WhatsApp`)
+          ? (total > 0 ? `<i class="${icon}"></i> Place Order via WhatsApp — ₹${total.toFixed(2)}` : `<i class="${icon}"></i> Place Order via WhatsApp`)
           : `<i class="${icon}"></i> Login to Order`;
       } else {
         btn.innerHTML = currentCustomer
-          ? (total > 0 ? `<i class="${icon}"></i> Send Order & Enquiry via WhatsApp — ₹${total}` : `<i class="${icon}"></i> Send Order & Enquiry via WhatsApp`)
+          ? (total > 0 ? `<i class="${icon}"></i> Send Order & Enquiry via WhatsApp — ₹${total.toFixed(2)}` : `<i class="${icon}"></i> Send Order & Enquiry via WhatsApp`)
           : `<i class="${icon}"></i> Login to Order / Enquire`;
       }
     }
@@ -15293,39 +16032,103 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
     }
 
     function _finalizePlaceOrder(ctx) {
-      const { chosen, lines, total, name, mobile, address, wa } = ctx;
+      const { chosen, name, mobile, address, wa } = ctx;
+
+      const valResult = serverSideValidateOrderPayload({
+        vendor: _menuVendor,
+        items: chosen,
+        itemQtys: _menuQtys,
+        appliedCoupon: _appliedCoupon,
+        paymentMode: 'WhatsApp'
+      });
 
       const isEnquiryOnly = chosen.every(it => !it.price || it.price <= 0);
       const isMixed = !isEnquiryOnly && chosen.some(it => !it.price || it.price <= 0);
-
-      let introHeader = '';
-      let totalFooter = '';
-      let toastMsg = 'Sent via WhatsApp! ✓';
       const promoTag = `\n\n🌐 _Ordered via TynTron — By the residents, For the residents of the community_`;
 
-      if (isEnquiryOnly) {
-        introHeader = "Hi! I'd like to enquire about the following offerings via TynTron 💬";
-        totalFooter = `\n\n🏠 Address: ${address}\n👤 Name: ${name}\n📱 Mobile: ${mobile}${promoTag}\n\nPlease share details and availability. Thank you!`;
-        toastMsg = 'Enquiry sent via WhatsApp! ✓';
-      } else if (isMixed) {
-        introHeader = "Hi! I'd like to place an order & enquiry via TynTron 🛒💬";
-        totalFooter = `\n\n💰 *Priced Items Total: ₹${total}*\n🏠 Address: ${address}\n👤 Name: ${name}\n📱 Mobile: ${mobile}${promoTag}\n\nPlease confirm availability and details. Thank you!`;
-        toastMsg = 'Order & Enquiry sent via WhatsApp! ✓';
+      let introHeader = '';
+      let linesStr = '';
+      let breakdownStr = '';
+      let toastMsg = 'Sent via WhatsApp! ✓';
+
+      if (valResult.flagEnabled) {
+        linesStr = valResult.validatedItems.map(it => {
+          const q = it.qty;
+          if (it.effective_price > 0) {
+            if (it.discount_percentage > 0) {
+              return `• ${it.name} x${q} — ₹${(it.effective_price * q).toFixed(2)} (Original: ₹${(it.original_price * q).toFixed(2)}, ${it.discount_percentage}% OFF)`;
+            } else {
+              return `• ${it.name} x${q} — ₹${(it.effective_price * q).toFixed(2)}`;
+            }
+          } else {
+            const typeInfo = getOfferingTypeInfo(it.type || 'item');
+            return `• ${it.name} (${typeInfo.label} — Enquiry)`;
+          }
+        }).join('\n');
+
+        if (isEnquiryOnly) {
+          introHeader = "Hi! I'd like to enquire about the following offerings via TynTron 💬";
+          breakdownStr = `\n\n🏠 Address: ${address}\n👤 Name: ${name}\n📱 Mobile: ${mobile}${promoTag}\n\nPlease share details and availability. Thank you!`;
+          toastMsg = 'Enquiry sent via WhatsApp! ✓';
+        } else if (isMixed) {
+          introHeader = "Hi! I'd like to place an order & enquiry via TynTron 🛒💬";
+          breakdownStr = `\n\n------------------------------`
+            + `\nItem Subtotal: ₹${valResult.originalSubtotal.toFixed(2)}`
+            + (valResult.vendorMarkdownTotal > 0 ? `\nVendor Discount: -₹${valResult.vendorMarkdownTotal.toFixed(2)}` : '')
+            + (valResult.couponDeduction > 0 ? `\nCoupon Applied (${valResult.appliedCoupon ? valResult.appliedCoupon.code : ''}): -₹${valResult.couponDeduction.toFixed(2)}` : '')
+            + `\nFinal Payable Amount: ₹${valResult.finalPayable.toFixed(2)}`
+            + `\n------------------------------`
+            + `\n\n🏠 Address: ${address}\n👤 Name: ${name}\n📱 Mobile: ${mobile}${promoTag}\n\nPlease confirm availability and details. Thank you!`;
+          toastMsg = 'Order & Enquiry sent via WhatsApp! ✓';
+        } else {
+          introHeader = _catCfg.waIntro ? `${_catCfg.waIntro} via TynTron` : "Hi! I'd like to place an order via TynTron 🛒";
+          breakdownStr = `\n\n------------------------------`
+            + `\nItem Subtotal: ₹${valResult.originalSubtotal.toFixed(2)}`
+            + (valResult.vendorMarkdownTotal > 0 ? `\nVendor Discount: -₹${valResult.vendorMarkdownTotal.toFixed(2)}` : '')
+            + (valResult.couponDeduction > 0 ? `\nCoupon Applied (${valResult.appliedCoupon ? valResult.appliedCoupon.code : ''}): -₹${valResult.couponDeduction.toFixed(2)}` : '')
+            + `\nFinal Payable Amount: ₹${valResult.finalPayable.toFixed(2)}`
+            + `\n------------------------------`
+            + `\n\n🏠 Address: ${address}\n👤 Name: ${name}\n📱 Mobile: ${mobile}${promoTag}\n\nPlease confirm. Thank you!`;
+        }
       } else {
-        introHeader = _catCfg.waIntro ? `${_catCfg.waIntro} via TynTron` : "Hi! I'd like to place an order via TynTron 🛒";
-        totalFooter = `\n\n💰 *Total: ₹${total}*\n🏠 Address: ${address}\n👤 Name: ${name}\n📱 Mobile: ${mobile}${promoTag}\n\nPlease confirm. Thank you!`;
-        toastMsg = 'Order sent via WhatsApp! ✓';
+        linesStr = valResult.validatedItems.map(it => {
+          const q = it.qty;
+          if (it.original_price > 0) {
+            const sub = (it.original_price * q).toFixed(2);
+            return q > 1 ? `• ${it.name} x${q} — ₹${sub}` : `• ${it.name} — ₹${it.original_price}`;
+          } else {
+            const typeInfo = getOfferingTypeInfo(it.type || 'item');
+            return `• ${it.name} (${typeInfo.label} — Enquiry)`;
+          }
+        }).join('\n');
+
+        if (isEnquiryOnly) {
+          introHeader = "Hi! I'd like to enquire about the following offerings via TynTron 💬";
+          breakdownStr = `\n\n🏠 Address: ${address}\n👤 Name: ${name}\n📱 Mobile: ${mobile}${promoTag}\n\nPlease share details and availability. Thank you!`;
+          toastMsg = 'Enquiry sent via WhatsApp! ✓';
+        } else if (isMixed) {
+          introHeader = "Hi! I'd like to place an order & enquiry via TynTron 🛒💬";
+          breakdownStr = `\n\n💰 *Priced Items Total: ₹${valResult.originalSubtotal.toFixed(2)}*\n🏠 Address: ${address}\n👤 Name: ${name}\n📱 Mobile: ${mobile}${promoTag}\n\nPlease confirm availability and details. Thank you!`;
+          toastMsg = 'Order & Enquiry sent via WhatsApp! ✓';
+        } else {
+          introHeader = _catCfg.waIntro ? `${_catCfg.waIntro} via TynTron` : "Hi! I'd like to place an order via TynTron 🛒";
+          breakdownStr = `\n\n💰 *Total: ₹${valResult.originalSubtotal.toFixed(2)}*\n🏠 Address: ${address}\n👤 Name: ${name}\n📱 Mobile: ${mobile}${promoTag}\n\nPlease confirm. Thank you!`;
+        }
       }
 
-      const msg = `${introHeader}\n\n*${_menuVendor.venture}*\n${lines.join('\n')}${totalFooter}`;
-      window.open(`https://wa.me/91${wa}?text=${encodeURIComponent(msg)}`, '_blank');
+      const msg = `${introHeader}\n\n*${_menuVendor.venture}*\n${linesStr}${breakdownStr}`;
+
+      const cleanWa = (wa || '').replace(/[\s\-\+\(\)]/g, '');
+      const url = `https://wa.me/91${cleanWa}?text=${encodeURIComponent(msg)}`;
+      window.open(url, '_blank');
       fsRecordStat(_menuVendor.id, 'orderClicks');
       fsRecordStat(_menuVendor.id, 'whatsappClicks');
       fsLogOrder(_menuVendor.id, _menuVendor.venture,
-        chosen.map(it => ({ name: it.name, price: it.price || 0, qty: _menuQtys[it.id] || 1 })),
-        total, `${address} | 📱 ${mobile}`, currentCustomer?.email || null, name, mobile);
+        valResult.validatedItems.map(it => ({ name: it.name, price: it.effective_price || 0, qty: it.qty })),
+        valResult.finalPayable, `${address} | 📱 ${mobile}`, currentCustomer?.email || null, name, mobile);
       closeVendorDetail();
       _menuQtys = {};
+      _appliedCoupon = null;
       showToast(toastMsg);
     }
 
@@ -19233,6 +20036,7 @@ Together, we grow stronger — one order at a time.`;
         case 'customers': renderAdminCustomers(c); break;
         case 'config': renderAdminConfig(c); break;
         case 'features': renderAdminFeatures(c); break;
+        case 'coupons': renderAdminCoupons(c); break;
         case 'ads': renderAdminAds(c); break;
         case 'stats': renderAdminStats(c); break;
         case 'reviews': renderAdminReviews(c); break;
@@ -21690,6 +22494,14 @@ Together, we grow stronger — one order at a time.`;
       const menu = v.menu || [];
       const rows = menu.map(it => {
         const typeInfo = getOfferingTypeInfo(it.type || 'item');
+        const orig = it.original_price != null ? it.original_price : (it.price || 0);
+        const disc = it.discount_percentage || 0;
+        const eff = it.effective_price != null ? it.effective_price : (it.price || 0);
+
+        const priceDisplay = (disc > 0 && isDiscountsAndCouponsEnabled())
+          ? `<div><span style="text-decoration:line-through;color:var(--text-muted);font-size:0.75rem">₹${orig}</span> <span style="color:var(--green);font-weight:700">₹${eff}</span> <span style="background:var(--green);color:#fff;font-size:0.65rem;padding:1px 5px;border-radius:4px;font-weight:700">${disc}% OFF</span></div>`
+          : `₹${eff || orig || 0}`;
+
         return `<tr>
     <td>
       <div style="display:flex;align-items:center;gap:8px">
@@ -21700,7 +22512,7 @@ Together, we grow stronger — one order at a time.`;
         </div>
       </div>
     </td>
-    <td style="font-weight:600">₹${it.price || 0}</td>
+    <td style="font-weight:600">${priceDisplay}</td>
     <td style="color:var(--text-muted);font-size:.78rem">${esc(it.desc || '—')}</td>
     <td><span style="color:${it.available !== false ? '#28a745' : '#c0392b'};font-weight:700">${it.available !== false ? 'Yes' : 'No'}</span></td>
     <td style="white-space:nowrap">
@@ -21724,7 +22536,7 @@ Together, we grow stronger — one order at a time.`;
       const addBtn = isDeact
         ? `<button class="btn btn-sm btn-primary" style="margin-left:auto;opacity:0.5;cursor:not-allowed" disabled onclick="alert('Your account is deactivated. Please contact admin.');showToast('Your account is deactivated. Please contact admin.');"><i class="fa fa-ban"></i> Account Deactivated</button>`
         : (isLimitReached
-          ? `<button class="btn btn-sm btn-ghost" style="margin-left:auto;color:var(--danger);border:1px solid var(--danger);font-weight:600" onclick="alert('Item Limit Reached! You have reached your max limit of ${maxItemsLimit} items. Please contact Admin to increase your item limit.');showToast('Item limit of ${maxItemsLimit} reached. Contact admin to increase.');"><i class="fa fa-lock"></i> Limit Reached (${menu.length}/${maxItemsLimit})</button>`
+          ? `<button class="btn btn-sm btn-ghost" style="margin-left:auto;color:var(--danger);border:1.5px solid var(--danger);font-weight:600" onclick="alert('Item Limit Reached! You have reached your max limit of ${maxItemsLimit} items. Please contact Admin to increase your item limit.');showToast('Item limit of ${maxItemsLimit} reached. Contact admin to increase.');"><i class="fa fa-lock"></i> Limit Reached (${menu.length}/${maxItemsLimit})</button>`
           : `<div class="dropdown" style="position:relative;display:inline-block;margin-left:auto">
               <button type="button" class="btn btn-sm btn-primary dropdown-toggle" onclick="toggleOfferingDropdown(event)" style="display:inline-flex;align-items:center;gap:6px">
                 <i class="fa fa-plus"></i> Add Business Offering <i class="fa fa-chevron-down" style="font-size:.7rem"></i>
@@ -21735,7 +22547,7 @@ Together, we grow stronger — one order at a time.`;
             </div>`);
 
       const offeringsCard = `<div class="s-card">
-    <div class="s-card-title"><i class="fa fa-layer-group" style="color:var(--green)"></i> Business Offerings & Items <span style="font-size:.8rem;color:var(--text-muted);font-weight:600;margin-left:6px">${limitText}</span> ${limitWarning}
+    <div class="s-card-title"><i class="fa fa-layer-group" style="color:var(--green)"></i> Business Offerings &amp; Items <span style="font-size:.8rem;color:var(--text-muted);font-weight:600;margin-left:6px">${limitText}</span> ${limitWarning}
       ${addBtn}
     </div>
     ${menu.length ? `<table class="menu-table">
@@ -21744,7 +22556,35 @@ Together, we grow stronger — one order at a time.`;
     </table>`: `<div class="empty-state" style="padding:24px"><i class="fa fa-layer-group"></i><p>No business offerings added yet. Click "Add Business Offering" above to add products, services, menu, classes, events, etc.</p></div>`}
   </div>`;
 
-      return offeringsCard;
+      const vendorCoupons = (_couponsList || []).filter(c => c.vendor_id === v.id);
+      const couponsCard = `<div class="s-card" style="margin-top:18px">
+    <div class="s-card-title" style="display:flex;justify-content:space-between;align-items:center">
+      <span><i class="fa fa-ticket" style="color:var(--gold)"></i> Vendor Promotional Coupons</span>
+      <button class="btn btn-sm btn-primary" onclick="openCouponEditModal({ creator_type: 'VENDOR', vendor_id: '${v.id}' })"><i class="fa fa-plus"></i> Create Vendor Coupon</button>
+    </div>
+    <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:12px">Create special discount coupons exclusive to your business. Customers can apply these during checkout.</p>
+    ${vendorCoupons.length ? `<table class="menu-table">
+      <thead><tr><th>Code</th><th>Discount</th><th>Min Order</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
+      <tbody>
+        ${vendorCoupons.map(cp => `<tr>
+          <td style="font-weight:800;letter-spacing:0.5px;color:var(--green-dark)">${esc(cp.code)}</td>
+          <td style="font-weight:700;color:var(--gold)">${cp.discount_type === 'PERCENTAGE' ? `${cp.discount_value}% OFF` : `₹${cp.discount_value} OFF`}</td>
+          <td>₹${cp.min_order_value || 0}</td>
+          <td>
+            <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:0.8rem">
+              <input type="checkbox" ${cp.is_active !== false ? 'checked' : ''} onchange="adminToggleCoupon('${cp.id}', this.checked)" style="accent-color:var(--green)">
+              ${cp.is_active !== false ? '<span style="color:var(--green);font-weight:600">Active</span>' : '<span style="color:var(--text-muted)">Disabled</span>'}
+            </label>
+          </td>
+          <td style="text-align:right">
+            <button class="btn btn-sm btn-danger" onclick="adminDeleteCoupon('${cp.id}')"><i class="fa fa-trash"></i> Delete</button>
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table>` : `<div class="empty-state" style="padding:16px"><p style="font-size:0.85rem;margin:0">No coupons created yet for your business.</p></div>`}
+  </div>`;
+
+      return offeringsCard + couponsCard;
     }
 
     function _businessDetailsHTML(v) {
@@ -22213,6 +23053,30 @@ Together, we grow stronger — one order at a time.`;
       return mandatoryTypes.includes((type || '').toLowerCase());
     }
 
+    function updateMenuItemEffectivePricePreview() {
+      const origInput = document.getElementById('mi_original_price');
+      const pctInput = document.getElementById('mi_discount_percentage');
+      const previewBox = document.getElementById('mi_effective_preview_box');
+      const rateVal = document.getElementById('mi_effective_rate_val');
+      const hiddenPrice = document.getElementById('mi_price');
+
+      if (!origInput) return;
+      const orig = parseFloat(origInput.value) || 0;
+      const pct = parseFloat(pctInput?.value) || 0;
+
+      const eff = pct > 0 ? parseFloat((orig * (1 - pct / 100)).toFixed(2)) : orig;
+      if (hiddenPrice) hiddenPrice.value = eff;
+
+      if (previewBox && rateVal) {
+        if (orig > 0 && pct > 0) {
+          rateVal.textContent = `₹${eff} (${pct}% Vendor Discount applied, Original ₹${orig})`;
+          previewBox.style.display = 'block';
+        } else {
+          previewBox.style.display = 'none';
+        }
+      }
+    }
+
     function openMenuItemModal(vendorId, itemId, offeringType) {
       _editMenuVendorId = vendorId; _editMenuItemId = itemId;
       const vendor = DATA.find(d => d.id === vendorId);
@@ -22238,21 +23102,28 @@ Together, we grow stronger — one order at a time.`;
       if (typeDisplay) typeDisplay.value = typeInfo.label;
 
       const priceLabel = document.getElementById('mi_price_label');
-      const priceInput = document.getElementById('mi_price');
+      const origPriceInput = document.getElementById('mi_original_price');
+      const discountPctInput = document.getElementById('mi_discount_percentage');
       const nameInput = document.getElementById('mi_name');
       const isMandatory = isPriceMandatory(type);
 
       if (priceLabel) {
-        priceLabel.innerHTML = isMandatory ? 'Cost / Price (₹) *' : 'Cost / Price (₹) <span style="font-weight:400;color:var(--text-muted)">(Optional)</span>';
+        priceLabel.innerHTML = isMandatory ? 'Original Baseline Rate (₹) *' : 'Original Baseline Rate (₹) <span style="font-weight:400;color:var(--text-muted)">(Optional)</span>';
       }
-      if (priceInput) {
-        priceInput.placeholder = isMandatory ? 'e.g. 350' : 'Optional (e.g. 0)';
-        priceInput.style.borderColor = '';
+      if (origPriceInput) {
+        origPriceInput.placeholder = isMandatory ? 'e.g. 1000' : 'Optional (e.g. 0)';
+        origPriceInput.style.borderColor = '';
       }
       if (nameInput) nameInput.style.borderColor = '';
 
       document.getElementById('mi_name').value = item?.name || '';
-      document.getElementById('mi_price').value = (item && item.price !== undefined && item.price !== null) ? item.price : '';
+      
+      const pricing = getOfferingPricing(item);
+      if (origPriceInput) origPriceInput.value = (item && (item.original_price != null || item.price != null)) ? pricing.originalPrice : '';
+      if (discountPctInput) discountPctInput.value = (item && item.discount_percentage != null) ? pricing.discountPct : 0;
+      
+      updateMenuItemEffectivePricePreview();
+
       document.getElementById('mi_desc').value = item?.desc || '';
       document.getElementById('mi_avail').checked = item?.available !== false;
 
@@ -22265,12 +23136,13 @@ Together, we grow stronger — one order at a time.`;
 
     async function saveMenuItem() {
       const nameInput = document.getElementById('mi_name');
-      const priceInput = document.getElementById('mi_price');
+      const origPriceInput = document.getElementById('mi_original_price');
       const name = (nameInput?.value || '').trim();
-      const priceVal = (priceInput?.value || '').trim();
+      const origPriceVal = (origPriceInput?.value || '').trim();
+      const discountPctVal = (document.getElementById('mi_discount_percentage')?.value || '').trim();
       const type = document.getElementById('mi_type')?.value || 'item';
 
-      if (priceInput) priceInput.style.borderColor = '';
+      if (origPriceInput) origPriceInput.style.borderColor = '';
       if (nameInput) nameInput.style.borderColor = '';
 
       if (!name) {
@@ -22280,14 +23152,17 @@ Together, we grow stronger — one order at a time.`;
       }
 
       const isMandatory = isPriceMandatory(type);
-      if (isMandatory && (priceVal === '' || isNaN(parseFloat(priceVal)))) {
+      if (isMandatory && (origPriceVal === '' || isNaN(parseFloat(origPriceVal)))) {
         const typeInfo = getOfferingTypeInfo(type);
-        showToast(`Cost / Price is required for ${typeInfo.label}`);
-        if (priceInput) { priceInput.style.borderColor = '#dc2626'; priceInput.focus(); }
+        showToast(`Original Baseline Rate is required for ${typeInfo.label}`);
+        if (origPriceInput) { origPriceInput.style.borderColor = '#dc2626'; origPriceInput.focus(); }
         return;
       }
 
-      const price = priceVal !== '' ? parseFloat(priceVal) : 0;
+      const original_price = origPriceVal !== '' ? parseFloat(origPriceVal) : 0;
+      const discount_percentage = discountPctVal !== '' ? parseFloat(discountPctVal) : 0;
+      const effective_price = discount_percentage > 0 ? parseFloat((original_price * (1 - discount_percentage / 100)).toFixed(2)) : original_price;
+
       const vendor = DATA.find(d => d.id === _editMenuVendorId);
       if (!vendor) return;
 
@@ -22306,7 +23181,10 @@ Together, we grow stronger — one order at a time.`;
         id: _editMenuItemId || 'm' + Date.now(),
         type: type,
         name: name,
-        price: isNaN(price) ? 0 : price,
+        original_price: isNaN(original_price) ? 0 : original_price,
+        discount_percentage: isNaN(discount_percentage) ? 0 : discount_percentage,
+        effective_price: isNaN(effective_price) ? 0 : effective_price,
+        price: isNaN(effective_price) ? 0 : effective_price,
         desc: document.getElementById('mi_desc').value.trim(),
         image: _miPendingImg === '__remove__' ? '' : (_miPendingImg || ''),
         available: document.getElementById('mi_avail').checked
@@ -23389,6 +24267,20 @@ Together, we grow stronger — one order at a time.`;
     </div>
 
     <div style="display:flex;flex-direction:column;gap:16px">
+      <!-- 0. Discounts & Coupons System Global Feature Flag -->
+      <div style="background:var(--cream);border-radius:12px;padding:16px;border:1.5px solid var(--border)">
+        <div style="font-weight:700;font-size:.95rem;margin-bottom:8px;color:var(--text);display:flex;align-items:center;gap:8px">
+          <i class="fa fa-percent" style="color:var(--gold);font-size:1.1rem"></i> Discounts &amp; Coupons Engine (ENABLE_DISCOUNTS_AND_COUPONS)
+        </div>
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600;font-size:.88rem">
+          <input type="checkbox" id="cfg_enableDiscountsAndCoupons" ${isDiscountsAndCouponsEnabled() ? 'checked' : ''} style="accent-color:var(--green);width:18px;height:18px">
+          Enable Item-Level Percentage Discounts &amp; Coupon Deduction System
+        </label>
+        <p style="font-size:.78rem;color:var(--text-muted);margin-top:6px;line-height:1.4">
+          When enabled, original strike-through prices, effective discounted prices, coupon drawer, and itemized discount breakdowns are visible to customers and enforced on WhatsApp orders. When disabled, all discount and coupon UI is hidden site-wide, and baseline prices are used with zero discount metadata.
+        </p>
+      </div>
+
       <!-- 1. Resident Carpool Feature -->
       <div style="background:var(--cream);border-radius:12px;padding:16px;border:1.5px solid var(--border)">
         <div style="font-weight:700;font-size:.95rem;margin-bottom:8px;color:var(--text);display:flex;align-items:center;gap:8px">
@@ -23649,6 +24541,7 @@ Together, we grow stronger — one order at a time.`;
     }
 
     async function saveAdminFeatures() {
+      const enableDiscountsAndCoupons = document.getElementById('cfg_enableDiscountsAndCoupons')?.checked !== false;
       const showCarpool = document.getElementById('cfg_showCarpool')?.checked !== false;
       const showAiChatbot = document.getElementById('cfg_showAiChatbot')?.checked !== false;
       const showRegisterButton = document.getElementById('cfg_showRegisterButton')?.checked !== false;
@@ -23662,6 +24555,7 @@ Together, we grow stronger — one order at a time.`;
       const subTimingRadio = document.querySelector('input[name="cfg_subscriptionShowTiming"]:checked');
       const subscriptionShowTiming = subTimingRadio ? subTimingRadio.value : 'registration';
 
+      SITE_CONFIG.ENABLE_DISCOUNTS_AND_COUPONS = enableDiscountsAndCoupons;
       SITE_CONFIG.showCarpool = showCarpool;
       SITE_CONFIG.showAiChatbot = showAiChatbot;
       SITE_CONFIG.showRegisterButton = showRegisterButton;
@@ -23673,7 +24567,10 @@ Together, we grow stronger — one order at a time.`;
       SITE_CONFIG.enableFailureNotificationEmail = enableFailureNotificationEmail;
       SITE_CONFIG.failureNotificationRecipient = failureNotificationRecipient;
 
+      await RedisFeatureFlagController.setFlag('ENABLE_DISCOUNTS_AND_COUPONS', enableDiscountsAndCoupons);
+
       await fsSaveConfig({
+        ENABLE_DISCOUNTS_AND_COUPONS: enableDiscountsAndCoupons,
         showCarpool,
         showAiChatbot,
         showRegisterButton,
