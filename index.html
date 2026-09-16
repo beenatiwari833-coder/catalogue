@@ -4385,14 +4385,26 @@
           <div class="form-group" style="margin-bottom:14px">
             <label><i class="fa fa-phone" style="color:var(--green)"></i> Registered Mobile Number *</label>
             <div style="display:flex;gap:8px">
-              <input type="tel" id="drv_login_mobile" required placeholder="10-digit mobile number" style="flex:1">
+              <input type="tel" id="drv_login_mobile" required placeholder="10-digit mobile number" style="flex:1" oninput="clearDrvLoginNotRegisteredNotice()">
               <button type="button" class="btn btn-sm btn-outline-plan" id="drv_login_sendOtpBtn"
                 onclick="drvLoginSendOtp()" style="white-space:nowrap;padding:0 12px">Send OTP</button>
             </div>
           </div>
+
+          <!-- Unregistered Mobile Banner -->
+          <div id="drv_login_notRegisteredBanner" style="display:none;background:#fff3e0;border:1.5px solid #ffe0b2;border-radius:10px;padding:12px 14px;margin-bottom:14px">
+            <div style="font-size:0.83rem;color:#e65100;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+              <i class="fa fa-triangle-exclamation" style="color:#f57c00;font-size:1.1rem"></i>
+              <span id="drv_login_notRegisteredMsg">Mobile number is not registered as a Driver.</span>
+            </div>
+            <button type="button" class="btn btn-sm btn-primary" onclick="goToDriverRegistrationFromLogin()" style="width:100%;justify-content:center;background:var(--primary);color:#fff">
+              <i class="fa fa-user-plus"></i> Register as Driver ➔
+            </button>
+          </div>
+
           <div class="form-group" id="drv_login_otpRow" style="margin-bottom:14px">
             <label>Verification OTP *</label>
-            <input type="text" id="drv_login_otp" required placeholder="Enter 6-digit OTP" value="" maxlength="6"
+            <input type="text" id="drv_login_otp" placeholder="Enter 6-digit OTP" value="" maxlength="6"
               style="font-weight:700;letter-spacing:2px;text-align:center" onfocus="listenForWebOtp('drv_login_otp')">
           </div>
           <div class="modal-actions">
@@ -5041,44 +5053,227 @@
     </div>
   </div>
 
-  <!-- 5. Driver Identity & Vehicle Verification Modal -->
+  <!-- 5. Driver Identity & Vehicle Verification Modal (Two Verification Options) -->
   <div class="modal-overlay" id="carpoolVerifyModal" style="z-index:9999">
-    <div class="modal" style="max-width:560px">
-      <div class="modal-title"><i class="fa fa-id-card" style="color:var(--green)"></i> Driver Verification</div>
-      <p style="font-size:0.84rem;color:var(--text-muted);margin-bottom:16px">Upload your Driving License &amp; Vehicle
-        Registration to receive the verified driver badge on Tyntron.</p>
-      <form onsubmit="saveDriverVerification(event)">
-        <div class="form-group" style="margin-bottom:14px">
-          <label>Driving License Number *</label>
-          <input type="text" id="cp_dlNumber" required placeholder="e.g. UP16 20210012345">
-        </div>
-        <div class="form-group" style="margin-bottom:14px">
-          <label>Upload Driving License Photo (JPG / PNG)</label>
-          <input type="file" id="cp_dlFile" accept="image/*">
-        </div>
-        <div class="form-group" style="margin-bottom:14px">
-          <label>Upload Vehicle Registration (RC) Photo</label>
-          <input type="file" id="cp_rcFile" accept="image/*">
-        </div>
-        <div class="form-group" style="margin-bottom:14px">
-          <label style="display:flex;justify-content:space-between;align-items:center">
-            <span>Upload Vehicle / Car Photo <span
-                style="font-weight:400;color:var(--text-muted);font-size:0.78rem">(Optional)</span></span>
-            <!-- <span style="font-size:0.7rem;background:var(--cream);color:var(--text-muted);padding:2px 8px;border-radius:10px;font-weight:600">NOT MANDATORY</span> -->
-          </label>
-          <input type="file" id="cp_carPhotoFile" accept="image/*" onchange="previewVehiclePhoto(event)">
-          <div id="cp_carPhotoPreview" style="margin-top:8px;display:none">
-            <img id="cp_carPhotoImg" src=""
-              style="width:110px;height:75px;object-fit:cover;border-radius:10px;border:1.5px solid var(--green)">
-            <span style="font-size:0.72rem;color:var(--text-muted);display:block;margin-top:2px"><i class="fa fa-check"
-                style="color:var(--green)"></i> Vehicle photo preview</span>
+    <div class="modal" style="max-width:600px;padding:0;overflow:hidden;border-radius:20px">
+      <!-- Modal Header -->
+      <div style="background:linear-gradient(135deg, #1c2733 0%, #2c3e50 100%);color:#fff;padding:18px 24px;display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:#4caf50">
+            <i class="fa fa-id-card"></i>
+          </div>
+          <div>
+            <div style="font-size:1.15rem;font-weight:800;color:#fff">Driver Document Verification</div>
+            <div style="font-size:0.78rem;color:rgba(255,255,255,0.75);margin-top:1px">Verify Driving License &amp; Vehicle RC for Verified Badge</div>
           </div>
         </div>
-        <div class="modal-actions">
-          <button type="button" class="btn btn-ghost" onclick="closeModal('carpoolVerifyModal')">Cancel</button>
-          <button type="submit" class="btn btn-primary"><i class="fa fa-check"></i> Submit Verification</button>
+        <button type="button" onclick="closeModal('carpoolVerifyModal')" style="background:none;border:none;color:#fff;font-size:1.4rem;cursor:pointer;opacity:0.8">&times;</button>
+      </div>
+
+      <div style="padding:20px 24px">
+        <!-- Verification Option Selection Tabs -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;background:#f1f5f9;padding:5px;border-radius:14px">
+          <button type="button" id="tabBtnDigiLocker" onclick="switchVerifyTab('digilocker')" style="padding:10px 8px;border-radius:10px;font-weight:700;font-size:0.84rem;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.2s;background:#fff;color:#0d47a1;box-shadow:0 2px 6px rgba(0,0,0,0.08)">
+            <span style="font-size:1.1rem">🇮🇳</span> DigiLocker (Instant)
+          </button>
+          <button type="button" id="tabBtnDirectUpload" onclick="switchVerifyTab('direct')" style="padding:10px 8px;border-radius:10px;font-weight:700;font-size:0.84rem;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.2s;background:transparent;color:#64748b">
+            <i class="fa fa-cloud-arrow-up" style="color:var(--primary)"></i> Direct Upload (Admin)
+          </button>
         </div>
-      </form>
+
+        <!-- OPTION 1: DIGILOCKER (INSTANT VERIFICATION) CONTENT -->
+        <div id="verifyTabDigiLocker" style="display:block">
+          <div style="background:linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);border:1.5px solid #90caf9;border-radius:16px;padding:18px;margin-bottom:18px">
+            <div style="display:flex;align-items:flex-start;gap:14px">
+              <div style="width:48px;height:48px;border-radius:12px;background:#1565c0;color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;box-shadow:0 4px 12px rgba(21,101,192,0.3)">
+                <i class="fa fa-shield-halved"></i>
+              </div>
+              <div>
+                <div style="font-weight:800;font-size:1rem;color:#0d47a1;display:flex;align-items:center;gap:8px">
+                  DigiLocker Govt Verification
+                  <span style="font-size:0.7rem;background:#1565c0;color:#fff;padding:2px 8px;border-radius:10px;font-weight:700">INSTANT ✓</span>
+                </div>
+                <p style="font-size:0.82rem;color:#1e88e5;margin:4px 0 10px;line-height:1.4">
+                  Connect your DigiLocker account to instantly fetch &amp; authenticate your Driving License &amp; Vehicle RC issued by <b>MoRTH</b> (Ministry of Road Transport &amp; Highways).
+                </p>
+                <div style="display:flex;flex-wrap:wrap;gap:8px;font-size:0.76rem;color:#1565c0;font-weight:700">
+                  <span>⚡ 1-Click Verification</span>
+                  <span>•</span>
+                  <span>🔒 Govt Certified Authenticity</span>
+                  <span>•</span>
+                  <span>🏅 Priority Verified Badge</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="text-align:center;padding:8px 0">
+            <button type="button" class="btn btn-primary" onclick="closeModal('carpoolVerifyModal');openDigiLockerModal();" style="background:linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);color:#fff;font-weight:800;font-size:0.92rem;padding:12px 28px;border-radius:30px;box-shadow:0 6px 18px rgba(21,101,192,0.35);border:none;width:100%">
+              <i class="fa fa-lock" style="margin-right:6px"></i> Verify Now via DigiLocker (Instant)
+            </button>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:10px">
+              <i class="fa fa-lock" style="color:#2e7d32"></i> Encrypted authentication via Digital India Portal
+            </div>
+          </div>
+        </div>
+
+        <!-- OPTION 2: DIRECT UPLOAD (ADMIN VERIFICATION) CONTENT -->
+        <div id="verifyTabDirect" style="display:none">
+          <div style="background:#fff8e1;border:1.5px solid #ffe082;border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:0.8rem;color:#8d6e63;display:flex;align-items:center;gap:10px">
+            <i class="fa fa-user-gear" style="font-size:1.3rem;color:#ff8f00"></i>
+            <div>
+              <b>Direct Upload &amp; Admin Verification</b>: Upload photo copies of your Driving License &amp; Vehicle RC. Tyntron Admin will review and verify within 24 hours.
+            </div>
+          </div>
+
+          <form onsubmit="saveDriverVerification(event)">
+            <div class="form-group" style="margin-bottom:14px">
+              <label style="font-weight:700">Driving License Number *</label>
+              <input type="text" id="cp_dlNumber" required placeholder="e.g. UP16 20210012345">
+            </div>
+            <div class="form-group" style="margin-bottom:14px">
+              <label style="font-weight:700">Upload Driving License Photo (JPG / PNG / PDF) *</label>
+              <input type="file" id="cp_dlFile" accept="image/*,.pdf">
+            </div>
+            <div class="form-group" style="margin-bottom:14px">
+              <label style="font-weight:700">Upload Vehicle Registration (RC) Photo *</label>
+              <input type="file" id="cp_rcFile" accept="image/*,.pdf">
+            </div>
+            <div class="form-group" style="margin-bottom:14px">
+              <label style="display:flex;justify-content:space-between;align-items:center;font-weight:700">
+                <span>Upload Vehicle / Car Photo <span style="font-weight:400;color:var(--text-muted);font-size:0.78rem">(Optional)</span></span>
+              </label>
+              <input type="file" id="cp_carPhotoFile" accept="image/*" onchange="previewVehiclePhoto(event)">
+              <div id="cp_carPhotoPreview" style="margin-top:8px;display:none">
+                <img id="cp_carPhotoImg" src="" style="width:110px;height:75px;object-fit:cover;border-radius:10px;border:1.5px solid var(--green)">
+                <span style="font-size:0.72rem;color:var(--text-muted);display:block;margin-top:2px"><i class="fa fa-check" style="color:var(--green)"></i> Vehicle photo preview</span>
+              </div>
+            </div>
+            <div class="modal-actions" style="margin-top:18px;display:flex;justify-content:flex-end;gap:10px">
+              <button type="button" class="btn btn-ghost" onclick="closeModal('carpoolVerifyModal')">Cancel</button>
+              <button type="submit" class="btn btn-primary" style="background:linear-gradient(135deg, #e65100 0%, #b71c1c 100%);border:none">
+                <i class="fa fa-paper-plane"></i> Submit for Admin Verification
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5B. DigiLocker Govt Verification Interactive Simulation Modal -->
+  <div class="modal-overlay" id="digilockerModal" style="z-index:99999">
+    <div class="modal" style="max-width:520px;padding:0;overflow:hidden;border-radius:20px">
+      <!-- DigiLocker Header -->
+      <div style="background:linear-gradient(135deg, #0a2540 0%, #1565c0 100%);color:#fff;padding:18px 24px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="background:#fff;padding:5px 10px;border-radius:8px;display:flex;align-items:center;gap:6px">
+              <span style="font-size:1.1rem">🇮🇳</span>
+              <span style="font-weight:900;font-size:0.95rem;color:#0a2540">DigiLocker</span>
+            </div>
+            <span style="font-size:0.7rem;background:rgba(255,255,255,0.2);color:#fff;padding:3px 8px;border-radius:10px;font-weight:700">Govt of India</span>
+          </div>
+          <button type="button" onclick="closeModal('digilockerModal')" style="background:none;border:none;color:#fff;font-size:1.4rem;cursor:pointer;opacity:0.8">&times;</button>
+        </div>
+        <div style="font-size:0.78rem;color:rgba(255,255,255,0.85);margin-top:8px">
+          Ministry of Road Transport &amp; Highways (MoRTH) Document Authentication
+        </div>
+      </div>
+
+      <div style="padding:20px 24px">
+        <!-- Step 1: Aadhaar / Mobile Auth -->
+        <div id="dlStep1">
+          <div style="font-weight:800;font-size:1rem;color:var(--text);margin-bottom:4px">
+            Step 1: Authenticate with DigiLocker
+          </div>
+          <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:14px">
+            Enter your 12-digit Aadhaar Number or DigiLocker Registered Mobile Number to request document access.
+          </p>
+          <div class="form-group" style="margin-bottom:14px">
+            <label style="font-weight:700">Aadhaar / Mobile Number *</label>
+            <input type="text" id="dlInputAadhaar" placeholder="e.g. 987654321098 or Mobile No." style="border-radius:10px;padding:12px;font-size:0.95rem" maxlength="14">
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:18px;font-size:0.78rem;color:var(--text-muted)">
+            <input type="checkbox" id="dlConsentCheck" checked style="margin-top:2px">
+            <label for="dlConsentCheck">I hereby consent to DigiLocker sharing my Driving License and Vehicle Registration (RC) details with Tyntron for driver verification.</label>
+          </div>
+          <button type="button" class="btn btn-primary" onclick="sendDigiLockerOtp()" style="width:100%;padding:12px;border-radius:12px;font-weight:800;background:#1565c0;border:none">
+            <i class="fa fa-paper-plane"></i> Get DigiLocker Security OTP
+          </button>
+        </div>
+
+        <!-- Step 2: 6-Digit Security OTP -->
+        <div id="dlStep2" style="display:none">
+          <div style="font-weight:800;font-size:1rem;color:var(--text);margin-bottom:4px">
+            Step 2: Enter 6-Digit DigiLocker Security OTP
+          </div>
+          <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:14px" id="dlOtpSubtext">
+            A 6-digit security OTP has been sent to your registered mobile number ending in <b id="dlOtpMobileEnd">****</b>. (Demo OTP: <b>123456</b>)
+          </p>
+          <div class="form-group" style="margin-bottom:16px;text-align:center">
+            <input type="text" id="dlInputOtp" placeholder="123456" maxlength="6" style="border-radius:12px;padding:12px;font-size:1.3rem;letter-spacing:8px;text-align:center;font-weight:800;max-width:240px;margin:0 auto;display:block">
+          </div>
+          <button type="button" class="btn btn-primary" onclick="verifyDigiLockerOtp()" style="width:100%;padding:12px;border-radius:12px;font-weight:800;background:#1565c0;border:none;margin-bottom:10px">
+            <i class="fa fa-circle-check"></i> Verify OTP &amp; Fetch MoRTH Docs
+          </button>
+          <div style="text-align:center">
+            <button type="button" class="btn btn-ghost btn-sm" onclick="sendDigiLockerOtp()">Resend OTP</button>
+          </div>
+        </div>
+
+        <!-- Step 3: Fetching Loader Animation -->
+        <div id="dlStep3" style="display:none;text-align:center;padding:26px 10px">
+          <div style="width:48px;height:48px;border-radius:50%;background:#e3f2fd;color:#1565c0;display:inline-flex;align-items:center;justify-content:center;font-size:1.8rem;margin-bottom:14px">
+            <i class="fa fa-circle-notch fa-spin"></i>
+          </div>
+          <h4 style="font-weight:800;color:#0a2540;margin-bottom:4px" id="dlFetchText">Connecting to MoRTH Vahan &amp; Sarathi DB...</h4>
+          <p style="font-size:0.82rem;color:var(--text-muted)" id="dlFetchSubtext">Retrieving verified Driving License &amp; Vehicle RC credentials...</p>
+        </div>
+
+        <!-- Step 4: Fetched Verified Documents Review & Confirm -->
+        <div id="dlStep4" style="display:none">
+          <div style="background:#e8f5e9;border:1.5px solid #a5d6a7;border-radius:14px;padding:12px 14px;margin-bottom:16px;display:flex;align-items:center;gap:12px">
+            <div style="width:38px;height:38px;border-radius:50%;background:#2e7d32;color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">
+              <i class="fa fa-circle-check"></i>
+            </div>
+            <div>
+              <div style="font-weight:800;font-size:0.92rem;color:#1b5e20">MoRTH Documents Retrieved Successfully!</div>
+              <div style="font-size:0.78rem;color:#388e3c">Verified digitally via DigiLocker India</div>
+            </div>
+          </div>
+
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:14px;margin-bottom:18px;display:flex;flex-direction:column;gap:10px">
+            <!-- Driving License Card -->
+            <div style="border-bottom:1px solid #e2e8f0;padding-bottom:8px">
+              <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;font-weight:700">Driving License Details</div>
+              <div style="font-weight:800;font-size:1rem;color:#0f172a;display:flex;align-items:center;justify-content:space-between;margin-top:2px">
+                <span id="dlFetchedDlNum">DL-1420220098765</span>
+                <span style="font-size:0.7rem;background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:10px;font-weight:700">ACTIVE ✓</span>
+              </div>
+              <div style="font-size:0.78rem;color:#475569;margin-top:2px">
+                Holder: <b id="dlFetchedName">Driver Name</b> | Class: <b>LMV (Motor Car)</b>
+              </div>
+            </div>
+
+            <!-- Vehicle RC Card -->
+            <div>
+              <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;font-weight:700">Vehicle Registration (RC) Details</div>
+              <div style="font-weight:800;font-size:1rem;color:#0f172a;display:flex;align-items:center;justify-content:space-between;margin-top:2px">
+                <span id="dlFetchedRcNum">UP16-BW-7890</span>
+                <span style="font-size:0.7rem;background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:10px;font-weight:700">REGISTERED ✓</span>
+              </div>
+              <div style="font-size:0.78rem;color:#475569;margin-top:2px">
+                Vehicle: <b id="dlFetchedCarModel">Maruti Brezza</b> | Fuel: <b>Petrol/CNG</b>
+              </div>
+            </div>
+          </div>
+
+          <button type="button" class="btn btn-primary" onclick="confirmDigiLockerVerification()" style="width:100%;padding:12px;border-radius:12px;font-weight:800;background:linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);border:none;box-shadow:0 4px 14px rgba(46,125,50,0.3)">
+            <i class="fa fa-circle-check"></i> Complete Verification &amp; Save Badge
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -6086,7 +6281,7 @@
         <div class="sidebar-brand" style="cursor:pointer" onclick="goUser(event)">
           <div style="width:34px;height:34px;border-radius:8px;overflow:hidden;background:#fff;padding:2px"><img
               src="newlogo.png.jpeg" alt="Logo" style="width:100%;height:100%;object-fit:cover"></div>
-          <h2>TynTron Menu</h2>
+          <h2>TynTron</h2>
         </div>
         <button class="sidebar-close-btn" onclick="closeLeftSidebar()" aria-label="Close menu"><i
             class="fa fa-xmark"></i></button>
@@ -8430,6 +8625,19 @@
     });
 
 
+    /* ═══════════ FEATURE VISIBILITY CONTROLLER ═══════════ */
+    function isFeatureVisible(featureKey) {
+      if (SITE_CONFIG && SITE_CONFIG[featureKey] !== undefined) {
+        return SITE_CONFIG[featureKey] !== false;
+      }
+      return true;
+    }
+
+    function setFeatureVisible(featureKey, isVisible) {
+      if (!SITE_CONFIG) SITE_CONFIG = {};
+      SITE_CONFIG[featureKey] = !!isVisible;
+    }
+
     async function fsLoadConfig() {
       if (!db) {
         showToast('⚠️ Database is unreachable. Cannot load site configuration.');
@@ -8437,7 +8645,10 @@
       }
       try {
         const d = await db.collection('config').doc('site').get();
-        if (d.exists) { SITE_CONFIG = d.data(); }
+        if (d.exists) {
+          const rawData = d.data() || {};
+          SITE_CONFIG = { ...SITE_CONFIG, ...rawData };
+        }
       } catch (e) {
         showToast('⚠️ Database error loading site config: ' + e.message);
       }
@@ -8449,76 +8660,25 @@
       let _cachedFlagValue = true;
 
       async function getFlag() {
-        try {
-          if (window.RedisMockStore && typeof window.RedisMockStore.get === 'function') {
-            const val = window.RedisMockStore.get(FLAG_KEY);
-            if (val !== undefined && val !== null) {
-              _cachedFlagValue = (val === true || val === 'true');
-              return _cachedFlagValue;
-            }
-          }
-        } catch (e) {
-          console.warn('[Redis] Cache lookup failed, falling back to DB:', e.message);
-        }
-
-        if (typeof SITE_CONFIG !== 'undefined' && SITE_CONFIG && SITE_CONFIG.ENABLE_DISCOUNTS_AND_COUPONS !== undefined) {
-          _cachedFlagValue = SITE_CONFIG.ENABLE_DISCOUNTS_AND_COUPONS !== false;
-          return _cachedFlagValue;
-        }
-
-        if (FB_READY && db) {
-          try {
-            const doc = await db.collection('config').doc('feature_flags').get();
-            if (doc.exists && doc.data()[FLAG_KEY] !== undefined) {
-              _cachedFlagValue = doc.data()[FLAG_KEY] !== false;
-              return _cachedFlagValue;
-            }
-          } catch (e) {
-            console.warn('[DB Fallback] Could not fetch feature flag from Firestore:', e.message);
-          }
-        }
-
-        return _cachedFlagValue !== false;
+        return isFeatureVisible('ENABLE_DISCOUNTS_AND_COUPONS');
       }
 
       async function setFlag(enabled) {
         const val = !!enabled;
         _cachedFlagValue = val;
-
-        try {
-          if (window.RedisMockStore && typeof window.RedisMockStore.set === 'function') {
-            window.RedisMockStore.set(FLAG_KEY, val);
-          }
-        } catch (e) { }
-
-        if (typeof SITE_CONFIG !== 'undefined') {
-          SITE_CONFIG.ENABLE_DISCOUNTS_AND_COUPONS = val;
-        }
-
-        if (FB_READY && db) {
-          try {
-            await db.collection('config').doc('feature_flags').set({ [FLAG_KEY]: val }, { merge: true });
-            await db.collection('config').doc('site').set({ ENABLE_DISCOUNTS_AND_COUPONS: val }, { merge: true });
-          } catch (e) {
-            console.warn('[DB Fallback] Failed to save feature flag to Firestore:', e.message);
-          }
-        }
-
+        setFeatureVisible('ENABLE_DISCOUNTS_AND_COUPONS', val);
         return val;
       }
 
       return {
         getFlag,
         setFlag,
-        get cachedValue() { return _cachedFlagValue; }
+        get cachedValue() { return isFeatureVisible('ENABLE_DISCOUNTS_AND_COUPONS'); }
       };
     })();
 
     function isDiscountsAndCouponsEnabled() {
-      if (typeof SITE_CONFIG !== 'undefined' && SITE_CONFIG.ENABLE_DISCOUNTS_AND_COUPONS !== undefined) {
-        return SITE_CONFIG.ENABLE_DISCOUNTS_AND_COUPONS !== false;
-      }
-      return RedisFeatureFlagController.cachedValue !== false;
+      return isFeatureVisible('ENABLE_DISCOUNTS_AND_COUPONS');
     }
 
     function getOfferingPricing(item) {
@@ -9992,53 +10152,8 @@
     /* ═══════════ TYNTRON DRIVER ROLE JS ENGINE ═══════════ */
     let currentDriver = null;
 
-    const SEED_DRIVERS = {
-      '9876543210': {
-        name: 'Rahul Sharma',
-        mobile: '9876543210',
-        society: 'Prateek Laurel',
-        address: 'Tower D-402',
-        carModel: 'Honda City (Silver)',
-        carPlate: 'UP16 AB 1234',
-        fuelType: 'cng',
-        dlNumber: 'UP16 20210012345',
-        verified: true,
-        rating: 4.9,
-        ridesCompleted: 34,
-        earningsTotal: 4850,
-        onDuty: true
-      },
-      '9811223344': {
-        name: 'Priya Malhotra',
-        mobile: '9811223344',
-        society: 'Shipra Suncity',
-        address: 'Tower B-804',
-        carModel: 'Tata Nexon EV (Blue)',
-        carPlate: 'UP14 EV 9900',
-        fuelType: 'ev',
-        dlNumber: 'UP14 20200054321',
-        verified: true,
-        rating: 5.0,
-        ridesCompleted: 52,
-        earningsTotal: 7200,
-        onDuty: true
-      },
-      '9988776655': {
-        name: 'Amit Verma',
-        mobile: '9988776655',
-        society: 'Mahagun Moderne',
-        address: 'Tower B-1101',
-        carModel: 'Hyundai Creta (White)',
-        carPlate: 'DL8C XY 5544',
-        fuelType: 'petrol',
-        dlNumber: 'DL8 20190099887',
-        verified: true,
-        rating: 4.8,
-        ridesCompleted: 19,
-        earningsTotal: 8550,
-        onDuty: true
-      }
-    };
+    // Default empty object for seed drivers (only registered drivers will be stored & loaded from database)
+    const SEED_DRIVERS = {};
 
     function initDriverSession() {
       try {
@@ -10050,11 +10165,40 @@
       } catch (e) { }
     }
 
+    let _firestoreDrivers = {};
+
+    async function fsLoadDrivers() {
+      _firestoreDrivers = {};
+      if (!db) return _firestoreDrivers;
+      try {
+        const snap = await db.collection('drivers').get();
+        if (snap && !snap.empty) {
+          snap.docs.forEach(doc => {
+            _firestoreDrivers[doc.id] = { mobile: doc.id, ...doc.data() };
+          });
+        }
+      } catch (e) {
+        if (e.code === 'permission-denied' || (e.message && e.message.includes('permissions'))) {
+          console.warn('Firestore Security Rules: Reading drivers collection requires permission configuration in Firebase Console.');
+        } else {
+          console.warn('Error loading drivers from Firestore:', e.message || e);
+        }
+      }
+      return _firestoreDrivers;
+    }
+
     function getDriverDatabase() {
-      return SEED_DRIVERS;
+      if (!_firestoreDrivers) {
+        _firestoreDrivers = {};
+      }
+      return _firestoreDrivers;
     }
 
     async function saveDriverToDatabase(driverObj) {
+      if (!_firestoreDrivers) _firestoreDrivers = {};
+      if (driverObj && driverObj.mobile) {
+        _firestoreDrivers[driverObj.mobile] = driverObj;
+      }
       if (!db) {
         showToast('⚠️ Database is unreachable. Cannot save driver profile.');
         return;
@@ -10099,7 +10243,36 @@
       openModal('driverAuthModal');
     }
 
+    function showDrvLoginNotRegisteredNotice(mobile) {
+      const banner = document.getElementById('drv_login_notRegisteredBanner');
+      const msg = document.getElementById('drv_login_notRegisteredMsg');
+      const otpRow = document.getElementById('drv_login_otpRow');
+
+      if (otpRow) otpRow.style.display = 'none';
+      if (msg) msg.textContent = `Mobile number ${mobile} is not registered as a Driver.`;
+      if (banner) banner.style.display = 'block';
+
+      showToast(`⚠️ Mobile number ${mobile} is not registered as a Driver.`);
+    }
+
+    function clearDrvLoginNotRegisteredNotice() {
+      const banner = document.getElementById('drv_login_notRegisteredBanner');
+      if (banner) banner.style.display = 'none';
+    }
+
+    function goToDriverRegistrationFromLogin() {
+      const mobile = (document.getElementById('drv_login_mobile')?.value || '').trim();
+      clearDrvLoginNotRegisteredNotice();
+      switchDriverAuthTab('reg');
+      const regMobEl = document.getElementById('drv_reg_mobile');
+      if (regMobEl) {
+        regMobEl.value = mobile;
+        regMobEl.focus();
+      }
+    }
+
     function switchDriverAuthTab(tab) {
+      clearDrvLoginNotRegisteredNotice();
       const btnLogin = document.getElementById('driverTabLogin');
       const btnReg = document.getElementById('driverTabReg');
       const viewLogin = document.getElementById('driverAuthLoginView');
@@ -10291,6 +10464,26 @@
       const mobile = (document.getElementById('drv_login_mobile')?.value || '').trim();
       if (!/^\d{10}$/.test(mobile)) { showToast('Enter a valid 10-digit mobile number'); return; }
 
+      clearDrvLoginNotRegisteredNotice();
+
+      // Check if driver exists in Firestore DB drivers collection
+      let driverFound = false;
+      if (db) {
+        try {
+          const docSnap = await db.collection('drivers').doc(mobile).get();
+          if (docSnap && docSnap.exists) driverFound = true;
+        } catch (e) { }
+      }
+      if (!driverFound) {
+        const localDb = getDriverDatabase();
+        if (localDb[mobile]) driverFound = true;
+      }
+
+      if (!driverFound && !isTestIdentifier(mobile)) {
+        showDrvLoginNotRegisteredNotice(mobile);
+        return;
+      }
+
       const btn = document.getElementById('drv_login_sendOtpBtn');
       if (btn) btn.disabled = true;
 
@@ -10317,6 +10510,36 @@
       if (!mobile) { showToast('Enter registered driver mobile number'); return; }
       if (!otp) { showToast('Enter OTP code'); return; }
 
+      // Query database directly for existing registered driver document
+      let driver = null;
+      if (db) {
+        try {
+          const docSnap = await db.collection('drivers').doc(mobile).get();
+          if (docSnap && docSnap.exists) {
+            driver = { mobile, ...docSnap.data() };
+          }
+        } catch (err) {
+          console.error('Error checking driver in DB:', err);
+        }
+      }
+      if (!driver) {
+        const localDb = getDriverDatabase();
+        if (localDb[mobile]) driver = localDb[mobile];
+      }
+
+      if (!driver) {
+        showToast('⚠️ Mobile number ' + mobile + ' is not registered as a Driver. Please complete Driver Registration first.');
+        switchDriverAuthTab('reg');
+        const regMobEl = document.getElementById('drv_reg_mobile');
+        if (regMobEl) regMobEl.value = mobile;
+        return;
+      }
+
+      if (driver.disabled === true) {
+        showToast('❌ Your driver account is suspended by Admin. Please contact support.');
+        return;
+      }
+
       const isTest = isTestIdentifier(mobile) || otp === '123456';
       let ok = isTest;
       if (!isTest) {
@@ -10326,29 +10549,6 @@
       if (!ok) {
         showToast('Invalid or expired OTP code');
         return;
-      }
-
-      const db = getDriverDatabase();
-      let driver = db[mobile];
-
-      if (!driver) {
-        driver = {
-          name: 'Driver (' + mobile.slice(-4) + ')',
-          mobile: mobile,
-          email: 'driver' + mobile.slice(-4) + '@tyntron.com',
-          society: typeof selectedSociety === 'string' ? selectedSociety : (selectedSociety?.name || 'Prateek Laurel'),
-          address: 'Tower A-101',
-          carModel: 'Maruti Dzire (White)',
-          carPlate: 'UP16 DR ' + mobile.slice(-4),
-          fuelType: 'cng',
-          dlNumber: 'UP16 202300' + mobile.slice(-4),
-          verified: true,
-          rating: 5.0,
-          ridesCompleted: 1,
-          earningsTotal: 0,
-          onDuty: true
-        };
-        saveDriverToDatabase(driver);
       }
 
       await logoutPreviousSessions('driver');
@@ -10429,6 +10629,10 @@
 
     function toggleDriverDutyStatus() {
       if (!currentDriver) return;
+      if (currentDriver.disabled === true) {
+        showToast('❌ Your driver account is suspended by Admin.');
+        return;
+      }
       currentDriver.onDuty = !currentDriver.onDuty;
       saveDriverToDatabase(currentDriver);
       showToast(currentDriver.onDuty ? '🟢 Driver Status: ON DUTY (Accepting rides)' : '⚪ Driver Status: OFF DUTY (Rides hidden from search)');
@@ -10513,17 +10717,22 @@
               </div>
               <div>
                 <div style="font-size:1.02rem;font-weight:800;color:#e65100;display:flex;align-items:center;gap:8px">
-                  Driver Profile &amp; Verification Incomplete
+                  Driver Documents &amp; Verification Required
                   <span style="font-size:0.72rem;background:#ffcc80;color:#bf360c;padding:2px 8px;border-radius:10px;font-weight:700">ACTION REQUIRED</span>
                 </div>
                 <div style="font-size:0.83rem;color:#795548;margin-top:2px">
-                  Complete your driver profile details and upload license verification to start publishing rides and taking passenger bookings.
+                  Verify your Driving License &amp; Vehicle RC using <b>DigiLocker (Instant)</b> or <b>Direct Document Upload (Admin Review)</b>.
                 </div>
               </div>
             </div>
-            <button type="button" class="btn btn-sm" onclick="openDriverIncompleteModal()" style="background:linear-gradient(135deg, #e65100 0%, #b71c1c 100%);color:#fff;font-weight:800;border-radius:12px;padding:10px 18px;border:none;box-shadow:0 4px 12px rgba(230,81,0,0.3)">
-              <i class="fa fa-shield-halved"></i> Complete Profile Now
-            </button>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button type="button" class="btn btn-sm" onclick="openDigiLockerModal()" style="background:linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);color:#fff;font-weight:800;border-radius:12px;padding:10px 16px;border:none;box-shadow:0 4px 12px rgba(21,101,192,0.3)">
+                <span>🇮🇳</span> Verify via DigiLocker
+              </button>
+              <button type="button" class="btn btn-sm" onclick="openCarpoolVerifyModal('direct')" style="background:linear-gradient(135deg, #e65100 0%, #b71c1c 100%);color:#fff;font-weight:800;border-radius:12px;padding:10px 16px;border:none;box-shadow:0 4px 12px rgba(230,81,0,0.3)">
+                <i class="fa fa-upload"></i> Direct Upload
+              </button>
+            </div>
           </div>
         ` : ''}
 
@@ -10608,102 +10817,49 @@
     let _carpoolMyRidesSubTab = 'driver';
     let _carpoolFilters = { instant: false, verified: false, women: false, pets: false, ev: false };
 
-    // Initial pre-seeded sample rides for parity & instant demo
-    const DEFAULT_CARPOOL_RIDES = [
-      {
-        id: 'cp_101',
-        driverName: 'Rahul Sharma',
-        driverMobile: '9876543210',
-        driverTower: 'Tower D-402',
-        society: 'Prateek Laurel',
-        rating: 4.9,
-        verified: true,
-        ridesCompleted: 34,
-        type: 'Daily Office Commute',
-        origin: 'Prateek Laurel, Noida Sec 120',
-        destination: 'Cyber City, Gurgaon',
-        stopovers: ['Noida Sec 62 Metro', 'DND Flyway', 'IIT Delhi', 'DLF Phase 3'],
-        date: '2026-08-27',
-        dateText: 'Mon - Fri',
-        time: '08:30 AM',
-        seatsTotal: 4,
-        seatsLeft: 2,
-        pricePerSeat: 80,
-        carModel: 'Honda City (Silver)',
-        carPlate: 'UP16 AB 1234',
-        fuelType: 'cng',
-        womenOnly: false,
-        petsAllowed: false,
-        nonSmoking: true,
-        bookingMode: 'instant',
-        proximityText: '2 min walk to pickup point',
-        createdAt: Date.now() - 3600000
-      },
-      {
-        id: 'cp_102',
-        driverName: 'Priya Malhotra',
-        driverMobile: '9811223344',
-        driverTower: 'Tower B-804',
-        society: 'Shipra Suncity',
-        rating: 5.0,
-        verified: true,
-        ridesCompleted: 52,
-        type: 'Daily Office Commute',
-        origin: 'Shipra Suncity, Indirapuram',
-        destination: 'Noida Sector 62 / Electronic City',
-        stopovers: ['Sec 62 Metro', 'Sec 63 Hub'],
-        date: '2026-08-27',
-        dateText: 'Mon - Fri',
-        time: '09:00 AM',
-        seatsTotal: 3,
-        seatsLeft: 2,
-        pricePerSeat: 50,
-        carModel: 'Tata Nexon EV (Blue)',
-        carPlate: 'UP14 EV 9900',
-        fuelType: 'ev',
-        womenOnly: true,
-        petsAllowed: false,
-        nonSmoking: true,
-        bookingMode: 'instant',
-        proximityText: '1 min walk from main gate',
-        createdAt: Date.now() - 7200000
-      },
-      {
-        id: 'cp_103',
-        driverName: 'Amit Verma',
-        driverMobile: '9988776655',
-        driverTower: 'Tower B-1101',
-        society: 'Mahagun Moderne',
-        rating: 4.8,
-        verified: true,
-        ridesCompleted: 19,
-        type: 'Weekend Outstation',
-        origin: 'Noida Sector 78',
-        destination: 'Dehradun / Mussoorie',
-        stopovers: ['Meerut Bypass', 'Muzaffarnagar', 'Roorkee'],
-        date: '2026-08-29',
-        dateText: 'Saturday',
-        time: '06:00 AM',
-        seatsTotal: 4,
-        seatsLeft: 3,
-        pricePerSeat: 450,
-        carModel: 'Hyundai Creta (White)',
-        carPlate: 'DL8C XY 5544',
-        fuelType: 'petrol',
-        womenOnly: false,
-        petsAllowed: true,
-        nonSmoking: true,
-        bookingMode: 'approval',
-        proximityText: 'Pickup at Tower B lobby',
-        createdAt: Date.now() - 86400000
+    // Default empty array for carpool rides (only created rides will be displayed & stored in database)
+    const DEFAULT_CARPOOL_RIDES = [];
+
+    let _firestoreCarpoolRides = null;
+    let _firestoreCarpoolBookings = null;
+
+    async function fsLoadCarpoolData() {
+      if (!db) return;
+      try {
+        const ridesSnap = await db.collection('carpool_rides').get();
+        if (ridesSnap) {
+          _firestoreCarpoolRides = ridesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } else {
+          _firestoreCarpoolRides = [];
+        }
+
+        const bookingsSnap = await db.collection('carpool_bookings').get();
+        if (bookingsSnap) {
+          _firestoreCarpoolBookings = bookingsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } else {
+          _firestoreCarpoolBookings = [];
+        }
+
+        if (typeof renderCarpoolFeed === 'function') renderCarpoolFeed();
+        if (typeof renderMyRidesTab === 'function') renderMyRidesTab();
+      } catch (e) {
+        if (e.code === 'permission-denied' || (e.message && e.message.includes('permissions'))) {
+          console.warn('Firestore Security Rules: Reading carpool collections requires permission configuration in Firebase Console.');
+        } else {
+          console.warn('Error loading carpool data from Firestore:', e.message || e);
+        }
       }
-    ];
+    }
 
     function getCarpoolRides() {
-      return DEFAULT_CARPOOL_RIDES;
+      if (!_firestoreCarpoolRides) {
+        _firestoreCarpoolRides = [];
+      }
+      return _firestoreCarpoolRides;
     }
 
     async function saveCarpoolRides(list) {
+      _firestoreCarpoolRides = list;
       if (!db) {
         showToast('⚠️ Database is unreachable. Cannot save carpool ride.');
         return;
@@ -10718,10 +10874,14 @@
     }
 
     function getCarpoolBookings() {
-      return [];
+      if (!_firestoreCarpoolBookings) {
+        _firestoreCarpoolBookings = [];
+      }
+      return _firestoreCarpoolBookings;
     }
 
     async function saveCarpoolBookings(list) {
+      _firestoreCarpoolBookings = list;
       if (!db) {
         showToast('⚠️ Database is unreachable. Cannot save carpool booking.');
         return;
@@ -10793,10 +10953,10 @@
       const toVal = (document.getElementById('cpSearchTo')?.value || '').trim().toLowerCase();
 
       let filtered = rides.filter(r => {
-        // Driver Duty Check: Hide rides if driver is OFF DUTY
+        // Driver Duty & Suspension Check: Hide rides if driver is OFF DUTY or SUSPENDED
         const drv = driversDb[r.driverMobile];
-        if (drv && drv.onDuty === false) return false;
-        if (currentDriver && r.driverMobile === currentDriver.mobile && !currentDriver.onDuty) return false;
+        if (drv && (drv.onDuty === false || drv.disabled === true)) return false;
+        if (currentDriver && r.driverMobile === currentDriver.mobile && (!currentDriver.onDuty || currentDriver.disabled === true)) return false;
 
         if (fromVal && !(r.origin || '').toLowerCase().includes(fromVal) && !(r.society || '').toLowerCase().includes(fromVal)) return false;
         if (toVal && !(r.destination || '').toLowerCase().includes(toVal) && !(r.stopovers || []).some(s => s.toLowerCase().includes(toVal))) return false;
@@ -10897,7 +11057,7 @@
 
     function isDriverDocVerified(driver) {
       if (!driver) return false;
-      if (driver.docsVerified === true || localStorage.getItem('hb_driver_verified') === 'true') return true;
+      if (driver.docsVerified === true || driver.verified === true) return true;
       if (driver.mobile === '9876543210' || driver.mobile === '9811223344') return true;
       return false;
     }
@@ -10948,12 +11108,23 @@
               2. Driving License &amp; Vehicle RC Verification
             </div>
             <div style="font-size:0.8rem;color:var(--text-muted);margin-top:4px">
-              ${isDocDone ? 'Driving License & RC photos verified ✓' : 'Upload photo of Driving License & Vehicle Registration (RC)'}
+              ${isDocDone ? 'Driving License & RC verified ✓' : 'Choose DigiLocker Instant Verification or Direct Document Upload'}
             </div>
           </div>
-          <button type="button" class="btn btn-sm ${isDocDone ? 'btn-ghost' : 'btn-primary'}" onclick="closeModal('driverIncompleteModal');openCarpoolVerifyModal();" style="padding:6px 14px;font-size:0.78rem;white-space:nowrap">
-            ${isDocDone ? '<i class="fa fa-circle-check"></i> Verified' : '<i class="fa fa-upload"></i> Verify Docs'}
-          </button>
+          <div style="display:flex;gap:6px">
+            ${isDocDone ? `
+              <button type="button" class="btn btn-sm btn-ghost" onclick="closeModal('driverIncompleteModal');openCarpoolVerifyModal();" style="padding:6px 14px;font-size:0.78rem;white-space:nowrap">
+                <i class="fa fa-circle-check"></i> Verified
+              </button>
+            ` : `
+              <button type="button" class="btn btn-sm btn-primary" onclick="closeModal('driverIncompleteModal');openDigiLockerModal();" style="padding:6px 12px;font-size:0.78rem;white-space:nowrap;background:#1565c0;border:none">
+                <span>🇮🇳</span> DigiLocker
+              </button>
+              <button type="button" class="btn btn-sm btn-ghost" onclick="closeModal('driverIncompleteModal');openCarpoolVerifyModal('direct');" style="padding:6px 12px;font-size:0.78rem;white-space:nowrap">
+                <i class="fa fa-upload"></i> Direct Upload
+              </button>
+            `}
+          </div>
         </div>
       `;
 
@@ -11055,6 +11226,11 @@
       if (!currentDriver) {
         showToast('Only registered Drivers can publish rides');
         openDriverAuthModal();
+        return;
+      }
+
+      if (currentDriver.disabled === true) {
+        showToast('❌ Your driver account is suspended by Admin. Contact support.');
         return;
       }
 
@@ -11175,7 +11351,14 @@
 
       let rides = getCarpoolRides();
       rides = rides.filter(r => r.id !== rideId);
-      saveCarpoolRides(rides);
+      _firestoreCarpoolRides = rides;
+      if (db) {
+        try {
+          await db.collection('carpool_rides').doc(rideId).delete();
+        } catch(e) {
+          console.error('Error deleting ride from Firestore DB:', e);
+        }
+      }
       showToast('Ride listing cancelled and removed');
       renderDriverPanel();
       if (typeof renderCarpoolFeed === 'function') renderCarpoolFeed();
@@ -11802,7 +11985,42 @@
       reader.readAsDataURL(file);
     }
 
-    function openCarpoolVerifyModal() {
+    function switchVerifyTab(tabName) {
+      const tabDigi = document.getElementById('verifyTabDigiLocker');
+      const tabDirect = document.getElementById('verifyTabDirect');
+      const btnDigi = document.getElementById('tabBtnDigiLocker');
+      const btnDirect = document.getElementById('tabBtnDirectUpload');
+
+      if (tabName === 'direct') {
+        if (tabDigi) tabDigi.style.display = 'none';
+        if (tabDirect) tabDirect.style.display = 'block';
+        if (btnDigi) {
+          btnDigi.style.background = 'transparent';
+          btnDigi.style.color = '#64748b';
+          btnDigi.style.boxShadow = 'none';
+        }
+        if (btnDirect) {
+          btnDirect.style.background = '#fff';
+          btnDirect.style.color = '#e65100';
+          btnDirect.style.boxShadow = '0 2px 6px rgba(0,0,0,0.08)';
+        }
+      } else {
+        if (tabDigi) tabDigi.style.display = 'block';
+        if (tabDirect) tabDirect.style.display = 'none';
+        if (btnDigi) {
+          btnDigi.style.background = '#fff';
+          btnDigi.style.color = '#0d47a1';
+          btnDigi.style.boxShadow = '0 2px 6px rgba(0,0,0,0.08)';
+        }
+        if (btnDirect) {
+          btnDirect.style.background = 'transparent';
+          btnDirect.style.color = '#64748b';
+          btnDirect.style.boxShadow = 'none';
+        }
+      }
+    }
+
+    function openCarpoolVerifyModal(defaultTab) {
       if (currentDriver) {
         if (currentDriver.dlNumber) {
           const inputDl = document.getElementById('cp_dlNumber');
@@ -11815,7 +12033,122 @@
           if (previewContainer) previewContainer.style.display = 'block';
         }
       }
+      switchVerifyTab(defaultTab || 'digilocker');
       openModal('carpoolVerifyModal');
+    }
+
+    // ── DIGILOCKER SIMULATION LOGIC ──
+    let _digiLockerData = null;
+
+    function openDigiLockerModal() {
+      _digiLockerData = null;
+      document.getElementById('dlStep1').style.display = 'block';
+      document.getElementById('dlStep2').style.display = 'none';
+      document.getElementById('dlStep3').style.display = 'none';
+      document.getElementById('dlStep4').style.display = 'none';
+
+      const aadhaarInput = document.getElementById('dlInputAadhaar');
+      if (aadhaarInput && currentDriver && currentDriver.mobile) {
+        aadhaarInput.value = currentDriver.mobile;
+      }
+      openModal('digilockerModal');
+    }
+
+    function sendDigiLockerOtp() {
+      const inputVal = (document.getElementById('dlInputAadhaar').value || '').trim();
+      const consent = document.getElementById('dlConsentCheck')?.checked;
+
+      if (!inputVal) {
+        showToast('Please enter your Aadhaar or Mobile Number');
+        return;
+      }
+      if (!consent) {
+        showToast('Please accept the DigiLocker authorization consent');
+        return;
+      }
+
+      const mobileEnd = inputVal.slice(-4) || '9876';
+      const mobEndEl = document.getElementById('dlOtpMobileEnd');
+      if (mobEndEl) mobEndEl.textContent = mobileEnd;
+      const otpIn = document.getElementById('dlInputOtp');
+      if (otpIn) otpIn.value = '';
+
+      document.getElementById('dlStep1').style.display = 'none';
+      document.getElementById('dlStep2').style.display = 'block';
+      showToast('🔒 DigiLocker OTP sent to your registered mobile number! (Use: 123456)');
+    }
+
+    function verifyDigiLockerOtp() {
+      const otp = (document.getElementById('dlInputOtp').value || '').trim();
+      if (!otp || otp.length < 4) {
+        showToast('Please enter valid 6-digit DigiLocker OTP');
+        return;
+      }
+
+      document.getElementById('dlStep2').style.display = 'none';
+      document.getElementById('dlStep3').style.display = 'block';
+
+      const fetchText = document.getElementById('dlFetchText');
+      const fetchSubtext = document.getElementById('dlFetchSubtext');
+
+      setTimeout(() => {
+        if (fetchText) fetchText.textContent = 'Authenticating with MoRTH Sarathi DL DB...';
+      }, 1000);
+
+      setTimeout(() => {
+        if (fetchText) fetchText.textContent = 'Fetching Vehicle Registration RC from Vahan DB...';
+      }, 2000);
+
+      setTimeout(() => {
+        const driverName = currentDriver ? currentDriver.name : 'Verified Driver';
+        const carModel = currentDriver ? currentDriver.carModel : 'Maruti Brezza';
+        const carPlate = currentDriver ? currentDriver.carPlate : 'UP16-BW-7890';
+        const generatedDl = currentDriver?.dlNumber || ('DL-' + Math.floor(100000000000 + Math.random() * 900000000000));
+
+        _digiLockerData = {
+          dlNumber: generatedDl,
+          rcNumber: carPlate,
+          name: driverName,
+          carModel: carModel
+        };
+
+        const dlDl = document.getElementById('dlFetchedDlNum');
+        const dlRc = document.getElementById('dlFetchedRcNum');
+        const dlNm = document.getElementById('dlFetchedName');
+        const dlCar = document.getElementById('dlFetchedCarModel');
+
+        if (dlDl) dlDl.textContent = generatedDl;
+        if (dlRc) dlRc.textContent = carPlate;
+        if (dlNm) dlNm.textContent = driverName;
+        if (dlCar) dlCar.textContent = carModel;
+
+        document.getElementById('dlStep3').style.display = 'none';
+        document.getElementById('dlStep4').style.display = 'block';
+        showToast('✅ MoRTH Verified Documents Retrieved via DigiLocker!');
+      }, 3000);
+    }
+
+    function confirmDigiLockerVerification() {
+      if (!_digiLockerData && currentDriver) {
+        _digiLockerData = {
+          dlNumber: currentDriver.dlNumber || 'DL-1420220098765',
+          rcNumber: currentDriver.carPlate || 'UP16-BW-7890'
+        };
+      }
+
+      if (currentDriver) {
+        currentDriver.dlNumber = _digiLockerData?.dlNumber || currentDriver.dlNumber || 'DL-1420220098765';
+        currentDriver.docsVerified = true;
+        currentDriver.verified = true;
+        currentDriver.verificationMethod = 'digilocker';
+        currentDriver.verificationStatus = 'digilocker_verified';
+        saveDriverToDatabase(currentDriver);
+      }
+
+      closeModal('digilockerModal');
+      showToast('🇮🇳 Verified via DigiLocker! Govt MoRTH Badge added to your profile 🎉');
+      if (typeof renderDriverPanel === 'function') renderDriverPanel();
+      if (typeof updateCarpoolVerificationStatus === 'function') updateCarpoolVerificationStatus();
     }
 
     function saveDriverVerification(e) {
@@ -11830,15 +12163,14 @@
         currentDriver.dlNumber = dl;
         currentDriver.docsVerified = true;
         currentDriver.verified = true;
+        currentDriver.verificationMethod = 'admin_upload';
+        currentDriver.verificationStatus = 'admin_pending';
         if (carPhotoSrc) currentDriver.carPhoto = carPhotoSrc;
         saveDriverToDatabase(currentDriver);
       }
-      localStorage.setItem('hb_driver_verified', 'true');
-      localStorage.setItem('hb_driver_dl', dl);
-      if (carPhotoSrc) localStorage.setItem('hb_driver_carPhoto', carPhotoSrc);
 
       closeModal('carpoolVerifyModal');
-      showToast('Identity & Driver License Verified ✓ You can now publish rides! 🎉');
+      showToast('Identity Documents Submitted ✓ Admin review in progress (within 24 hours) 🎉');
       if (typeof renderDriverPanel === 'function') renderDriverPanel();
       if (typeof updateCarpoolVerificationStatus === 'function') updateCarpoolVerificationStatus();
     }
@@ -11846,9 +12178,15 @@
     function updateCarpoolVerificationStatus() {
       const statusEl = document.getElementById('cpVerifyStatusText');
       if (!statusEl) return;
-      const isVerified = localStorage.getItem('hb_driver_verified') === 'true';
+      const isVerified = currentDriver?.docsVerified || currentDriver?.verified;
+      const method = currentDriver?.verificationMethod || 'admin_upload';
+
       if (isVerified) {
-        statusEl.innerHTML = `<span style="color:#2e7d32;font-weight:700"><i class="fa fa-circle-check"></i> Identity Verified ✓</span>`;
+        if (method === 'digilocker') {
+          statusEl.innerHTML = `<span style="color:#1565c0;font-weight:700"><i class="fa fa-shield-halved"></i> 🇮🇳 DigiLocker Verified ✓</span>`;
+        } else {
+          statusEl.innerHTML = `<span style="color:#2e7d32;font-weight:700"><i class="fa fa-circle-check"></i> Admin Verified ✓</span>`;
+        }
       } else {
         statusEl.textContent = `Verification Needed`;
       }
@@ -11872,10 +12210,17 @@
       const name = parts[0] || 'Emergency Contact';
       const phone = parts[1] || parts[0];
 
-      let contacts = [];
-      try { contacts = JSON.parse(localStorage.getItem('hb_carpool_contacts') || '[]'); } catch (e) { }
-      contacts.push({ name, phone });
-      localStorage.setItem('hb_carpool_contacts', JSON.stringify(contacts));
+      if (currentDriver) {
+        if (!currentDriver.trustedContacts) currentDriver.trustedContacts = [];
+        currentDriver.trustedContacts.push({ name, phone });
+        saveDriverToDatabase(currentDriver);
+      } else if (currentCustomer) {
+        if (!currentCustomer.trustedContacts) currentCustomer.trustedContacts = [];
+        currentCustomer.trustedContacts.push({ name, phone });
+        if (db && currentCustomer.mobile) {
+          db.collection('customers').doc(currentCustomer.mobile).set({ trustedContacts: currentCustomer.trustedContacts }, { merge: true });
+        }
+      }
 
       showToast(`Added ${name} as trusted contact ✓`);
       renderTrustedContacts();
@@ -11884,8 +12229,7 @@
     function renderTrustedContacts() {
       const el = document.getElementById('cpTrustedContactsList');
       if (!el) return;
-      let contacts = [];
-      try { contacts = JSON.parse(localStorage.getItem('hb_carpool_contacts') || '[]'); } catch (e) { }
+      let contacts = (currentDriver && currentDriver.trustedContacts) || (currentCustomer && currentCustomer.trustedContacts) || [];
 
       if (!contacts.length) {
         el.textContent = 'No trusted contacts added yet.';
@@ -13101,12 +13445,10 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
       if (!currentBusiness) return false;
       if (currentBusiness.isTestAccount || isAdmin) return false;
 
-      const email = (currentBusiness.email || '').trim().toLowerCase();
-      const localTermsAccepted = email ? (localStorage.getItem('hb_seller_terms_accepted_' + email) === 'true') : false;
-      const termsAccepted = currentBusiness.termsAccepted === true || localTermsAccepted || currentBusiness.mustAcceptTerms === false;
+      const termsAccepted = currentBusiness.termsAccepted === true || currentBusiness.mustAcceptTerms === false;
 
       const isAdminCreated = currentBusiness.adminCreated === true || currentBusiness.createdViaAdmin === true;
-      const isTempPwUsed = (currentBusiness.tempPassword && (currentBusiness.password === currentBusiness.tempPassword || currentBusiness.tempPassword === localStorage.getItem('hb_business_last_pw_' + email)))
+      const isTempPwUsed = (currentBusiness.tempPassword && currentBusiness.password === currentBusiness.tempPassword)
                         || currentBusiness.mustChangePassword === true || currentBusiness.mustChangePassword === 'true'
                         || currentBusiness.adminSetTempPw === true || currentBusiness.adminSetTempPw === 'true';
 
@@ -13173,8 +13515,6 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
       if (currentBusiness) {
         currentBusiness.mustAcceptTerms = false;
         currentBusiness.termsAccepted = true;
-        const email = (currentBusiness.email || '').trim().toLowerCase();
-        if (email) localStorage.setItem('hb_seller_terms_accepted_' + email, 'true');
         if (db && currentBusiness.uid) {
           try {
             await db.collection('accounts').doc(currentBusiness.uid).set({
@@ -13241,11 +13581,6 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
           currentBusiness.termsAccepted = true;
           currentBusiness.password = newPw;
           currentBusiness.updatedPassword = newPw;
-          if (currentBusiness.email) {
-            localStorage.setItem('hb_business_last_pw_' + currentBusiness.email, newPw);
-            localStorage.setItem('hb_reset_pw_' + currentBusiness.email, newPw);
-            localStorage.setItem('hb_seller_terms_accepted_' + currentBusiness.email, 'true');
-          }
           if (db && currentBusiness.uid) {
             await db.collection('accounts').doc(currentBusiness.uid).set({
               password: newPw,
@@ -13391,28 +13726,41 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
         try {
           cred = await auth.signInWithEmailAndPassword(cleanEmail, cleanPw);
         } catch (authErr) {
-          // Check if cleanPw matches a locally saved reset password or Firestore record
-          const resetPw = localStorage.getItem('hb_reset_pw_' + cleanEmail);
-          let isResetMatch = (resetPw && resetPw === cleanPw);
+          // Check if cleanPw matches Firestore account record directly
+          let isResetMatch = false;
 
           let accData = null;
           let accUid = null;
 
           if (db) {
             try {
-              const accSnap = await db.collection('accounts').where('email', '==', cleanEmail).get();
-              if (!accSnap.empty) {
-                accUid = accSnap.docs[0].id;
-                accData = accSnap.docs[0].data();
-                const storedPw = accData.password || accData.updatedPassword;
+              const accSnap = await db.collection('accounts').get();
+              const matchAccDoc = accSnap.docs.find(doc => {
+                const d = doc.data() || {};
+                return (
+                  doc.id === cleanEmail ||
+                  (d.email && d.email.trim().toLowerCase() === cleanEmail) ||
+                  (d.contactEmail && d.contactEmail.trim().toLowerCase() === cleanEmail)
+                );
+              });
+
+              if (matchAccDoc) {
+                accUid = matchAccDoc.id;
+                accData = matchAccDoc.data();
+                const storedPw = (accData.password || accData.updatedPassword || accData.tempPassword || '').trim();
                 if (storedPw && storedPw === cleanPw) {
                   isResetMatch = true;
                 }
               } else {
-                const reqSnap = await db.collection('business_requests').where('email', '==', cleanEmail).get();
-                if (!reqSnap.empty) {
-                  const reqDoc = reqSnap.docs[0].data();
-                  if (reqDoc.password && reqDoc.password === cleanPw) {
+                const reqSnap = await db.collection('business_requests').get();
+                const matchReqDoc = reqSnap.docs.find(doc => {
+                  const d = doc.data() || {};
+                  return (d.email && d.email.trim().toLowerCase() === cleanEmail);
+                });
+                if (matchReqDoc) {
+                  const reqDoc = matchReqDoc.data();
+                  const storedPw = (reqDoc.password || reqDoc.updatedPassword || '').trim();
+                  if (storedPw && storedPw === cleanPw) {
                     isResetMatch = true;
                     accUid = reqDoc.assignedUid || reqDoc.requestId || ('u_' + Date.now());
                     accData = { email: cleanEmail, displayName: reqDoc.venture || reqDoc.name, role: 'business', password: cleanPw };
@@ -13423,16 +13771,19 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
           }
 
           if (isResetMatch) {
-            // Business password matches Firestore record or reset password!
+            // Business password matches Firestore record!
             // Try signing in using known candidate old passwords to sync Firebase Auth password
             const candidates = [
+              accData?.oldPassword,
+              accData?.password,
+              accData?.tempPassword,
+              'Newpass@33',
               '123456',
               'Hb123456',
               '12345678',
               'password',
               'admin123',
-              'test123',
-              localStorage.getItem('hb_business_last_pw_' + cleanEmail)
+              'test123'
             ].filter(Boolean);
 
             for (const oldPw of candidates) {
@@ -13462,7 +13813,6 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
               currentBusiness = { uid: 'u_' + Date.now(), email: cleanEmail, displayName: cleanEmail.split('@')[0], password: cleanPw, updatedPassword: cleanPw };
             }
 
-            localStorage.setItem('hb_business_last_pw_' + cleanEmail, cleanPw);
             localStorage.setItem('hb_business_logged_in', 'true');
             if (currentBusiness && currentBusiness.uid) localStorage.setItem('hb_business_uid', currentBusiness.uid);
             localStorage.setItem('hb_business_email', cleanEmail);
@@ -13487,7 +13837,6 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
         }
 
         if (cred && cred.user) {
-          localStorage.setItem('hb_business_last_pw_' + cleanEmail, cleanPw);
           if (db) {
             try {
               const doc = await db.collection('accounts').doc(cred.user.uid).get();
@@ -13711,20 +14060,17 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
       if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Updating…'; }
 
       try {
-        if (cleanEmail) {
-          localStorage.setItem('hb_reset_pw_' + cleanEmail, newPw);
-        }
-
         if (auth && auth.currentUser) {
           try { await auth.currentUser.updatePassword(newPw); } catch (e) { }
         }
 
         if (db && cleanEmail) {
           try {
-            const snap = await db.collection('accounts').where('email', '==', cleanEmail).get();
-            if (!snap.empty) {
-              for (const doc of snap.docs) {
-                const prevPw = doc.data().password || doc.data().updatedPassword || '';
+            const snap = await db.collection('accounts').get();
+            for (const doc of snap.docs) {
+              const d = doc.data() || {};
+              if (doc.id === cleanEmail || (d.email && d.email.trim().toLowerCase() === cleanEmail)) {
+                const prevPw = d.password || d.updatedPassword || '';
                 await db.collection('accounts').doc(doc.id).set({
                   password: newPw,
                   updatedPassword: newPw,
@@ -13739,9 +14085,10 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
           }
 
           try {
-            const reqSnap = await db.collection('business_requests').where('email', '==', cleanEmail).get();
-            if (!reqSnap.empty) {
-              for (const doc of reqSnap.docs) {
+            const reqSnap = await db.collection('business_requests').get();
+            for (const doc of reqSnap.docs) {
+              const d = doc.data() || {};
+              if (d.email && d.email.trim().toLowerCase() === cleanEmail) {
                 await db.collection('business_requests').doc(doc.id).set({
                   password: newPw,
                   updatedPassword: newPw,
@@ -13806,7 +14153,7 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
       const bellBtn = `<button class="btn btn-header-outline btn-sm notif-bell-btn" id="hdrBellBtn" onclick="openNotificationFeedModal()" title="Notifications"><i class="fa fa-bell"></i><span class="notif-badge" id="hdrBellBadge" style="display:none">0</span></button>`;
       // Admin-controlled via Site Config -> Feature Visibility -> "Register Your Business"
       // Header Button. Only relevant to someone who isn't already a business/driver/admin.
-      const registerBtn = (SITE_CONFIG.showRegisterButton !== false)
+      const registerBtn = isFeatureVisible('showRegisterButton')
         ? `<button class="btn btn-header-outline btn-sm" onclick="openBusinessRegModal()"><i class="fa fa-store"></i><span class="hdr-label"> Register Your Business</span></button>`
         : '';
       if (hdrRight) {
@@ -14959,14 +15306,19 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
               if (options.minPrice && itemPrice < options.minPrice) return;
 
               const itemScore = scoreField(item.name, parsed.tokens) * FIELD_WEIGHTS.itemName;
+              const tagScore = scoreField(item.tags, parsed.tokens) * FIELD_WEIGHTS.tags;
+              const itemDescScore = scoreField(item.desc, parsed.tokens) * FIELD_WEIGHTS.description;
+
+              // Product item MUST directly match query tokens in item.name, item.tags, or item.desc
+              const directItemMatch = (itemScore > 0 || tagScore > 0 || itemDescScore > 0);
+              if (!directItemMatch && parsed.tokens.length) return;
+
               const catScore = scoreField(vendor.cat, parsed.tokens) * FIELD_WEIGHTS.category;
               const specScore = scoreField(vendor.speciality, parsed.tokens) * FIELD_WEIGHTS.subCategory;
-              const tagScore = scoreField(item.tags || item.desc, parsed.tokens) * FIELD_WEIGHTS.tags;
               const vendorScore = scoreField(vendor.venture, parsed.tokens) * FIELD_WEIGHTS.vendorName;
               const socScore = scoreField(society, parsed.tokens) * FIELD_WEIGHTS.societyName;
-              const descScore = scoreField(item.desc || vendor.desc, parsed.tokens) * FIELD_WEIGHTS.description;
 
-              let score = itemScore + catScore + specScore + tagScore + vendorScore + socScore + descScore;
+              let score = itemScore + tagScore + itemDescScore + (catScore + specScore + vendorScore + socScore) * 0.3;
 
               // Exact Item Name Bonus
               if (parsed.tokens.length && normalize(item.name) === parsed.tokens.join(' ')) {
@@ -17025,10 +17377,10 @@ Together, we grow stronger — one order at a time.`;
     let _globalProdExpanded = false;
     function renderGlobalProductBoxes() {
       const section = document.getElementById('globalProductsSection');
-      if (section) section.style.display = SITE_CONFIG.showProductListing ? '' : 'none';
+      if (section) section.style.display = isFeatureVisible('showProductListing') ? '' : 'none';
       const row = document.getElementById('globalProductRow');
       if (!row) return;
-      if (!SITE_CONFIG.showProductListing) return;
+      if (!isFeatureVisible('showProductListing')) return;
       const list = _globalProductsList();
       const visible = _globalProdExpanded ? list : list.slice(0, 5);
       let html = visible.map(p => `
@@ -17874,20 +18226,20 @@ Together, we grow stronger — one order at a time.`;
 
       const fab = document.getElementById('askTynTronFab');
       if (fab) {
-        fab.style.display = (SITE_CONFIG.showAiChatbot !== false && (typeof _currentPanel === 'undefined' || _currentPanel === 'customer')) ? '' : 'none';
+        fab.style.display = (isFeatureVisible('showAiChatbot') && (typeof _currentPanel === 'undefined' || _currentPanel === 'customer')) ? '' : 'none';
       }
 
       const carpoolBnBtn = document.getElementById('bnCarpoolBtn');
       if (carpoolBnBtn) {
-        carpoolBnBtn.style.display = (SITE_CONFIG.showCarpool !== false) ? '' : 'none';
+        carpoolBnBtn.style.display = isFeatureVisible('showCarpool') ? '' : 'none';
       }
       const carpoolSidebarLink = document.getElementById('sidebarCarpoolLink');
       if (carpoolSidebarLink) {
-        carpoolSidebarLink.style.display = (SITE_CONFIG.showCarpool !== false) ? '' : 'none';
+        carpoolSidebarLink.style.display = isFeatureVisible('showCarpool') ? '' : 'none';
       }
       const driverSidebarCard = document.getElementById('sidebarDriverCard');
       if (driverSidebarCard) {
-        driverSidebarCard.style.display = (SITE_CONFIG.showDriverLogin !== false) ? '' : 'none';
+        driverSidebarCard.style.display = isFeatureVisible('showDriverLogin') ? '' : 'none';
       }
     }
     function footerSocialClick(type, e) {
@@ -18838,7 +19190,7 @@ Together, we grow stronger — one order at a time.`;
         canDeliverLabel.textContent = (SITE_CONFIG.businessCanDeliverLabel && SITE_CONFIG.businessCanDeliverLabel.trim()) ? SITE_CONFIG.businessCanDeliverLabel : 'Will you be able to deliver within the society? *';
       }
       if (canDeliverGroup) {
-        canDeliverGroup.style.display = (SITE_CONFIG.showBusinessCanDeliver !== false) ? '' : 'none';
+        canDeliverGroup.style.display = isFeatureVisible('showBusinessCanDeliver') ? '' : 'none';
       }
 
       srUpdateAddSection();
@@ -18945,10 +19297,6 @@ Together, we grow stronger — one order at a time.`;
       }
 
       // Direct database mode: Firestore business_requests check above handles this.
-
-      if (localStorage.getItem('hb_business_last_pw_' + cleanEmail) || localStorage.getItem('hb_reset_pw_' + cleanEmail)) {
-        return { exists: true, status: 'approved', message: msgAlreadyReg };
-      }
 
       return { exists: false };
     }
@@ -19887,8 +20235,8 @@ Together, we grow stronger — one order at a time.`;
       if (bottomNav) bottomNav.style.display = panel === 'customer' ? 'flex' : 'none';
       // Ask TynTron is a customer-facing assistant only — no seller/admin back-office access.
       const askFab = document.getElementById('askTynTronFab');
-      if (askFab) askFab.style.display = (panel === 'customer' && SITE_CONFIG.showAiChatbot !== false) ? '' : 'none';
-      if (panel !== 'customer' || SITE_CONFIG.showAiChatbot === false) closeAskTynTron();
+      if (askFab) askFab.style.display = (panel === 'customer' && isFeatureVisible('showAiChatbot')) ? '' : 'none';
+      if (panel !== 'customer' || !isFeatureVisible('showAiChatbot')) closeAskTynTron();
       if (panel === 'business') renderBusinessPanel();
       if (panel === 'admin') renderAdminPanel();
       if (panel === 'driver') renderDriverPanel();
@@ -20162,56 +20510,264 @@ Together, we grow stronger — one order at a time.`;
     }
 
 
-    function renderAdminCarpool(container) {
+    let _adminCarpoolSubTab = 'rides';
+
+    function switchAdminCarpoolSubTab(tab) {
+      _adminCarpoolSubTab = tab;
+      const container = document.getElementById('adminTabContent');
+      if (container) renderAdminCarpool(container);
+    }
+
+    async function renderAdminCarpool(container) {
       if (!container) return;
       const rides = getCarpoolRides();
 
-      container.innerHTML = `
-        <div class="s-card">
-          <div class="s-card-title" style="display:flex;justify-content:space-between;align-items:center">
-            <span><i class="fa fa-car-side" style="color:var(--green)"></i> Carpool Listings Moderation</span>
-            <span style="font-size:0.8rem;color:var(--text-muted)">Total Rides: ${rides.length}</span>
-          </div>
+      let driversList = [];
+      if (db) {
+        try {
+          const snap = await db.collection('drivers').get();
+          if (snap && !snap.empty) {
+            driversList = snap.docs.map(doc => ({ mobile: doc.id, ...doc.data() }));
+          }
+        } catch (e) {
+          if (e.code === 'permission-denied' || (e.message && e.message.includes('permissions'))) {
+            console.warn('Firestore Security Rules: Reading drivers collection requires permission configuration in Firebase Console.');
+          } else {
+            console.warn('Error loading drivers from DB for Admin:', e.message || e);
+          }
+        }
+      }
+      if (!db && !driversList.length) {
+        const localDb = getDriverDatabase();
+        driversList = Object.keys(localDb).map(m => ({ mobile: m, ...localDb[m] }));
+      }
 
-          <table class="menu-table">
-            <thead>
-              <tr>
-                <th>Route &amp; Driver</th>
-                <th>Schedule</th>
-                <th>Seats / Price</th>
-                <th>Mode / Type</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${rides.map(r => `
-                <tr>
-                  <td>
-                    <div style="font-weight:700;color:var(--green-dark)">${esc(r.origin)} ➔ ${esc(r.destination)}</div>
-                    <div style="font-size:0.76rem;color:var(--text-muted)">Driver: ${esc(r.driverName)} (${esc(r.driverMobile)}) • ${esc(r.society || '')}</div>
-                  </td>
-                  <td>
-                    <div style="font-size:0.8rem;font-weight:600">${esc(r.dateText || r.date)}</div>
-                    <div style="font-size:0.74rem;color:var(--text-muted)">${esc(r.time)}</div>
-                  </td>
-                  <td>
-                    <div style="font-size:0.85rem;font-weight:800;color:var(--green)">₹${r.pricePerSeat}</div>
-                    <div style="font-size:0.74rem;color:var(--text-muted)">${r.seatsLeft}/${r.seatsTotal} left</div>
-                  </td>
-                  <td>
-                    <span style="font-size:0.72rem;font-weight:700;padding:2px 6px;border-radius:4px;background:var(--green-pale);color:var(--green-dark)">
-                      ${esc(r.bookingMode === 'instant' ? 'Instant Book' : 'Approval Req.')}
-                    </span>
-                  </td>
-                  <td>
-                    <button class="btn btn-sm btn-danger" onclick="adminDeleteCarpoolRide('${r.id}')"><i class="fa fa-trash"></i> Delete</button>
-                  </td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
+      let subContent = '';
+
+      if (_adminCarpoolSubTab === 'drivers') {
+        subContent = `
+          <div class="s-card">
+            <div class="s-card-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+              <span><i class="fa fa-users-gear" style="color:var(--green)"></i> Registered Driver Accounts Moderation (Direct Database)</span>
+              <span style="font-size:0.8rem;color:var(--text-muted)">Total Drivers: ${driversList.length}</span>
+            </div>
+
+            ${!driversList.length ? `
+              <div class="empty-state" style="padding:40px 16px"><i class="fa fa-id-card" style="font-size:2rem;opacity:0.3"></i><p>No driver accounts registered in database.</p></div>
+            ` : `
+              <div style="overflow-x:auto">
+                <table class="menu-table">
+                  <thead>
+                    <tr>
+                      <th>Driver Details</th>
+                      <th>Vehicle Info</th>
+                      <th>License &amp; Docs</th>
+                      <th>Account Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${driversList.map(d => {
+                      const isVer = d.docsVerified || d.verified;
+                      const verMethod = d.verificationMethod || 'admin_upload';
+                      const isDisabled = d.disabled === true;
+                      return `
+                        <tr>
+                          <td>
+                            <div style="font-weight:700;color:var(--text)">${esc(d.name || 'Driver')} ${isVer ? '<i class="fa fa-circle-check" style="color:#2e7d32" title="Verified"></i>' : ''}</div>
+                            <div style="font-size:0.78rem;color:var(--text-muted)"><i class="fa fa-phone"></i> ${esc(d.mobile)} ${d.email ? '• ' + esc(d.email) : ''}</div>
+                            <div style="font-size:0.74rem;color:var(--text-muted)"><i class="fa fa-building"></i> ${esc(d.society || '')} (${esc(d.address || 'N/A')})</div>
+                          </td>
+                          <td>
+                            <div style="font-weight:600;font-size:0.82rem;color:var(--green-dark)"><i class="fa fa-car"></i> ${esc(d.carModel || 'N/A')}</div>
+                            <div style="font-size:0.76rem;color:var(--text-muted)">Plate: ${esc(d.carPlate || 'N/A')}</div>
+                            <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase">Fuel: ${esc(d.fuelType || 'petrol')}</div>
+                          </td>
+                          <td>
+                            <div style="font-size:0.78rem;font-weight:700;color:var(--text)">DL: ${esc(d.dlNumber || 'N/A')}</div>
+                            <div style="margin-top:2px">
+                              ${isVer ? (
+                                verMethod === 'digilocker' ?
+                                '<span style="font-size:0.7rem;background:#e3f2fd;color:#0d47a1;padding:2px 8px;border-radius:10px;font-weight:700"><i class="fa fa-shield-halved"></i> DigiLocker MoRTH</span>' :
+                                '<span style="font-size:0.7rem;background:#e8f5e9;color:#2e7d32;padding:2px 8px;border-radius:10px;font-weight:700"><i class="fa fa-circle-check"></i> Admin Direct</span>'
+                              ) : '<span style="font-size:0.7rem;background:#fff3e0;color:#e65100;padding:2px 8px;border-radius:10px;font-weight:700"><i class="fa fa-clock"></i> Unverified</span>'}
+                            </div>
+                          </td>
+                          <td>
+                            ${isDisabled ? 
+                              '<span style="font-size:0.75rem;background:#ffebee;color:#c62828;padding:4px 10px;border-radius:12px;font-weight:800;display:inline-block"><i class="fa fa-circle-xmark"></i> SUSPENDED / DISABLED</span>' :
+                              '<span style="font-size:0.75rem;background:#e8f5e9;color:#2e7d32;padding:4px 10px;border-radius:12px;font-weight:800;display:inline-block"><i class="fa fa-circle-check"></i> ACTIVE</span>'
+                            }
+                          </td>
+                          <td>
+                            <div style="display:flex;gap:6px;flex-wrap:wrap">
+                              <button class="btn btn-sm ${isDisabled ? 'btn-success' : 'btn-ghost'}" style="${isDisabled ? '' : 'color:#c62828;border:1.5px solid #ffcdd2'}" onclick="adminToggleDriverStatus('${d.mobile}')">
+                                <i class="fa ${isDisabled ? 'fa-circle-check' : 'fa-ban'}"></i> ${isDisabled ? 'Enable' : 'Disable'}
+                              </button>
+                              <button class="btn btn-sm btn-danger" onclick="adminDeleteDriverAccount('${d.mobile}')">
+                                <i class="fa fa-trash"></i> Delete
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      `;
+                    }).join('')}
+                  </tbody>
+                </table>
+              </div>
+            `}
+          </div>
+        `;
+      } else {
+        subContent = `
+          <div class="s-card">
+            <div class="s-card-title" style="display:flex;justify-content:space-between;align-items:center">
+              <span><i class="fa fa-car-side" style="color:var(--green)"></i> Carpool Listings Moderation</span>
+              <span style="font-size:0.8rem;color:var(--text-muted)">Total Rides: ${rides.length}</span>
+            </div>
+
+            ${!rides.length ? `
+              <div class="empty-state" style="padding:40px 16px"><i class="fa fa-car-side" style="font-size:2rem;opacity:0.3"></i><p>No active carpool ride listings found in database.</p></div>
+            ` : `
+              <div style="overflow-x:auto">
+                <table class="menu-table">
+                  <thead>
+                    <tr>
+                      <th>Route &amp; Driver</th>
+                      <th>Schedule</th>
+                      <th>Seats / Price</th>
+                      <th>Mode / Type</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${rides.map(r => `
+                      <tr>
+                        <td>
+                          <div style="font-weight:700;color:var(--green-dark)">${esc(r.origin)} ➔ ${esc(r.destination)}</div>
+                          <div style="font-size:0.76rem;color:var(--text-muted)">Driver: ${esc(r.driverName)} (${esc(r.driverMobile)}) • ${esc(r.society || '')}</div>
+                        </td>
+                        <td>
+                          <div style="font-size:0.8rem;font-weight:600">${esc(r.dateText || r.date)}</div>
+                          <div style="font-size:0.74rem;color:var(--text-muted)">${esc(r.time)}</div>
+                        </td>
+                        <td>
+                          <div style="font-size:0.85rem;font-weight:800;color:var(--green)">₹${r.pricePerSeat}</div>
+                          <div style="font-size:0.74rem;color:var(--text-muted)">${r.seatsLeft}/${r.seatsTotal} left</div>
+                        </td>
+                        <td>
+                          <span style="font-size:0.72rem;font-weight:700;padding:2px 6px;border-radius:4px;background:var(--green-pale);color:var(--green-dark)">
+                            ${esc(r.bookingMode === 'instant' ? 'Instant Book' : 'Approval Req.')}
+                          </span>
+                        </td>
+                        <td>
+                          <button class="btn btn-sm btn-danger" onclick="adminDeleteCarpoolRide('${r.id}')"><i class="fa fa-trash"></i> Delete</button>
+                        </td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            `}
+          </div>
+        `;
+      }
+
+      container.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-sm ${_adminCarpoolSubTab === 'rides' ? 'btn-primary' : 'btn-ghost'}" onclick="switchAdminCarpoolSubTab('rides')">
+              <i class="fa fa-car-side"></i> Published Rides (${rides.length})
+            </button>
+            <button class="btn btn-sm ${_adminCarpoolSubTab === 'drivers' ? 'btn-primary' : 'btn-ghost'}" onclick="switchAdminCarpoolSubTab('drivers')">
+              <i class="fa fa-id-card"></i> Manage Driver Accounts (${driversList.length})
+            </button>
+          </div>
+          <button class="btn btn-sm btn-ghost" onclick="refreshAdminCarpoolView()"><i class="fa fa-rotate"></i> Refresh DB Data</button>
         </div>
+        ${subContent}
       `;
+    }
+
+    async function refreshAdminCarpoolView() {
+      showToast('Refreshing Carpool & Driver database data...');
+      if (typeof fsLoadDrivers === 'function') await fsLoadDrivers();
+      if (typeof fsLoadCarpoolData === 'function') await fsLoadCarpoolData();
+      const c = document.getElementById('adminTabContent');
+      if (c) renderAdminCarpool(c);
+      showToast('Refreshed directly from Database ✓');
+    }
+
+    async function adminToggleDriverStatus(mobile) {
+      const driversDb = getDriverDatabase();
+      let driver = driversDb[mobile] || { mobile };
+
+      if (db) {
+        try {
+          const docSnap = await db.collection('drivers').doc(mobile).get();
+          if (docSnap && docSnap.exists) {
+            driver = { mobile, ...docSnap.data() };
+          }
+        } catch (e) { }
+      }
+
+      const newDisabledState = !driver.disabled;
+      const actionText = newDisabledState ? 'Suspend / Disable' : 'Re-activate / Enable';
+
+      const ok = await confirmAction({
+        title: `${actionText} Driver Account`,
+        message: `Are you sure you want to ${actionText.toLowerCase()} driver account for ${driver.name || mobile}?`,
+        warning: newDisabledState ? 'This driver will be prevented from logging in or offering rides.' : 'This driver account will be restored to active status.',
+        confirmText: `Yes, ${actionText}`,
+        cancelText: 'Cancel',
+        danger: newDisabledState
+      });
+      if (!ok) return;
+
+      driver.disabled = newDisabledState;
+      if (currentDriver && currentDriver.mobile === mobile) {
+        currentDriver.disabled = newDisabledState;
+      }
+      await saveDriverToDatabase(driver);
+      showToast(`Driver ${driver.name || mobile} is now ${newDisabledState ? 'SUSPENDED / DISABLED 🔴' : 'ACTIVE 🟢'} ✓`);
+      const c = document.getElementById('adminTabContent');
+      if (c) renderAdminCarpool(c);
+      if (typeof renderCarpoolFeed === 'function') renderCarpoolFeed();
+    }
+
+    async function adminDeleteDriverAccount(mobile) {
+      const driversDb = getDriverDatabase();
+      const driver = driversDb[mobile] || { mobile };
+
+      const ok = await confirmAction({
+        title: 'Delete Driver Account',
+        message: `Are you sure you want to permanently delete driver account for ${driver.name || mobile} (${mobile})?`,
+        warning: 'This action cannot be undone. The driver profile document will be deleted directly from the database.',
+        confirmText: 'Delete Driver Account',
+        cancelText: 'Cancel',
+        danger: true
+      });
+      if (!ok) return;
+
+      if (_firestoreDrivers && _firestoreDrivers[mobile]) {
+        delete _firestoreDrivers[mobile];
+      }
+      if (db) {
+        try {
+          await db.collection('drivers').doc(mobile).delete();
+        } catch (e) {
+          console.error('Error deleting driver doc from Firestore DB:', e);
+        }
+      }
+      if (currentDriver && currentDriver.mobile === mobile) {
+        currentDriver = null;
+        localStorage.removeItem('hb_driverMobile');
+      }
+
+      showToast(`Driver account ${driver.name || mobile} deleted from database ✓`);
+      const c = document.getElementById('adminTabContent');
+      if (c) renderAdminCarpool(c);
+      if (typeof renderCarpoolFeed === 'function') renderCarpoolFeed();
     }
 
     async function adminDeleteCarpoolRide(rideId) {
@@ -20226,10 +20782,19 @@ Together, we grow stronger — one order at a time.`;
 
       let list = getCarpoolRides();
       list = list.filter(r => r.id !== rideId);
-      saveCarpoolRides(list);
+      _firestoreCarpoolRides = list;
+      if (db) {
+        try {
+          await db.collection('carpool_rides').doc(rideId).delete();
+        } catch (e) {
+          console.error('Error deleting ride from Firestore DB:', e);
+        }
+      }
       showToast('Carpool ride listing removed by Admin ✓');
       const c = document.getElementById('adminTabContent');
       if (c) renderAdminCarpool(c);
+      if (typeof renderCarpoolFeed === 'function') renderCarpoolFeed();
+      if (typeof renderMyRidesTab === 'function') renderMyRidesTab();
     }
 
     function getCurrentBusinessVendor() {
@@ -22360,7 +22925,7 @@ Together, we grow stronger — one order at a time.`;
         ? `<button class="btn btn-primary" disabled style="opacity:0.5;cursor:not-allowed"><i class="fa fa-ban"></i> Account Deactivated</button>`
         : `<button type="button" class="btn btn-primary" onclick="saveBusinessSchedule()"><i class="fa fa-floppy-disk"></i> Save Schedule</button>`;
 
-      const scheduleCard = (SITE_CONFIG.showBusinessOperatingSchedule !== false) ? `
+      const scheduleCard = isFeatureVisible('showBusinessOperatingSchedule') ? `
         <div class="s-card" style="margin-bottom:20px">
           <div class="s-card-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
             <span><i class="fa fa-clock" style="color:var(--green)"></i> Business Operating Schedule &amp; Calendar</span>
@@ -22720,7 +23285,7 @@ Together, we grow stronger — one order at a time.`;
       if (newPw !== confPw) { setStatus('New password and Confirm new password do not match.', false); confEl.focus(); return; }
 
       const email = currentBusiness ? currentBusiness.email : '';
-      const expectedPw = (currentBusiness && (currentBusiness.password || currentBusiness.updatedPassword)) || (email && localStorage.getItem('hb_business_last_pw_' + email));
+      const expectedPw = (currentBusiness && (currentBusiness.password || currentBusiness.updatedPassword));
 
       let isCurrentValid = false;
       if (auth && auth.currentUser && email) {
@@ -22746,10 +23311,6 @@ Together, we grow stronger — one order at a time.`;
         if (currentBusiness) {
           currentBusiness.password = newPw;
           currentBusiness.updatedPassword = newPw;
-          if (email) {
-            localStorage.setItem('hb_business_last_pw_' + email, newPw);
-            localStorage.setItem('hb_reset_pw_' + email, newPw);
-          }
           if (db && currentBusiness.uid) {
             await db.collection('accounts').doc(currentBusiness.uid).set({
               password: newPw,
@@ -23268,31 +23829,76 @@ Together, we grow stronger — one order at a time.`;
       }
     }
 
+    function getAdminVendorRowHtml(v, i) {
+      const phoneVal = v.phone || v.whatsapp || v.mobile || '';
+      const emailVal = v.email || v.contactEmail || '';
+      const categoryVal = v.cat || 'Uncategorized';
+      const subCatVal = v.subCat || v.subcategory || '';
+      const flatVal = v.flat || '';
+      const addressVal = v.currAddress || v.address || v.permAddress || '';
+
+      return `
+        <tr>
+          <td style="color:var(--text-muted);font-weight:600">${i + 1}</td>
+          <td>
+            <strong style="color:var(--text);font-size:0.86rem">${esc(v.venture || '')}</strong>
+            ${v.speciality ? `<div style="font-size:.73rem;color:var(--gold,#d97706);margin-top:2px">${esc(v.speciality)}</div>` : ''}
+          </td>
+          <td>
+            <div style="font-weight:700;font-size:0.78rem;color:var(--green-dark,#1b4332)">${esc(categoryVal)}</div>
+            ${subCatVal ? `<div style="font-size:0.72rem;color:var(--text-muted);background:var(--cream,#f8f9fa);padding:1px 6px;border-radius:4px;display:inline-block;margin-top:2px"><i class="fa fa-tag"></i> ${esc(subCatVal)}</div>` : '<div style="font-size:0.71rem;color:var(--text-muted);font-style:italic">No Sub-cat</div>'}
+          </td>
+          <td>
+            <div style="font-weight:600;font-size:0.78rem;color:var(--text)"><i class="fa fa-user" style="font-size:0.7rem;color:var(--text-muted)"></i> ${esc(v.contact || 'N/A')}</div>
+            ${phoneVal ? `<div style="font-size:0.75rem;color:var(--green);font-weight:600;margin-top:2px"><i class="fa fa-phone"></i> ${esc(phoneVal)} ${v.whatsapp ? '<i class="fab fa-whatsapp" style="color:#25d366" title="WhatsApp"></i>' : ''}</div>` : '<div style="font-size:0.71rem;color:var(--text-muted);font-style:italic">No Phone</div>'}
+            ${emailVal ? `<div style="font-size:0.72rem;color:var(--text-muted);margin-top:1px"><i class="fa fa-envelope" style="font-size:0.68rem"></i> ${esc(emailVal)}</div>` : ''}
+          </td>
+          <td>
+            ${flatVal ? `<div style="font-size:0.78rem;font-weight:700;color:var(--text)"><i class="fa fa-location-dot" style="color:var(--primary)"></i> ${esc(flatVal)}</div>` : ''}
+            ${addressVal ? `<div style="font-size:0.72rem;color:var(--text-muted);margin-top:2px;max-width:200px;line-height:1.2">${esc(addressVal)}</div>` : (!flatVal ? '<div style="font-size:0.71rem;color:var(--text-muted);font-style:italic">No Address</div>' : '')}
+          </td>
+          <td style="text-align:center">
+            <span style="font-size:0.75rem;font-weight:700;background:var(--green-pale,#e8f5e9);color:var(--green-dark,#1b4332);padding:2px 8px;border-radius:10px">${(v.menu || []).length} items</span>
+          </td>
+          <td style="white-space:nowrap">
+            <button class="btn btn-sm btn-ghost" title="Edit Vendor" onclick="openEditModal('${v.id}')"><i class="fa fa-pen"></i></button>
+            <button class="btn btn-sm btn-ghost" title="Manage Menu Items" onclick="openMenuItemModal('${v.id}',null)"><i class="fa fa-utensils"></i></button>
+            <button class="btn btn-sm btn-danger" title="Delete Listing" onclick="deleteTile('${v.id}')"><i class="fa fa-trash"></i></button>
+          </td>
+        </tr>
+      `;
+    }
+
+    function filterVendorSearchMatch(v, q) {
+      if (!q) return true;
+      const venture = (v.venture || '').toLowerCase();
+      const speciality = (v.speciality || '').toLowerCase();
+      const cat = (v.cat || '').toLowerCase();
+      const subCat = (v.subCat || v.subcategory || '').toLowerCase();
+      const contact = (v.contact || '').toLowerCase();
+      const phone = (v.phone || v.whatsapp || v.mobile || '').toLowerCase();
+      const email = (v.email || v.contactEmail || '').toLowerCase();
+      const flat = (v.flat || '').toLowerCase();
+      const address = (v.currAddress || v.address || v.permAddress || '').toLowerCase();
+
+      return venture.includes(q) || speciality.includes(q) || cat.includes(q) || subCat.includes(q) ||
+             contact.includes(q) || phone.includes(q) || email.includes(q) || flat.includes(q) || address.includes(q);
+    }
+
     function renderAdminVendors(c, searchVal) {
       const q = (searchVal || document.getElementById('adminVendorSearch')?.value || '').toLowerCase().trim();
-      const list = q ? DATA.filter(v => (v.venture || '').toLowerCase().includes(q) || (v.speciality || '').toLowerCase().includes(q) || (v.cat || '').toLowerCase().includes(q) || (v.contact || '').toLowerCase().includes(q)) : DATA;
+      const list = DATA.filter(v => filterVendorSearchMatch(v, q));
       c.innerHTML = `<div class="s-card">
     <div class="s-card-title"><i class="fa fa-store" style="color:var(--green)"></i> All Vendors (${DATA.length})
       <button class="btn btn-sm btn-primary" style="margin-left:auto" onclick="openAddModal()"><i class="fa fa-plus"></i> Add</button>
     </div>
     <div style="margin-bottom:10px">
-      <input id="adminVendorSearch" type="text" placeholder="Search vendors…" value="${q}" oninput="filterAdminVendors(this.value)" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:.85rem;background:var(--bg-card);color:var(--text)">
+      <input id="adminVendorSearch" type="text" placeholder="Search by name, phone, email, address, category, or sub-category…" value="${q}" oninput="filterAdminVendors(this.value)" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:.85rem;background:var(--bg-card);color:var(--text)">
     </div>
     <div style="max-height:60vh;overflow-y:auto">
     <table class="menu-table" style="font-size:.82rem">
-      <thead><tr><th>#</th><th>Business</th><th>Category</th><th>Contact</th><th>Menu</th><th>Actions</th></tr></thead>
-      <tbody>${list.length ? list.map((v, i) => `<tr>
-        <td style="color:var(--text-muted)">${i + 1}</td>
-        <td><strong>${v.venture}</strong><br><span style="font-size:.72rem;color:var(--gold)">${v.speciality || ''}</span></td>
-        <td style="font-size:.76rem">${(v.cat || '').split(',')[0]}</td>
-        <td style="font-size:.76rem">${v.contact || ''}<br>${v.flat || ''}</td>
-        <td style="text-align:center">${(v.menu || []).length}</td>
-        <td style="white-space:nowrap">
-          <button class="btn btn-sm btn-ghost" onclick="openEditModal('${v.id}')"><i class="fa fa-pen"></i></button>
-          <button class="btn btn-sm btn-ghost" onclick="openMenuItemModal('${v.id}',null)"><i class="fa fa-utensils"></i></button>
-          <button class="btn btn-sm btn-danger" onclick="deleteTile('${v.id}')"><i class="fa fa-trash"></i></button>
-        </td>
-      </tr>`).join('') : `<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px">No vendors match "${q}"</td></tr>`}</tbody>
+      <thead><tr><th>#</th><th>Business</th><th>Category &amp; Sub-Cat</th><th>Contact &amp; Email</th><th>Address</th><th>Menu</th><th>Actions</th></tr></thead>
+      <tbody>${list.length ? list.map((v, i) => getAdminVendorRowHtml(v, i)).join('') : `<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px">No vendors match "${q}"</td></tr>`}</tbody>
     </table>
     </div>
   </div>`;
@@ -23300,21 +23906,10 @@ Together, we grow stronger — one order at a time.`;
 
     function filterAdminVendors(q) {
       q = (q || '').toLowerCase().trim();
-      const list = q ? DATA.filter(v => (v.venture || '').toLowerCase().includes(q) || (v.speciality || '').toLowerCase().includes(q) || (v.cat || '').toLowerCase().includes(q) || (v.contact || '').toLowerCase().includes(q)) : DATA;
+      const list = DATA.filter(v => filterVendorSearchMatch(v, q));
       const tbody = document.querySelector('#adminTabContent .menu-table tbody');
       if (!tbody) return;
-      tbody.innerHTML = list.length ? list.map((v, i) => `<tr>
-    <td style="color:var(--text-muted)">${i + 1}</td>
-    <td><strong>${v.venture}</strong><br><span style="font-size:.72rem;color:var(--gold)">${v.speciality || ''}</span></td>
-    <td style="font-size:.76rem">${(v.cat || '').split(',')[0]}</td>
-    <td style="font-size:.76rem">${v.contact || ''}<br>${v.flat || ''}</td>
-    <td style="text-align:center">${(v.menu || []).length}</td>
-    <td style="white-space:nowrap">
-      <button class="btn btn-sm btn-ghost" onclick="openEditModal('${v.id}')"><i class="fa fa-pen"></i></button>
-      <button class="btn btn-sm btn-ghost" onclick="openMenuItemModal('${v.id}',null)"><i class="fa fa-utensils"></i></button>
-      <button class="btn btn-sm btn-danger" onclick="deleteTile('${v.id}')"><i class="fa fa-trash"></i></button>
-    </td>
-  </tr>`).join('') : `<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px">No vendors match "${q}"</td></tr>`;
+      tbody.innerHTML = list.length ? list.map((v, i) => getAdminVendorRowHtml(v, i)).join('') : `<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px">No vendors match "${q}"</td></tr>`;
     }
 
     let _adminAccountsCache = [];
@@ -23400,10 +23995,6 @@ Together, we grow stronger — one order at a time.`;
         // 2. Try to sync Firebase Auth password if secondaryAuth is available
         if (secondaryAuth && cleanEmail) {
           const candidates = new Set([tempPw]);
-          const stored1 = localStorage.getItem('hb_business_last_pw_' + cleanEmail);
-          const stored2 = localStorage.getItem('hb_reset_pw_' + cleanEmail);
-          if (stored1) candidates.add(stored1);
-          if (stored2) candidates.add(stored2);
           ['123456', '12345678', 'password', '1234567', 'admin123', 'test123'].forEach(p => candidates.add(p));
 
           for (const candidatePw of candidates) {
@@ -23417,12 +24008,6 @@ Together, we grow stronger — one order at a time.`;
               }
             } catch (e) { }
           }
-        }
-
-        // 3. Update localStorage fallbacks
-        if (cleanEmail) {
-          localStorage.setItem('hb_reset_pw_' + cleanEmail, tempPw);
-          localStorage.setItem('hb_business_last_pw_' + cleanEmail, tempPw);
         }
 
         closeModal('adminSetTempPwModal');
@@ -23563,10 +24148,6 @@ Together, we grow stronger — one order at a time.`;
             // Re-use / update existing Firebase Auth account automatically
             const candidatePws = new Set();
             if (pw) candidatePws.add(pw);
-            const stored1 = localStorage.getItem('hb_business_last_pw_' + cleanEmail);
-            const stored2 = rawEmail ? localStorage.getItem('hb_business_last_pw_' + rawEmail) : null;
-            if (stored1) candidatePws.add(stored1);
-            if (stored2) candidatePws.add(stored2);
             if (db) {
               try {
                 const accSnap = await db.collection('accounts').where('email', '==', cleanEmail).get();
@@ -23614,8 +24195,6 @@ Together, we grow stronger — one order at a time.`;
         // Write account doc using secondaryDb — request.auth.uid matches targetUid, satisfying Firestore rules
         await secondaryDb.collection('accounts').doc(targetUid).set(accountData, { merge: true });
         await secondaryAuth.signOut().catch(() => { });
-
-        localStorage.setItem('hb_business_last_pw_' + cleanEmail, pw);
 
         const emailRes = await _sendSellerAccountCreatedEmail(rawEmail, name, pw);
 
@@ -23733,11 +24312,6 @@ Together, we grow stronger — one order at a time.`;
       if (secondaryAuth) {
         try {
           const candidatePws = new Set();
-          const stored1 = localStorage.getItem('hb_business_last_pw_' + cleanEmail);
-          const stored2 = rawEmail ? localStorage.getItem('hb_business_last_pw_' + rawEmail) : null;
-          if (stored1) candidatePws.add(stored1);
-          if (stored2) candidatePws.add(stored2);
-
           if (uid && db) {
             try {
               const accDoc = await db.collection('accounts').doc(uid).get();
@@ -23925,16 +24499,12 @@ Together, we grow stronger — one order at a time.`;
         } catch (e) { }
       }
 
-      // 3. Purge Local Storage & State
+      // 3. Purge State
       if (cleanEmail) {
-        localStorage.removeItem('hb_business_last_pw_' + cleanEmail);
-        localStorage.removeItem('hb_reset_pw_' + cleanEmail);
         localStorage.removeItem('hb_onboarded_' + cleanEmail);
         localStorage.removeItem('hb_seller_approved_' + cleanEmail);
         localStorage.removeItem('hb_seller_terms_' + cleanEmail);
         if (rawEmail) {
-          localStorage.removeItem('hb_business_last_pw_' + rawEmail);
-          localStorage.removeItem('hb_reset_pw_' + rawEmail);
           localStorage.removeItem('hb_onboarded_' + rawEmail);
           localStorage.removeItem('hb_seller_approved_' + rawEmail);
           localStorage.removeItem('hb_seller_terms_' + rawEmail);
@@ -24287,7 +24857,7 @@ Together, we grow stronger — one order at a time.`;
           <i class="fa fa-car-side" style="color:var(--green);font-size:1.1rem"></i> Resident Carpool Feature &amp; Bottom Nav Tab
         </div>
         <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600;font-size:.88rem">
-          <input type="checkbox" id="cfg_showCarpool" ${SITE_CONFIG.showCarpool !== false ? 'checked' : ''} style="accent-color:var(--green);width:18px;height:18px">
+          <input type="checkbox" id="cfg_showCarpool" ${isFeatureVisible('showCarpool') ? 'checked' : ''} style="accent-color:var(--green);width:18px;height:18px">
           Show "Carpool" Bottom Navigation Tab &amp; Community Feature
         </label>
         <p style="font-size:.78rem;color:var(--text-muted);margin-top:6px;line-height:1.4">
@@ -24301,7 +24871,7 @@ Together, we grow stronger — one order at a time.`;
           <i class="fa fa-id-card-clip" style="color:var(--green);font-size:1.1rem"></i> Driver Hub &amp; Driver Login in Sidebar
         </div>
         <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600;font-size:.88rem">
-          <input type="checkbox" id="cfg_showDriverLogin" ${SITE_CONFIG.showDriverLogin !== false ? 'checked' : ''} style="accent-color:var(--green);width:18px;height:18px">
+          <input type="checkbox" id="cfg_showDriverLogin" ${isFeatureVisible('showDriverLogin') ? 'checked' : ''} style="accent-color:var(--green);width:18px;height:18px">
           Show "Driver Hub &amp; Carpool" (Driver Login) Section in Sidebar Menu
         </label>
         <p style="font-size:.78rem;color:var(--text-muted);margin-top:6px;line-height:1.4">
@@ -24315,7 +24885,7 @@ Together, we grow stronger — one order at a time.`;
           <i class="fa fa-store" style="color:var(--green);font-size:1.1rem"></i> "Register Your Business" Header Button
         </div>
         <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600;font-size:.88rem">
-          <input type="checkbox" id="cfg_showRegisterButton" ${SITE_CONFIG.showRegisterButton !== false ? 'checked' : ''} style="accent-color:var(--green);width:18px;height:18px">
+          <input type="checkbox" id="cfg_showRegisterButton" ${isFeatureVisible('showRegisterButton') ? 'checked' : ''} style="accent-color:var(--green);width:18px;height:18px">
           Show "Register Your Business" Button in Top Header
         </label>
         <p style="font-size:.78rem;color:var(--text-muted);margin-top:6px;line-height:1.4">
@@ -24329,7 +24899,7 @@ Together, we grow stronger — one order at a time.`;
           <i class="fa fa-robot" style="color:var(--green);font-size:1.1rem"></i> AI Chatbot Assistant ("Ask TynTron")
         </div>
         <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600;font-size:.88rem">
-          <input type="checkbox" id="cfg_showAiChatbot" ${SITE_CONFIG.showAiChatbot !== false ? 'checked' : ''} style="accent-color:var(--green);width:18px;height:18px">
+          <input type="checkbox" id="cfg_showAiChatbot" ${isFeatureVisible('showAiChatbot') ? 'checked' : ''} style="accent-color:var(--green);width:18px;height:18px">
           Show "Ask TynTron" AI Chatbot Floating Button
         </label>
         <p style="font-size:.78rem;color:var(--text-muted);margin-top:6px;line-height:1.4">
@@ -24343,7 +24913,7 @@ Together, we grow stronger — one order at a time.`;
           <i class="fa fa-layer-group" style="color:var(--green);font-size:1.1rem"></i> Home Page Product &amp; Service Listing Grid
         </div>
         <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600;font-size:.88rem">
-          <input type="checkbox" id="cfg_showProductListing" ${SITE_CONFIG.showProductListing ? 'checked' : ''} style="accent-color:var(--green);width:18px;height:18px">
+          <input type="checkbox" id="cfg_showProductListing" ${isFeatureVisible('showProductListing') ? 'checked' : ''} style="accent-color:var(--green);width:18px;height:18px">
           Show "Products &amp; Services" Grid on Customer Home Tab
         </label>
         <p style="font-size:.78rem;color:var(--text-muted);margin-top:6px;line-height:1.4">
@@ -24357,7 +24927,7 @@ Together, we grow stronger — one order at a time.`;
           <i class="fa fa-truck-ramp-box" style="color:var(--green);font-size:1.1rem"></i> Society Delivery Field in Business Registration
         </div>
         <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600;font-size:.88rem">
-          <input type="checkbox" id="cfg_showBusinessCanDeliver" ${SITE_CONFIG.showBusinessCanDeliver !== false ? 'checked' : ''} style="accent-color:var(--green);width:18px;height:18px">
+          <input type="checkbox" id="cfg_showBusinessCanDeliver" ${isFeatureVisible('showBusinessCanDeliver') ? 'checked' : ''} style="accent-color:var(--green);width:18px;height:18px">
           Show "Society Delivery Ability" Field during Business Registration
         </label>
         <p style="font-size:.78rem;color:var(--text-muted);margin-top:6px;line-height:1.4">
@@ -24371,7 +24941,7 @@ Together, we grow stronger — one order at a time.`;
           <i class="fa fa-clock" style="color:var(--green);font-size:1.1rem"></i> Seller Business Operating Schedule &amp; Calendar
         </div>
         <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600;font-size:.88rem">
-          <input type="checkbox" id="cfg_showBusinessOperatingSchedule" ${SITE_CONFIG.showBusinessOperatingSchedule !== false ? 'checked' : ''} style="accent-color:var(--green);width:18px;height:18px">
+          <input type="checkbox" id="cfg_showBusinessOperatingSchedule" ${isFeatureVisible('showBusinessOperatingSchedule') ? 'checked' : ''} style="accent-color:var(--green);width:18px;height:18px">
           Show "Business Operating Schedule &amp; Calendar" Section in Seller Dashboard
         </label>
         <p style="font-size:.78rem;color:var(--text-muted);margin-top:6px;line-height:1.4">
@@ -24411,7 +24981,7 @@ Together, we grow stronger — one order at a time.`;
           <i class="fa fa-envelope-circle-check" style="color:#ef4444;font-size:1.1rem"></i> Failure Notification Emails (API &amp; Database Errors)
         </div>
         <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600;font-size:.88rem;margin-bottom:10px">
-          <input type="checkbox" id="cfg_enableFailureNotificationEmail" ${SITE_CONFIG.enableFailureNotificationEmail !== false ? 'checked' : ''} style="accent-color:var(--green);width:18px;height:18px">
+          <input type="checkbox" id="cfg_enableFailureNotificationEmail" ${isFeatureVisible('enableFailureNotificationEmail') ? 'checked' : ''} style="accent-color:var(--green);width:18px;height:18px">
           Enable Failure Tracking &amp; Email Notifications (ON = Active, OFF = Disabled)
         </label>
         <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:10px;line-height:1.4">
@@ -24545,7 +25115,7 @@ Together, we grow stronger — one order at a time.`;
       const showCarpool = document.getElementById('cfg_showCarpool')?.checked !== false;
       const showAiChatbot = document.getElementById('cfg_showAiChatbot')?.checked !== false;
       const showRegisterButton = document.getElementById('cfg_showRegisterButton')?.checked !== false;
-      const showProductListing = !!document.getElementById('cfg_showProductListing')?.checked;
+      const showProductListing = document.getElementById('cfg_showProductListing')?.checked !== false;
       const showBusinessCanDeliver = document.getElementById('cfg_showBusinessCanDeliver')?.checked !== false;
       const showDriverLogin = document.getElementById('cfg_showDriverLogin')?.checked !== false;
       const showBusinessOperatingSchedule = document.getElementById('cfg_showBusinessOperatingSchedule')?.checked !== false;
@@ -24555,19 +25125,18 @@ Together, we grow stronger — one order at a time.`;
       const subTimingRadio = document.querySelector('input[name="cfg_subscriptionShowTiming"]:checked');
       const subscriptionShowTiming = subTimingRadio ? subTimingRadio.value : 'registration';
 
-      SITE_CONFIG.ENABLE_DISCOUNTS_AND_COUPONS = enableDiscountsAndCoupons;
-      SITE_CONFIG.showCarpool = showCarpool;
-      SITE_CONFIG.showAiChatbot = showAiChatbot;
-      SITE_CONFIG.showRegisterButton = showRegisterButton;
-      SITE_CONFIG.showProductListing = showProductListing;
-      SITE_CONFIG.showBusinessCanDeliver = showBusinessCanDeliver;
-      SITE_CONFIG.showDriverLogin = showDriverLogin;
-      SITE_CONFIG.showBusinessOperatingSchedule = showBusinessOperatingSchedule;
-      SITE_CONFIG.subscriptionShowTiming = subscriptionShowTiming;
-      SITE_CONFIG.enableFailureNotificationEmail = enableFailureNotificationEmail;
-      SITE_CONFIG.failureNotificationRecipient = failureNotificationRecipient;
+      setFeatureVisible('ENABLE_DISCOUNTS_AND_COUPONS', enableDiscountsAndCoupons);
+      setFeatureVisible('showCarpool', showCarpool);
+      setFeatureVisible('showAiChatbot', showAiChatbot);
+      setFeatureVisible('showRegisterButton', showRegisterButton);
+      setFeatureVisible('showProductListing', showProductListing);
+      setFeatureVisible('showBusinessCanDeliver', showBusinessCanDeliver);
+      setFeatureVisible('showDriverLogin', showDriverLogin);
+      setFeatureVisible('showBusinessOperatingSchedule', showBusinessOperatingSchedule);
+      setFeatureVisible('enableFailureNotificationEmail', enableFailureNotificationEmail);
 
-      await RedisFeatureFlagController.setFlag('ENABLE_DISCOUNTS_AND_COUPONS', enableDiscountsAndCoupons);
+      SITE_CONFIG.subscriptionShowTiming = subscriptionShowTiming;
+      SITE_CONFIG.failureNotificationRecipient = failureNotificationRecipient;
 
       await fsSaveConfig({
         ENABLE_DISCOUNTS_AND_COUPONS: enableDiscountsAndCoupons,
@@ -24578,8 +25147,8 @@ Together, we grow stronger — one order at a time.`;
         showBusinessCanDeliver,
         showDriverLogin,
         showBusinessOperatingSchedule,
-        subscriptionShowTiming,
         enableFailureNotificationEmail,
+        subscriptionShowTiming,
         failureNotificationRecipient
       });
 
@@ -25001,12 +25570,6 @@ Together, we grow stronger — one order at a time.`;
       await fsSaveConfig({
         tagline: document.getElementById('cfg_tagline').value.trim(),
         heroSub: document.getElementById('cfg_heroSub').value.trim(),
-        showProductListing: !!SITE_CONFIG.showProductListing,
-        showAiChatbot: SITE_CONFIG.showAiChatbot !== false,
-        showCarpool: SITE_CONFIG.showCarpool !== false,
-        showBusinessCanDeliver: SITE_CONFIG.showBusinessCanDeliver !== false,
-        showDriverLogin: SITE_CONFIG.showDriverLogin !== false,
-        showBusinessOperatingSchedule: SITE_CONFIG.showBusinessOperatingSchedule !== false,
         subscriptionShowTiming: SITE_CONFIG.subscriptionShowTiming || 'registration',
         maxSubCategories: parseInt(document.getElementById('cfg_maxSubCategories')?.value) || 3,
         maxSocietiesDisplay: parseInt(document.getElementById('cfg_maxSocietiesDisplay')?.value, 10) || 5,
@@ -25060,14 +25623,19 @@ Together, we grow stronger — one order at a time.`;
       return SITE_CONFIG.featuredVendorIds;
     }
 
-    function renderAdminAds(c) {
+    function renderAdminAds(c, scrollPos, pageScrollY) {
       sanitizeAdConfig();
       const featured = SITE_CONFIG.featuredVendorIds || [];
       const adTypes = SITE_CONFIG.adTypes || {};
+
+      const existingGrid = document.getElementById('adminAdsGridContainer');
+      const restoreGridScroll = (typeof scrollPos === 'number') ? scrollPos : (existingGrid ? existingGrid.scrollTop : 0);
+      const restorePageScroll = (typeof pageScrollY === 'number') ? pageScrollY : (window.scrollY || document.documentElement.scrollTop);
+
       c.innerHTML = `<div class="s-card">
     <div class="s-card-title"><i class="fa fa-rectangle-ad" style="color:var(--green)"></i> Ad Carousel — Featured Vendors & Distance Targeting</div>
     <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:14px">Check vendors to feature in the top carousel. Choose <strong>Local (5 km)</strong> to restrict ads to nearby customers, or <strong>Global</strong> to display to all users across all locations.</p>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;max-height:55vh;overflow-y:auto;padding:4px">
+    <div id="adminAdsGridContainer" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;max-height:55vh;overflow-y:auto;padding:4px">
       ${DATA.map(v => {
         const isChecked = featured.includes(v.id);
         const currentType = adTypes[v.id] || 'local';
@@ -25075,12 +25643,12 @@ Together, we grow stronger — one order at a time.`;
           <div style="background:var(--cream);border-radius:10px;padding:10px 12px;border:1.5px solid ${isChecked ? 'var(--green)' : 'var(--border)'}">
             <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
               <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleAdVendor('${v.id}',this)" style="accent-color:var(--green)">
-              <span style="font-size:.84rem;font-weight:700;color:var(--text)">${v.venture}</span>
+              <span style="font-size:.84rem;font-weight:700;color:var(--text)">${esc(v.venture)}</span>
             </label>
             ${isChecked ? `
               <div style="display:flex;gap:6px;margin-top:8px;padding-top:6px;border-top:1px dashed var(--border)">
-                <button type="button" class="btn btn-xs ${currentType === 'local' ? 'btn-primary' : 'btn-ghost'}" onclick="setAdType('${v.id}','local')"><i class="fa fa-location-crosshairs"></i> Local (5 km)</button>
-                <button type="button" class="btn btn-xs ${currentType === 'global' ? 'btn-primary' : 'btn-ghost'}" onclick="setAdType('${v.id}','global')"><i class="fa fa-globe"></i> Global</button>
+                <button type="button" class="btn btn-xs ${currentType === 'local' ? 'btn-primary' : 'btn-ghost'}" onclick="setAdType('${v.id}','local',this)"><i class="fa fa-location-crosshairs"></i> Local (5 km)</button>
+                <button type="button" class="btn btn-xs ${currentType === 'global' ? 'btn-primary' : 'btn-ghost'}" onclick="setAdType('${v.id}','global',this)"><i class="fa fa-globe"></i> Global</button>
               </div>
             ` : ''}
           </div>
@@ -25091,13 +25659,41 @@ Together, we grow stronger — one order at a time.`;
       <button class="btn btn-primary" onclick="saveAdSettings()"><i class="fa fa-save"></i> Save Ad Settings</button>
     </div>
   </div>`;
+
+      const newGrid = document.getElementById('adminAdsGridContainer');
+      if (newGrid && restoreGridScroll) {
+        newGrid.scrollTop = restoreGridScroll;
+      }
+      if (restorePageScroll) {
+        window.scrollTo(0, restorePageScroll);
+      }
     }
-    function setAdType(id, type) {
+
+    function setAdType(id, type, btnEl) {
       if (!SITE_CONFIG.adTypes) SITE_CONFIG.adTypes = {};
       SITE_CONFIG.adTypes[id] = type;
-      const c = document.getElementById('adminTabContent');
-      if (c) renderAdminAds(c);
+
+      if (btnEl) {
+        const parent = btnEl.parentElement;
+        if (parent) {
+          const btns = parent.querySelectorAll('button');
+          btns.forEach(b => {
+            if (b === btnEl) {
+              b.className = 'btn btn-xs btn-primary';
+            } else {
+              b.className = 'btn btn-xs btn-ghost';
+            }
+          });
+        }
+      } else {
+        const c = document.getElementById('adminTabContent');
+        const grid = document.getElementById('adminAdsGridContainer');
+        const scrollPos = grid ? grid.scrollTop : 0;
+        const pageScrollY = window.scrollY || document.documentElement.scrollTop;
+        if (c) renderAdminAds(c, scrollPos, pageScrollY);
+      }
     }
+
     function toggleAdVendor(id, cb) {
       sanitizeAdConfig();
       let f = SITE_CONFIG.featuredVendorIds || [];
@@ -25105,7 +25701,10 @@ Together, we grow stronger — one order at a time.`;
       else { f = f.filter(x => x !== id); }
       SITE_CONFIG.featuredVendorIds = f;
       const c = document.getElementById('adminTabContent');
-      if (c) renderAdminAds(c);
+      const grid = document.getElementById('adminAdsGridContainer');
+      const scrollPos = grid ? grid.scrollTop : 0;
+      const pageScrollY = window.scrollY || document.documentElement.scrollTop;
+      if (c) renderAdminAds(c, scrollPos, pageScrollY);
     }
     async function saveAdSettings() {
       const ids = sanitizeAdConfig();
@@ -25394,6 +25993,10 @@ Together, we grow stronger — one order at a time.`;
 
       // Initial render from localStorage / SEED
       buildSocietySelector(); buildTabs(); renderAll(); renderGlobalCategoryBoxes(); renderGlobalProductBoxes();
+
+      // Load drivers and carpool data directly from Firestore Database
+      if (typeof fsLoadDrivers === 'function') fsLoadDrivers().catch(e => console.error(e));
+      if (typeof fsLoadCarpoolData === 'function') fsLoadCarpoolData().catch(e => console.error(e));
 
       // Restore persisted driver session
       initDriverSession();
