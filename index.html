@@ -7958,7 +7958,40 @@
     let _browseLevel = 'societies'; // 'societies' | 'societyPicker' | 'society' | 'category' — drill-down nav state
     let _browseCategory = null;
     let _browseProductQuery = null; // set instead of _browseCategory when level 'category' was reached via a global product pick
-    let SITE_CONFIG = {};
+    const DEFAULT_FEATURE_CONFIG = {
+      ENABLE_DISCOUNTS_AND_COUPONS: true,
+      showCarpool: true,
+      showAiChatbot: true,
+      showRegisterButton: true,
+      showProductListing: true,
+      showBusinessCanDeliver: true,
+      showDriverLogin: true,
+      showBusinessOperatingSchedule: true,
+      subscriptionShowTiming: 'registration',
+      enableFailureNotificationEmail: true
+    };
+
+    function getAppFeatureConfig() {
+      try {
+        const stored = localStorage.getItem('tyntron_demo_feature_config');
+        if (stored) {
+          return { ...DEFAULT_FEATURE_CONFIG, ...JSON.parse(stored) };
+        }
+      } catch (e) {}
+      return { ...DEFAULT_FEATURE_CONFIG };
+    }
+
+    function saveAppFeatureConfig(patch) {
+      const current = getAppFeatureConfig();
+      const updated = { ...current, ...patch };
+      try {
+        localStorage.setItem('tyntron_demo_feature_config', JSON.stringify(updated));
+      } catch (e) {}
+      Object.assign(SITE_CONFIG, updated);
+      return updated;
+    }
+
+    let SITE_CONFIG = { ...DEFAULT_FEATURE_CONFIG, ...getAppFeatureConfig() };
     const DEFAULT_SOCIETIES = [
       { name: '11th Avenue', address: 'Gaur City 2, Greater Noida West, UP', lat: 28.6080, lng: 77.4270 },
       { name: '16th Avenue Gaur City 2', address: 'Gaur City 2, Greater Noida West, UP', lat: 28.6090, lng: 77.4290 },
@@ -8437,7 +8470,26 @@
       }
       try {
         const d = await db.collection('config').doc('site').get();
-        if (d.exists) { SITE_CONFIG = d.data(); }
+        if (d.exists) {
+          const dbData = { ...d.data() };
+          // Feature visibility true/false values are NOT loaded from DB to prevent DB values from overriding app defaults
+          const featureKeys = [
+            'ENABLE_DISCOUNTS_AND_COUPONS',
+            'showCarpool',
+            'showAiChatbot',
+            'showRegisterButton',
+            'showProductListing',
+            'showBusinessCanDeliver',
+            'showDriverLogin',
+            'showBusinessOperatingSchedule',
+            'subscriptionShowTiming',
+            'enableFailureNotificationEmail'
+          ];
+          featureKeys.forEach(k => delete dbData[k]);
+
+          const localFeatures = getAppFeatureConfig();
+          SITE_CONFIG = { ...DEFAULT_FEATURE_CONFIG, ...dbData, ...localFeatures };
+        }
       } catch (e) {
         showToast('⚠️ Database error loading site config: ' + e.message);
       }
@@ -8449,61 +8501,18 @@
       let _cachedFlagValue = true;
 
       async function getFlag() {
-        try {
-          if (window.RedisMockStore && typeof window.RedisMockStore.get === 'function') {
-            const val = window.RedisMockStore.get(FLAG_KEY);
-            if (val !== undefined && val !== null) {
-              _cachedFlagValue = (val === true || val === 'true');
-              return _cachedFlagValue;
-            }
-          }
-        } catch (e) {
-          console.warn('[Redis] Cache lookup failed, falling back to DB:', e.message);
-        }
-
         if (typeof SITE_CONFIG !== 'undefined' && SITE_CONFIG && SITE_CONFIG.ENABLE_DISCOUNTS_AND_COUPONS !== undefined) {
           _cachedFlagValue = SITE_CONFIG.ENABLE_DISCOUNTS_AND_COUPONS !== false;
           return _cachedFlagValue;
         }
-
-        if (FB_READY && db) {
-          try {
-            const doc = await db.collection('config').doc('feature_flags').get();
-            if (doc.exists && doc.data()[FLAG_KEY] !== undefined) {
-              _cachedFlagValue = doc.data()[FLAG_KEY] !== false;
-              return _cachedFlagValue;
-            }
-          } catch (e) {
-            console.warn('[DB Fallback] Could not fetch feature flag from Firestore:', e.message);
-          }
-        }
-
-        return _cachedFlagValue !== false;
+        _cachedFlagValue = getAppFeatureConfig().ENABLE_DISCOUNTS_AND_COUPONS !== false;
+        return _cachedFlagValue;
       }
 
       async function setFlag(enabled) {
         const val = !!enabled;
         _cachedFlagValue = val;
-
-        try {
-          if (window.RedisMockStore && typeof window.RedisMockStore.set === 'function') {
-            window.RedisMockStore.set(FLAG_KEY, val);
-          }
-        } catch (e) { }
-
-        if (typeof SITE_CONFIG !== 'undefined') {
-          SITE_CONFIG.ENABLE_DISCOUNTS_AND_COUPONS = val;
-        }
-
-        if (FB_READY && db) {
-          try {
-            await db.collection('config').doc('feature_flags').set({ [FLAG_KEY]: val }, { merge: true });
-            await db.collection('config').doc('site').set({ ENABLE_DISCOUNTS_AND_COUPONS: val }, { merge: true });
-          } catch (e) {
-            console.warn('[DB Fallback] Failed to save feature flag to Firestore:', e.message);
-          }
-        }
-
+        saveAppFeatureConfig({ ENABLE_DISCOUNTS_AND_COUPONS: val });
         return val;
       }
 
@@ -8518,7 +8527,7 @@
       if (typeof SITE_CONFIG !== 'undefined' && SITE_CONFIG.ENABLE_DISCOUNTS_AND_COUPONS !== undefined) {
         return SITE_CONFIG.ENABLE_DISCOUNTS_AND_COUPONS !== false;
       }
-      return RedisFeatureFlagController.cachedValue !== false;
+      return getAppFeatureConfig().ENABLE_DISCOUNTS_AND_COUPONS !== false;
     }
 
     function getOfferingPricing(item) {
@@ -9054,14 +9063,54 @@
     }
 
     async function fsSaveConfig(patch) {
-      if (patch) SITE_CONFIG = { ...SITE_CONFIG, ...patch };
+      if (patch) {
+        const featureKeys = [
+          'ENABLE_DISCOUNTS_AND_COUPONS',
+          'showCarpool',
+          'showAiChatbot',
+          'showRegisterButton',
+          'showProductListing',
+          'showBusinessCanDeliver',
+          'showDriverLogin',
+          'showBusinessOperatingSchedule',
+          'subscriptionShowTiming',
+          'enableFailureNotificationEmail'
+        ];
+        const featurePatch = {};
+        Object.keys(patch).forEach(k => {
+          if (featureKeys.includes(k)) {
+            featurePatch[k] = patch[k];
+          }
+        });
+        if (Object.keys(featurePatch).length > 0) {
+          saveAppFeatureConfig(featurePatch);
+        }
+        SITE_CONFIG = { ...SITE_CONFIG, ...patch };
+      }
       if (!db) {
         showToast('⚠️ Database is unreachable. Cannot save site configuration.');
         return;
       }
       try {
         const ok = await ensureAdminAuth();
-        if (ok) await db.collection('config').doc('site').set(SITE_CONFIG, { merge: true });
+        if (ok) {
+          // Feature visibility true/false flags are NOT stored in the database
+          const dbConfig = { ...SITE_CONFIG };
+          const featureKeys = [
+            'ENABLE_DISCOUNTS_AND_COUPONS',
+            'showCarpool',
+            'showAiChatbot',
+            'showRegisterButton',
+            'showProductListing',
+            'showBusinessCanDeliver',
+            'showDriverLogin',
+            'showBusinessOperatingSchedule',
+            'subscriptionShowTiming',
+            'enableFailureNotificationEmail'
+          ];
+          featureKeys.forEach(k => delete dbConfig[k]);
+          await db.collection('config').doc('site').set(dbConfig, { merge: true });
+        }
       } catch (e) {
         notifyTechnicalFailure(e, 'General Exceptions — Firestore Save Config', patch);
         showToast('⚠️ Database error saving site config: ' + e.message);
@@ -17025,10 +17074,10 @@ Together, we grow stronger — one order at a time.`;
     let _globalProdExpanded = false;
     function renderGlobalProductBoxes() {
       const section = document.getElementById('globalProductsSection');
-      if (section) section.style.display = SITE_CONFIG.showProductListing ? '' : 'none';
+      if (section) section.style.display = SITE_CONFIG.showProductListing !== false ? '' : 'none';
       const row = document.getElementById('globalProductRow');
       if (!row) return;
-      if (!SITE_CONFIG.showProductListing) return;
+      if (SITE_CONFIG.showProductListing === false) return;
       const list = _globalProductsList();
       const visible = _globalProdExpanded ? list : list.slice(0, 5);
       let html = visible.map(p => `
@@ -24343,7 +24392,7 @@ Together, we grow stronger — one order at a time.`;
           <i class="fa fa-layer-group" style="color:var(--green);font-size:1.1rem"></i> Home Page Product &amp; Service Listing Grid
         </div>
         <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600;font-size:.88rem">
-          <input type="checkbox" id="cfg_showProductListing" ${SITE_CONFIG.showProductListing ? 'checked' : ''} style="accent-color:var(--green);width:18px;height:18px">
+          <input type="checkbox" id="cfg_showProductListing" ${SITE_CONFIG.showProductListing !== false ? 'checked' : ''} style="accent-color:var(--green);width:18px;height:18px">
           Show "Products &amp; Services" Grid on Customer Home Tab
         </label>
         <p style="font-size:.78rem;color:var(--text-muted);margin-top:6px;line-height:1.4">
@@ -24545,7 +24594,7 @@ Together, we grow stronger — one order at a time.`;
       const showCarpool = document.getElementById('cfg_showCarpool')?.checked !== false;
       const showAiChatbot = document.getElementById('cfg_showAiChatbot')?.checked !== false;
       const showRegisterButton = document.getElementById('cfg_showRegisterButton')?.checked !== false;
-      const showProductListing = !!document.getElementById('cfg_showProductListing')?.checked;
+      const showProductListing = document.getElementById('cfg_showProductListing')?.checked !== false;
       const showBusinessCanDeliver = document.getElementById('cfg_showBusinessCanDeliver')?.checked !== false;
       const showDriverLogin = document.getElementById('cfg_showDriverLogin')?.checked !== false;
       const showBusinessOperatingSchedule = document.getElementById('cfg_showBusinessOperatingSchedule')?.checked !== false;
@@ -24555,21 +24604,7 @@ Together, we grow stronger — one order at a time.`;
       const subTimingRadio = document.querySelector('input[name="cfg_subscriptionShowTiming"]:checked');
       const subscriptionShowTiming = subTimingRadio ? subTimingRadio.value : 'registration';
 
-      SITE_CONFIG.ENABLE_DISCOUNTS_AND_COUPONS = enableDiscountsAndCoupons;
-      SITE_CONFIG.showCarpool = showCarpool;
-      SITE_CONFIG.showAiChatbot = showAiChatbot;
-      SITE_CONFIG.showRegisterButton = showRegisterButton;
-      SITE_CONFIG.showProductListing = showProductListing;
-      SITE_CONFIG.showBusinessCanDeliver = showBusinessCanDeliver;
-      SITE_CONFIG.showDriverLogin = showDriverLogin;
-      SITE_CONFIG.showBusinessOperatingSchedule = showBusinessOperatingSchedule;
-      SITE_CONFIG.subscriptionShowTiming = subscriptionShowTiming;
-      SITE_CONFIG.enableFailureNotificationEmail = enableFailureNotificationEmail;
-      SITE_CONFIG.failureNotificationRecipient = failureNotificationRecipient;
-
-      await RedisFeatureFlagController.setFlag('ENABLE_DISCOUNTS_AND_COUPONS', enableDiscountsAndCoupons);
-
-      await fsSaveConfig({
+      saveAppFeatureConfig({
         ENABLE_DISCOUNTS_AND_COUPONS: enableDiscountsAndCoupons,
         showCarpool,
         showAiChatbot,
@@ -24579,9 +24614,13 @@ Together, we grow stronger — one order at a time.`;
         showDriverLogin,
         showBusinessOperatingSchedule,
         subscriptionShowTiming,
-        enableFailureNotificationEmail,
-        failureNotificationRecipient
+        enableFailureNotificationEmail
       });
+      SITE_CONFIG.failureNotificationRecipient = failureNotificationRecipient;
+
+      await RedisFeatureFlagController.setFlag('ENABLE_DISCOUNTS_AND_COUPONS', enableDiscountsAndCoupons);
+
+      await fsSaveConfig({ failureNotificationRecipient });
 
       applyFooterLinks();
       renderGlobalProductBoxes();
@@ -25001,13 +25040,6 @@ Together, we grow stronger — one order at a time.`;
       await fsSaveConfig({
         tagline: document.getElementById('cfg_tagline').value.trim(),
         heroSub: document.getElementById('cfg_heroSub').value.trim(),
-        showProductListing: !!SITE_CONFIG.showProductListing,
-        showAiChatbot: SITE_CONFIG.showAiChatbot !== false,
-        showCarpool: SITE_CONFIG.showCarpool !== false,
-        showBusinessCanDeliver: SITE_CONFIG.showBusinessCanDeliver !== false,
-        showDriverLogin: SITE_CONFIG.showDriverLogin !== false,
-        showBusinessOperatingSchedule: SITE_CONFIG.showBusinessOperatingSchedule !== false,
-        subscriptionShowTiming: SITE_CONFIG.subscriptionShowTiming || 'registration',
         maxSubCategories: parseInt(document.getElementById('cfg_maxSubCategories')?.value) || 3,
         maxSocietiesDisplay: parseInt(document.getElementById('cfg_maxSocietiesDisplay')?.value, 10) || 5,
         businessCanDeliverLabel: document.getElementById('cfg_businessCanDeliverLabel').value.trim() || 'Will you be able to deliver within the society? *',
