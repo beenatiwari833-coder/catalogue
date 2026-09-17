@@ -4316,6 +4316,29 @@ Together, we grow stronger — one order at a time.`;
     let _cropperInstance = null;
     let _cropperCallback = null;
     let _cropperFileInput = null;
+    let _cropperInitialRatio = 1;
+    let _cropperMinRatio = 0.1;
+    let _cropperMaxRatio = 3;
+
+    function _updateCropperZoomLimits() {
+      if (!_cropperInstance) return;
+      const cd = _cropperInstance.getCanvasData();
+      const id = _cropperInstance.getImageData();
+      const container = _cropperInstance.getContainerData();
+      if (!cd || !id || !container) return;
+
+      const rotated = Math.abs(id.rotate || 0) % 180 === 90;
+      const naturalW = rotated ? id.naturalHeight : id.naturalWidth;
+      const naturalH = rotated ? id.naturalWidth : id.naturalHeight;
+
+      // Base ratio that fits the container
+      const fitRatio = Math.min(container.width / (naturalW || 1), container.height / (naturalH || 1));
+      _cropperInitialRatio = fitRatio;
+      // Allow zooming out enough so user can fit wide/tall photos nicely, but prevent shrinking into an empty blue square
+      _cropperMinRatio = fitRatio * 0.5;
+      // Cap maximum zoom: prevent infinite zoom in (max 3x magnification from fit)
+      _cropperMaxRatio = fitRatio * 3.0;
+    }
 
     function openImageCropper(file, callback, fileInput) {
       if (!file) return;
@@ -4339,7 +4362,8 @@ Together, we grow stronger — one order at a time.`;
         setTimeout(() => {
           _cropperInstance = new Cropper(img, {
             aspectRatio: 4 / 3,
-            viewMode: 1,
+            viewMode: 0,
+            dragMode: 'move',
             autoCropArea: 0.9,
             responsive: true,
             restore: false,
@@ -4349,6 +4373,19 @@ Together, we grow stronger — one order at a time.`;
             cropBoxMovable: true,
             cropBoxResizable: true,
             toggleDragModeOnDblclick: false,
+            minCropBoxWidth: 100,
+            minCropBoxHeight: 75,
+            ready: function () {
+              _updateCropperZoomLimits();
+            },
+            zoom: function (event) {
+              // Enforce zoom boundaries on touch / mouse wheel
+              if (event.detail.ratio > _cropperMaxRatio) {
+                event.preventDefault();
+              } else if (event.detail.ratio < _cropperMinRatio) {
+                event.preventDefault();
+              }
+            }
           });
         }, 150);
       };
@@ -4356,15 +4393,39 @@ Together, we grow stronger — one order at a time.`;
     }
 
     function cropperZoom(ratio) {
-      if (_cropperInstance) _cropperInstance.zoom(ratio);
+      if (!_cropperInstance) return;
+      const canvasData = _cropperInstance.getCanvasData();
+      if (!canvasData || !canvasData.naturalWidth) return;
+      const currentRatio = canvasData.width / canvasData.naturalWidth;
+
+      let targetRatio;
+      if (ratio < 0) {
+        targetRatio = currentRatio / (1 - ratio);
+      } else {
+        targetRatio = currentRatio * (1 + ratio);
+      }
+
+      if (targetRatio > _cropperMaxRatio) {
+        _cropperInstance.zoomTo(_cropperMaxRatio);
+      } else if (targetRatio < _cropperMinRatio) {
+        _cropperInstance.zoomTo(_cropperMinRatio);
+      } else {
+        _cropperInstance.zoom(ratio);
+      }
     }
 
     function cropperRotate(degree) {
-      if (_cropperInstance) _cropperInstance.rotate(degree);
+      if (_cropperInstance) {
+        _cropperInstance.rotate(degree);
+        _updateCropperZoomLimits();
+      }
     }
 
     function cropperReset() {
-      if (_cropperInstance) _cropperInstance.reset();
+      if (_cropperInstance) {
+        _cropperInstance.reset();
+        _updateCropperZoomLimits();
+      }
     }
 
     function closeImageCropper() {
@@ -4385,6 +4446,7 @@ Together, we grow stronger — one order at a time.`;
       const canvas = _cropperInstance.getCroppedCanvas({
         width: 800,
         height: 600,
+        fillColor: '#ffffff',
         imageSmoothingEnabled: true,
         imageSmoothingQuality: 'high',
       });
