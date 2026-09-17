@@ -15089,14 +15089,19 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
         /* ==================== ROBUST MULTI-FIELD SEARCH ENGINE ==================== */
     const TyntronSearchEngine = (() => {
       const STOP_WORDS = new Set([
-        'i', 'me', 'my', 'myself', 'we', 'our', 'you', 'your', 'want', 'need', 'show', 'buy', 'get', 'like',
+        'i', 'me', 'my', 'myself', 'we', 'our', 'you', 'your', 'want', 'wants', 'wanted',
+        'need', 'needs', 'needed', 'show', 'showing', 'buy', 'buying', 'bought', 'get', 'like',
+        'order', 'orders', 'ordering', 'ordered', 'book', 'booking', 'booked',
+        'deliver', 'delivery', 'delivering', 'delivered', 'send', 'sending', 'sent',
+        'purchase', 'purchasing', 'purchased',
         'looking', 'for', 'find', 'search', 'give', 'can', 'would', 'will', 'should', 'please',
         'in', 'at', 'near', 'by', 'from', 'under', 'below', 'less', 'than', 'above', 'over',
-        'a', 'an', 'the', 'for', 'with', 'and', 'or', 'of', 'to', 'is', 'are', 'be', 'do', 'does'
+        'a', 'an', 'the', 'for', 'with', 'and', 'or', 'of', 'to', 'is', 'are', 'be', 'do', 'does',
+        'item', 'items', 'product', 'products', 'service', 'services', 'available', 'have', 'has', 'had'
       ]);
 
       const SYNONYMS = {
-        "cak": "cake", "cakes": "cake", "pastry": "cake", "pastries": "cake", "dessert": "cake", "desserts": "cake",
+        "cak": "cake", "caek": "cake", "cakes": "cake", "pastry": "cake", "pastries": "cake", "dessert": "cake", "desserts": "cake",
         "bakery": "cake", "sweet": "cake", "sweets": "cake",
         "gym": "fitness", "workout": "fitness", "exercise": "fitness",
         "doc": "doctor", "physician": "doctor", "clinic": "doctor", "dentist": "doctor",
@@ -15268,8 +15273,10 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
             else if (fw.startsWith(t)) maxTier = Math.max(maxTier, 2.5);
             else if (fw.includes(t)) maxTier = Math.max(maxTier, 2.0);
             else {
-              const maxDist = t.length >= 7 ? 2 : (t.length >= 4 ? 1 : 0);
-              if (maxDist > 0) {
+              // Fuzzy typo tolerance: terms must have at least 5 letters and share the first letter
+              // to prevent false positives on short 4-letter words (e.g., 'cake' matching 'make' or 'care')
+              if (t.length >= 5 && fw.length >= 4 && fw[0] === t[0]) {
+                const maxDist = t.length >= 7 ? 2 : 1;
                 const dist = DamerauLevenshtein(t, fw);
                 if (dist <= maxDist) {
                   maxTier = Math.max(maxTier, 1.8);
@@ -15309,8 +15316,8 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
               const tagScore = scoreField(item.tags, parsed.tokens) * FIELD_WEIGHTS.tags;
               const itemDescScore = scoreField(item.desc, parsed.tokens) * FIELD_WEIGHTS.description;
 
-              // Product item MUST directly match query tokens in item.name, item.tags, or item.desc
-              const directItemMatch = (itemScore > 0 || tagScore > 0 || itemDescScore > 0);
+              // Product item MUST match in item.name, item.tags, or direct keyword match in item.desc
+              const directItemMatch = (itemScore > 0 || tagScore > 0 || itemDescScore >= 20);
               if (!directItemMatch && parsed.tokens.length) return;
 
               const catScore = scoreField(vendor.cat, parsed.tokens) * FIELD_WEIGHTS.category;
@@ -15355,6 +15362,13 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
           const vendorScore = scoreField(vendor.venture, parsed.tokens) * FIELD_WEIGHTS.vendorName;
           const socScore = scoreField(society, parsed.tokens) * FIELD_WEIGHTS.societyName;
           const descScore = scoreField(vendor.desc, parsed.tokens) * FIELD_WEIGHTS.description;
+
+          // Vendor must match at least one keyword token if tokens are present
+          const directVendorMatch = (catScore > 0 || specScore > 0 || vendorScore > 0 || descScore > 0);
+          if (!directVendorMatch && parsed.tokens.length) return;
+
+          // If a max price filter is present and vendor has menu items, require at least one item <= maxPrice
+          if (parsed.maxPrice !== null && menu.length && !menu.some(m => (+m.price || 0) <= parsed.maxPrice)) return;
 
           let vScore = catScore + specScore + vendorScore + socScore + descScore;
 
@@ -15401,7 +15415,7 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
         return { parsed, results: finalResults };
       }
 
-      return { parseQuery, search };
+      return { parseQuery, search, STOP_WORDS };
     })();
 
     function _searchHaystack(item) {
@@ -15445,9 +15459,9 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
         // Render interpreted query bar & active filter chips (Section 5 & 8)
         let interpretedHtml = `<div class="search-interpreted-bar">
           <span><i class="fa fa-sliders" style="color:var(--green)"></i> Search Intent:</span>
-          ${parsed && parsed.tokens.length ? `<span class="search-interpreted-chip"><i class="fa fa-tag"></i> Keyword: "${esc(parsed.tokens.join(' '))}"</span>` : ''}
-          ${parsed && parsed.societyIntent ? `<span class="search-interpreted-chip"><i class="fa fa-location-dot"></i> Location: ${esc(parsed.societyIntent)}</span>` : ''}
-          ${parsed && parsed.maxPrice ? `<span class="search-interpreted-chip"><i class="fa fa-indian-rupee-sign"></i> Price ≤ ₹${parsed.maxPrice}</span>` : ''}
+          ${parsed && parsed.tokens.length ? `<span class="search-interpreted-chip chip-keyword"><i class="fa fa-tag"></i> Keyword: "${esc(parsed.tokens.join(' + '))}"</span>` : ''}
+          ${parsed && parsed.societyIntent ? `<span class="search-interpreted-chip chip-society"><i class="fa fa-location-dot"></i> Society: ${esc(parsed.societyIntent)}</span>` : ''}
+          ${parsed && parsed.maxPrice ? `<span class="search-interpreted-chip chip-price"><i class="fa fa-indian-rupee-sign"></i> Price ≤ ₹${parsed.maxPrice}</span>` : ''}
           <button type="button" class="btn btn-ghost btn-sm" style="margin-left:auto;font-size:.78rem" onclick="clearSearch()"><i class="fa fa-xmark"></i> Clear Search</button>
         </div>`;
 
@@ -15473,7 +15487,15 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
           const tg = sec.querySelector('#tg_search_direct');
           directMatches.forEach((r, i) => {
             const catObj = CATS.find(c => c.name === r.vendor.cat) || { name: r.vendor.cat || 'Business' };
-            tg.appendChild(makeTile(r.vendor, i + 1, catObj));
+            const tile = makeTile(r.vendor, i + 1, catObj);
+            if (r.type === 'item' && r.item) {
+              const itemBadge = document.createElement('div');
+              itemBadge.className = 'search-item-matched-badge';
+              itemBadge.style.cssText = 'background:var(--green-pale);color:var(--green-dark);border:1px solid rgba(46,125,50,0.25);border-radius:8px;padding:6px 10px;font-size:0.82rem;margin:8px 0;display:flex;align-items:center;justify-content:space-between;font-weight:700';
+              itemBadge.innerHTML = `<span><i class="fa fa-cake-candles" style="margin-right:6px;color:var(--green)"></i> ${esc(r.item.name)}</span><span style="background:var(--green);color:#fff;padding:2px 8px;border-radius:6px;font-size:0.78rem">₹${r.item.price}</span>`;
+              tile.querySelector('.tile-body')?.insertBefore(itemBadge, tile.querySelector('.tile-divider') || tile.querySelector('.tile-info'));
+            }
+            tg.appendChild(tile);
           });
         }
 
@@ -15492,6 +15514,13 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
           nearbyMatches.forEach((r, i) => {
             const catObj = CATS.find(c => c.name === r.vendor.cat) || { name: r.vendor.cat || 'Business' };
             const tile = makeTile(r.vendor, i + 1, catObj);
+            if (r.type === 'item' && r.item) {
+              const itemBadge = document.createElement('div');
+              itemBadge.className = 'search-item-matched-badge';
+              itemBadge.style.cssText = 'background:var(--green-pale);color:var(--green-dark);border:1px solid rgba(46,125,50,0.25);border-radius:8px;padding:6px 10px;font-size:0.82rem;margin:8px 0;display:flex;align-items:center;justify-content:space-between;font-weight:700';
+              itemBadge.innerHTML = `<span><i class="fa fa-cake-candles" style="margin-right:6px;color:var(--green)"></i> ${esc(r.item.name)}</span><span style="background:var(--green);color:#fff;padding:2px 8px;border-radius:6px;font-size:0.78rem">₹${r.item.price}</span>`;
+              tile.querySelector('.tile-body')?.insertBefore(itemBadge, tile.querySelector('.tile-divider') || tile.querySelector('.tile-info'));
+            }
             const badge = document.createElement('div');
             badge.className = 'nearby-society-badge';
             badge.innerHTML = `<i class="fa fa-location-dot"></i> ${esc(r.society)}`;
@@ -15553,10 +15582,16 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
     let _searchSuggestItems = [], _searchSuggestIdx = -1, _searchDebounce = null;
 
     function onSearchInput() {
-      document.getElementById('searchClearBtn').style.display = document.getElementById('searchInput').value ? 'block' : 'none';
+      const q = (document.getElementById('searchInput').value || '').trim();
+      document.getElementById('searchClearBtn').style.display = q ? 'block' : 'none';
       clearTimeout(_searchDebounce);
-      renderAll();
-      if (_browseLevel === 'category') renderCategoryPage();
+      if (q && _browseLevel === 'societies') {
+        if (!selectedSociety) selectedSociety = 'Prateek Laurel';
+        openSocietyPage();
+      } else {
+        renderAll();
+        if (_browseLevel === 'category') renderCategoryPage();
+      }
       _searchDebounce = setTimeout(renderSearchSuggestions, 100);
     }
 
@@ -15645,10 +15680,39 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
     }
 
     function _highlightMatch(text, q) {
-      const words = _queryWords(q).map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).filter(Boolean);
+      if (!text || !q) return esc(text || '');
+      const stopWords = (typeof TyntronSearchEngine !== 'undefined' && TyntronSearchEngine.STOP_WORDS)
+        ? TyntronSearchEngine.STOP_WORDS
+        : new Set(['i', 'want', 'to', 'order', 'in', 'at', 'the', 'a', 'an', 'is', 'for']);
+
+      const rawWords = (q || '').toLowerCase().trim().split(/\s+/).filter(w => {
+        return w.length > 1 && !stopWords.has(w);
+      });
+
+      const terms = new Set();
+      rawWords.forEach(w => {
+        terms.add(w);
+        if (w.endsWith('s') && w.length > 3) terms.add(w.slice(0, -1));
+        if (w.endsWith('es') && w.length > 4) terms.add(w.slice(0, -2));
+      });
+
+      try {
+        if (typeof TyntronSearchEngine !== 'undefined' && TyntronSearchEngine.parseQuery) {
+          const parsed = TyntronSearchEngine.parseQuery(q);
+          if (parsed && parsed.tokens) {
+            parsed.tokens.forEach(t => { if (t && t.length > 1) terms.add(t); });
+          }
+        }
+      } catch (e) { }
+
+      const allWords = Array.from(terms)
+        .filter(w => w && w.length > 1)
+        .sort((a, b) => b.length - a.length)
+        .map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+
       const safe = esc(text);
-      if (!words.length) return safe;
-      return safe.replace(new RegExp('(' + words.join('|') + ')', 'ig'), '<b>$1</b>');
+      if (!allWords.length) return safe;
+      return safe.replace(new RegExp('(\\b(?:' + allWords.join('|') + ')\\w*)', 'ig'), '<b>$1</b>');
     }
 
     function renderSearchSuggestions() {
