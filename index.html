@@ -4903,132 +4903,175 @@
   <!-- ── CARPOOL MODULE MODALS ── -->
   <!-- 1. Driver Publish Ride Modal -->
   <div class="modal-overlay" id="offerRideModal" style="z-index:9999">
-    <div class="modal" style="max-width:680px">
-      <div class="modal-title" id="offerRideModalTitle">
-        <i class="fa fa-car-side" style="color:var(--green)"></i> Offer / Publish a Ride
+    <div class="modal" style="max-width:680px;max-height:90vh;display:flex;flex-direction:column;padding:0;overflow:hidden;border-radius:20px">
+      <!-- Modal Header (Fixed at top) -->
+      <div style="background:linear-gradient(135deg, #1c2733 0%, #2c3e50 100%);color:#fff;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+        <div class="modal-title" id="offerRideModalTitle" style="color:#fff;margin:0;font-size:1.15rem;font-weight:800;display:flex;align-items:center;gap:10px">
+          <i class="fa fa-car-side" style="color:var(--green)"></i> Offer / Publish a Ride
+        </div>
+        <button type="button" onclick="closeModal('offerRideModal')" style="background:none;border:none;color:#fff;font-size:1.4rem;cursor:pointer;opacity:0.8">&times;</button>
       </div>
-      <form onsubmit="saveOfferRide(event)">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
-          <div class="form-group">
-            <label>Start Location (Origin) *</label>
-            <input type="text" id="cp_origin" required placeholder="e.g. Prateek Laurel, Noida Sec 120"
-              onchange="autoSuggestCarpoolPrice()">
-          </div>
-          <div class="form-group">
-            <label>End Location (Destination) *</label>
-            <input type="text" id="cp_destination" required placeholder="e.g. Cyber City / Noida Sec 62 / Airport"
-              onchange="autoSuggestCarpoolPrice()">
-          </div>
-        </div>
 
-        <div class="form-group" style="margin-bottom:14px">
-          <label>Intermediate Stopovers (Optional)</label>
-          <input type="text" id="cp_stopovers" placeholder="e.g. Sec 18 Metro, Botanical Garden, Ashram">
-        </div>
-
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
-          <div class="form-group">
-            <label>Departure Date *</label>
-            <input type="date" id="cp_date" required>
-          </div>
-          <div class="form-group">
-            <label>Departure Time *</label>
-            <input type="time" id="cp_time" required>
-          </div>
-          <div class="form-group">
-            <label>Commute Type</label>
-            <select id="cp_recurring">
-              <option value="single">Single Trip</option>
-              <option value="daily">Daily Commute (Mon-Fri)</option>
-              <option value="weekly">Weekly Trip</option>
-            </select>
-          </div>
-        </div>
-
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
-          <div class="form-group">
-            <label>Seats Available *</label>
-            <select id="cp_seats" required>
-              <option value="1">1 Seat</option>
-              <option value="2" selected>2 Seats</option>
-              <option value="3">3 Seats</option>
-              <option value="4">4 Seats</option>
-              <option value="5">5 Seats</option>
-              <option value="6">6 Seats</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Price Per Seat (₹) *</label>
-            <div style="display:flex;align-items:center;gap:8px">
-              <input type="number" id="cp_price" required min="10" placeholder="e.g. 80">
-              <button type="button" class="btn btn-sm btn-ghost" onclick="autoSuggestCarpoolPrice()"
-                title="Auto Suggest Fair Price" style="white-space:nowrap;padding:8px 10px">
-                <i class="fa fa-wand-magic-sparkles" style="color:var(--gold)"></i> Suggest
+      <!-- Modal Body (Scrollable) -->
+      <div style="padding:20px 24px;overflow-y:auto;flex:1;min-height:0">
+        <form onsubmit="saveOfferRide(event)">
+          <!-- Trip Direction Selector (Resident Society Binding) -->
+          <div style="background:#f8fafc;padding:12px 14px;border-radius:14px;border:1.5px solid #e2e8f0;margin-bottom:16px">
+            <div style="font-size:0.8rem;font-weight:700;color:var(--text);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
+              <span><i class="fa fa-building" style="color:var(--green)"></i> Resident Society: <b id="cp_driverSocietyLabel" style="color:var(--green-dark)">Registered Society</b></span>
+              <span style="font-size:0.72rem;background:#e8f5e9;color:#2e7d32;padding:2px 8px;border-radius:8px;font-weight:700"><i class="fa fa-circle-check"></i> Resident Ride Only</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:center">
+              <button type="button" id="cp_dirOutboundBtn" onclick="setCarpoolTripDirection('outbound')" style="padding:9px 12px;border-radius:10px;font-size:0.82rem;font-weight:700;border:1.5px solid var(--green);background:var(--green-pale);color:var(--green-dark);cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .2s">
+                <i class="fa fa-arrow-right-from-bracket" style="font-size:1rem"></i>
+                <div style="text-align:left">
+                  <div>Going from Society</div>
+                  <div style="font-size:0.7rem;font-weight:500;opacity:0.8">Start = Society</div>
+                </div>
+              </button>
+              <button type="button" id="cp_dirInboundBtn" onclick="setCarpoolTripDirection('inbound')" style="padding:9px 12px;border-radius:10px;font-size:0.82rem;font-weight:700;border:1.5px solid #cbd5e1;background:#fff;color:#64748b;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .2s">
+                <i class="fa fa-arrow-right-to-bracket" style="font-size:1rem"></i>
+                <div style="text-align:left">
+                  <div>Coming to Society</div>
+                  <div style="font-size:0.7rem;font-weight:500;opacity:0.8">End = Society</div>
+                </div>
+              </button>
+              <button type="button" onclick="toggleCarpoolTripDirection()" class="btn btn-sm btn-ghost" title="Swap From & To" style="padding:10px 12px;border:1.5px solid #cbd5e1;border-radius:10px;height:100%;background:#fff">
+                <i class="fa fa-arrow-right-arrow-left" style="color:var(--green)"></i> Swap
               </button>
             </div>
-            <div style="font-size:0.74rem;color:var(--text-muted);margin-top:2px" id="cp_priceSuggestionNote">Fair
-              price: ₹60 - ₹120 per seat</div>
           </div>
-        </div>
 
-        <div style="border-top:1.5px dashed var(--border);padding-top:14px;margin-top:14px">
-          <div
-            style="font-size:0.8rem;font-weight:800;color:var(--green-dark);margin-bottom:10px;text-transform:uppercase">
-            Vehicle &amp; Driver Preferences</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px">
-            <div class="form-group">
-              <label>Car Model *</label>
-              <input type="text" id="cp_carModel" required placeholder="e.g. Honda City / Brezza">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;align-items:end">
+            <div class="form-group" style="margin-bottom:0;display:flex;flex-direction:column;justify-content:flex-end">
+              <label id="cp_originLabel" style="display:flex;justify-content:space-between;align-items:center;min-height:24px;margin-bottom:6px">
+                <span style="font-weight:700;white-space:nowrap;font-size:0.85rem">From (Origin) *</span>
+                <span id="cp_originBadge" style="font-size:0.7rem;font-weight:700;white-space:nowrap"></span>
+              </label>
+              <input type="text" id="cp_origin" required placeholder="e.g. Ace Aspire"
+                onchange="autoSuggestCarpoolPrice()" style="margin:0;width:100%;box-sizing:border-box">
             </div>
-            <div class="form-group">
-              <label>Car Color</label>
-              <input type="text" id="cp_carColor" placeholder="e.g. White / Silver">
-            </div>
-            <div class="form-group">
-              <label>Car Plate / Registration *</label>
-              <input type="text" id="cp_carPlate" required placeholder="e.g. UP16 AB 1234">
+            <div class="form-group" style="margin-bottom:0;display:flex;flex-direction:column;justify-content:flex-end">
+              <label id="cp_destinationLabel" style="display:flex;justify-content:space-between;align-items:center;min-height:24px;margin-bottom:6px">
+                <span style="font-weight:700;white-space:nowrap;font-size:0.85rem">To (Destination) *</span>
+                <span id="cp_destinationBadge" style="font-size:0.7rem;font-weight:700;white-space:nowrap"></span>
+              </label>
+              <input type="text" id="cp_destination" required placeholder="e.g. Cyber City / Noida Sec 62 / Airport"
+                onchange="autoSuggestCarpoolPrice()" style="margin:0;width:100%;box-sizing:border-box">
             </div>
           </div>
 
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+          <div class="form-group" style="margin-bottom:14px">
+            <label>Intermediate Stopovers (Optional)</label>
+            <input type="text" id="cp_stopovers" placeholder="e.g. Sec 18 Metro, Botanical Garden, Ashram">
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
             <div class="form-group">
-              <label>Fuel Type</label>
-              <select id="cp_fuelType">
-                <option value="petrol">Petrol / Diesel</option>
-                <option value="cng">CNG</option>
-                <option value="ev">Electric Vehicle (EV) ⚡</option>
+              <label>Departure Date *</label>
+              <input type="date" id="cp_date" required>
+            </div>
+            <div class="form-group">
+              <label>Departure Time *</label>
+              <input type="time" id="cp_time" required>
+            </div>
+            <div class="form-group">
+              <label>Commute Type</label>
+              <select id="cp_recurring">
+                <option value="single">Single Trip</option>
+                <option value="daily">Daily Commute (Mon-Fri)</option>
+                <option value="weekly">Weekly Trip</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+            <div class="form-group">
+              <label>Seats Available *</label>
+              <select id="cp_seats" required>
+                <option value="1">1 Seat</option>
+                <option value="2" selected>2 Seats</option>
+                <option value="3">3 Seats</option>
+                <option value="4">4 Seats</option>
+                <option value="5">5 Seats</option>
+                <option value="6">6 Seats</option>
               </select>
             </div>
             <div class="form-group">
-              <label>Booking Mode</label>
-              <select id="cp_bookingMode">
-                <option value="instant">Instant Booking (Auto Confirm)</option>
-                <option value="approval">Request Approval (Driver approves each seat)</option>
-              </select>
+              <label>Price Per Seat (₹) *</label>
+              <div style="display:flex;align-items:center;gap:8px">
+                <input type="number" id="cp_price" required min="10" placeholder="e.g. 80">
+                <button type="button" class="btn btn-sm btn-ghost" onclick="autoSuggestCarpoolPrice()"
+                  title="Auto Suggest Fair Price" style="white-space:nowrap;padding:8px 10px">
+                  <i class="fa fa-wand-magic-sparkles" style="color:var(--gold)"></i> Suggest
+                </button>
+              </div>
+              <div style="font-size:0.74rem;color:var(--text-muted);margin-top:2px" id="cp_priceSuggestionNote">Fair
+                price: ₹60 - ₹120 per seat</div>
             </div>
           </div>
 
-          <div style="display:flex;gap:16px;flex-wrap:wrap">
-            <label style="font-size:0.84rem;cursor:pointer;display:flex;align-items:center;gap:6px">
-              <input type="checkbox" id="cp_womenOnly"> <span style="font-weight:600;color:#e91e63"><i
-                  class="fa fa-person-dress"></i> Women-Only Ride</span>
-            </label>
-            <label style="font-size:0.84rem;cursor:pointer;display:flex;align-items:center;gap:6px">
-              <input type="checkbox" id="cp_petsAllowed"> <span><i class="fa fa-paw"></i> Pets Allowed</span>
-            </label>
-            <label style="font-size:0.84rem;cursor:pointer;display:flex;align-items:center;gap:6px">
-              <input type="checkbox" id="cp_nonSmoking" checked> <span><i class="fa fa-ban-smoking"></i>
-                Non-Smoking</span>
-            </label>
-          </div>
-        </div>
+          <div style="border-top:1.5px dashed var(--border);padding-top:14px;margin-top:14px">
+            <div
+              style="font-size:0.8rem;font-weight:800;color:var(--green-dark);margin-bottom:10px;text-transform:uppercase">
+              Vehicle &amp; Driver Preferences</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px">
+              <div class="form-group">
+                <label>Car Model *</label>
+                <input type="text" id="cp_carModel" required placeholder="e.g. Honda City / Brezza">
+              </div>
+              <div class="form-group">
+                <label>Car Color</label>
+                <input type="text" id="cp_carColor" placeholder="e.g. White / Silver">
+              </div>
+              <div class="form-group">
+                <label>Car Plate / Registration *</label>
+                <input type="text" id="cp_carPlate" required placeholder="e.g. UP16 AB 1234">
+              </div>
+            </div>
 
-        <div class="modal-actions">
-          <button type="button" class="btn btn-ghost" onclick="closeModal('offerRideModal')">Cancel</button>
-          <button type="submit" class="btn btn-primary" id="offerRideSubmitBtn"><i class="fa fa-paper-plane"></i>
-            Publish Ride</button>
-        </div>
-      </form>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+              <div class="form-group">
+                <label>Fuel Type</label>
+                <select id="cp_fuelType">
+                  <option value="petrol">Petrol / Diesel</option>
+                  <option value="cng">CNG</option>
+                  <option value="ev">Electric Vehicle (EV) ⚡</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Booking Mode</label>
+                <select id="cp_bookingMode">
+                  <option value="instant">Instant Booking (Auto Confirm)</option>
+                  <option value="approval">Request Approval (Driver approves each seat)</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:16px;flex-wrap:wrap">
+              <label style="font-size:0.84rem;cursor:pointer;display:flex;align-items:center;gap:6px">
+                <input type="checkbox" id="cp_womenOnly"> <span style="font-weight:600;color:#e91e63"><i
+                    class="fa fa-person-dress"></i> Women-Only Ride</span>
+              </label>
+              <label style="font-size:0.84rem;cursor:pointer;display:flex;align-items:center;gap:6px">
+                <input type="checkbox" id="cp_petsAllowed"> <span><i class="fa fa-paw"></i> Pets Allowed</span>
+              </label>
+              <label style="font-size:0.84rem;cursor:pointer;display:flex;align-items:center;gap:6px">
+                <input type="checkbox" id="cp_nonSmoking" checked> <span><i class="fa fa-ban-smoking"></i>
+                  Non-Smoking</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Sticky Action Bar (Always visible at the bottom) -->
+          <div class="modal-actions" style="margin:20px -24px -20px -24px;padding:14px 24px;border-top:1.5px solid #e2e8f0;display:flex;justify-content:flex-end;gap:10px;position:sticky;bottom:0;background:#fff;z-index:10;box-shadow:0 -6px 18px rgba(0,0,0,0.06);border-bottom-left-radius:20px;border-bottom-right-radius:20px">
+            <button type="button" class="btn btn-ghost" onclick="closeModal('offerRideModal')">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="offerRideSubmitBtn" style="padding:10px 22px;font-weight:800;border-radius:12px">
+              <i class="fa fa-paper-plane"></i> Publish Ride
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 
@@ -5055,9 +5098,9 @@
 
   <!-- 5. Driver Identity & Vehicle Verification Modal (Two Verification Options) -->
   <div class="modal-overlay" id="carpoolVerifyModal" style="z-index:9999">
-    <div class="modal" style="max-width:600px;padding:0;overflow:hidden;border-radius:20px">
-      <!-- Modal Header -->
-      <div style="background:linear-gradient(135deg, #1c2733 0%, #2c3e50 100%);color:#fff;padding:18px 24px;display:flex;align-items:center;justify-content:space-between">
+    <div class="modal" style="max-width:600px;padding:0;overflow:hidden;border-radius:20px;max-height:90vh;display:flex;flex-direction:column">
+      <!-- Modal Header (Fixed at top) -->
+      <div style="background:linear-gradient(135deg, #1c2733 0%, #2c3e50 100%);color:#fff;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
         <div style="display:flex;align-items:center;gap:12px">
           <div style="width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:#4caf50">
             <i class="fa fa-id-card"></i>
@@ -5070,7 +5113,8 @@
         <button type="button" onclick="closeModal('carpoolVerifyModal')" style="background:none;border:none;color:#fff;font-size:1.4rem;cursor:pointer;opacity:0.8">&times;</button>
       </div>
 
-      <div style="padding:20px 24px">
+      <!-- Modal Body (Scrollable with max-height) -->
+      <div style="padding:20px 24px;overflow-y:auto;flex:1;min-height:0">
         <!-- Verification Option Selection Tabs -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;background:#f1f5f9;padding:5px;border-radius:14px">
           <button type="button" id="tabBtnDigiLocker" onclick="switchVerifyTab('digilocker')" style="padding:10px 8px;border-radius:10px;font-weight:700;font-size:0.84rem;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.2s;background:#fff;color:#0d47a1;box-shadow:0 2px 6px rgba(0,0,0,0.08)">
@@ -5127,31 +5171,73 @@
           </div>
 
           <form onsubmit="saveDriverVerification(event)">
-            <div class="form-group" style="margin-bottom:14px">
-              <label style="font-weight:700">Driving License Number *</label>
-              <input type="text" id="cp_dlNumber" required placeholder="e.g. UP16 20210012345">
-            </div>
-            <div class="form-group" style="margin-bottom:14px">
-              <label style="font-weight:700">Upload Driving License Photo (JPG / PNG / PDF) *</label>
-              <input type="file" id="cp_dlFile" accept="image/*,.pdf">
-            </div>
-            <div class="form-group" style="margin-bottom:14px">
-              <label style="font-weight:700">Upload Vehicle Registration (RC) Photo *</label>
-              <input type="file" id="cp_rcFile" accept="image/*,.pdf">
-            </div>
-            <div class="form-group" style="margin-bottom:14px">
-              <label style="display:flex;justify-content:space-between;align-items:center;font-weight:700">
-                <span>Upload Vehicle / Car Photo <span style="font-weight:400;color:var(--text-muted);font-size:0.78rem">(Optional)</span></span>
-              </label>
-              <input type="file" id="cp_carPhotoFile" accept="image/*" onchange="previewVehiclePhoto(event)">
-              <div id="cp_carPhotoPreview" style="margin-top:8px;display:none">
-                <img id="cp_carPhotoImg" src="" style="width:110px;height:75px;object-fit:cover;border-radius:10px;border:1.5px solid var(--green)">
-                <span style="font-size:0.72rem;color:var(--text-muted);display:block;margin-top:2px"><i class="fa fa-check" style="color:var(--green)"></i> Vehicle photo preview</span>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+              <div class="form-group" style="margin:0">
+                <label style="font-weight:700">Driving License Number *</label>
+                <input type="text" id="cp_dlNumber" required placeholder="e.g. UP16 20210012345" style="text-transform:uppercase">
+              </div>
+              <div class="form-group" style="margin:0">
+                <label style="font-weight:700">Vehicle RC Number *</label>
+                <input type="text" id="cp_rcNumber" required placeholder="e.g. UP16-BW-7890" style="text-transform:uppercase">
               </div>
             </div>
-            <div class="modal-actions" style="margin-top:18px;display:flex;justify-content:flex-end;gap:10px">
+
+            <!-- DL Upload Field with Preview -->
+            <div class="form-group" style="margin-bottom:14px">
+              <label style="font-weight:700;display:flex;justify-content:space-between">
+                <span>Upload Driving License Photo (JPG / PNG / PDF) *</span>
+                <span id="cp_dlFileName" style="font-weight:400;font-size:0.75rem;color:var(--text-muted)"></span>
+              </label>
+              <input type="file" id="cp_dlFile" accept="image/*,.pdf" onchange="previewDriverDocFile(event, 'cp_dl')">
+              <div id="cp_dlPreview" style="margin-top:8px;display:none;background:#f8fafc;padding:8px;border-radius:10px;border:1px solid #e2e8f0;display:none;align-items:center;gap:10px">
+                <img id="cp_dlImg" src="" style="width:70px;height:50px;object-fit:cover;border-radius:6px;border:1px solid var(--border)" alt="DL Preview">
+                <div style="flex:1">
+                  <div id="cp_dlLabel" style="font-size:0.78rem;font-weight:700;color:var(--text)">Driving License Selected</div>
+                  <span style="font-size:0.72rem;color:var(--green)"><i class="fa fa-check-circle"></i> Ready to upload</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- RC Upload Field with Preview -->
+            <div class="form-group" style="margin-bottom:14px">
+              <label style="font-weight:700;display:flex;justify-content:space-between">
+                <span>Upload Vehicle Registration (RC) Photo *</span>
+                <span id="cp_rcFileName" style="font-weight:400;font-size:0.75rem;color:var(--text-muted)"></span>
+              </label>
+              <input type="file" id="cp_rcFile" accept="image/*,.pdf" onchange="previewDriverDocFile(event, 'cp_rc')">
+              <div id="cp_rcPreview" style="margin-top:8px;display:none;background:#f8fafc;padding:8px;border-radius:10px;border:1px solid #e2e8f0;display:none;align-items:center;gap:10px">
+                <img id="cp_rcImg" src="" style="width:70px;height:50px;object-fit:cover;border-radius:6px;border:1px solid var(--border)" alt="RC Preview">
+                <div style="flex:1">
+                  <div id="cp_rcLabel" style="font-size:0.78rem;font-weight:700;color:var(--text)">Vehicle RC Selected</div>
+                  <span style="font-size:0.72rem;color:var(--green)"><i class="fa fa-check-circle"></i> Ready to upload</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Vehicle / Car Photo Field with Preview -->
+            <div class="form-group" style="margin-bottom:14px">
+              <label style="display:flex;justify-content:space-between;align-items:center;font-weight:700">
+                <span>Upload Vehicle / Car Photo <span style="font-weight:400;color:var(--text-muted);font-size:0.78rem">(With readable number plate)</span></span>
+              </label>
+              <input type="file" id="cp_carPhotoFile" accept="image/*" onchange="previewVehiclePhoto(event)">
+              <div id="cp_carPhotoPreview" style="margin-top:8px;display:none;background:#f8fafc;padding:8px;border-radius:10px;border:1px solid #e2e8f0;display:none;align-items:center;gap:10px">
+                <img id="cp_carPhotoImg" src="" style="width:70px;height:50px;object-fit:cover;border-radius:6px;border:1px solid var(--green)">
+                <div style="flex:1">
+                  <div style="font-size:0.78rem;font-weight:700;color:var(--text)">Vehicle Photo Selected</div>
+                  <span style="font-size:0.72rem;color:var(--green)"><i class="fa fa-check-circle"></i> Ready to upload</span>
+                </div>
+              </div>
+            </div>
+
+            <div id="cp_existingDocsSection" style="display:none;margin-bottom:14px;background:#f1f5f9;border-radius:10px;padding:10px 12px;font-size:0.8rem">
+              <div style="font-weight:700;margin-bottom:4px;color:var(--text)">Previously Submitted Documents:</div>
+              <div id="cp_existingDocsLinks" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+            </div>
+
+            <!-- Sticky Action Bar (Always visible at the bottom) -->
+            <div class="modal-actions" style="margin:18px -24px -20px -24px;padding:14px 24px;border-top:1.5px solid #e2e8f0;display:flex;justify-content:flex-end;gap:10px;position:sticky;bottom:0;background:#fff;z-index:10;box-shadow:0 -6px 18px rgba(0,0,0,0.06);border-bottom-left-radius:20px;border-bottom-right-radius:20px">
               <button type="button" class="btn btn-ghost" onclick="closeModal('carpoolVerifyModal')">Cancel</button>
-              <button type="submit" class="btn btn-primary" style="background:linear-gradient(135deg, #e65100 0%, #b71c1c 100%);border:none">
+              <button type="submit" id="cp_submitVerifyBtn" class="btn btn-primary" style="background:linear-gradient(135deg, #e65100 0%, #b71c1c 100%);border:none;box-shadow:0 4px 14px rgba(230,81,0,0.3);padding:10px 22px;font-weight:800;border-radius:12px">
                 <i class="fa fa-paper-plane"></i> Submit for Admin Verification
               </button>
             </div>
@@ -5161,11 +5247,37 @@
     </div>
   </div>
 
+  <!-- Driver Document Lightbox Preview Modal -->
+  <div class="modal-overlay" id="driverDocViewerModal" style="z-index:999999">
+    <div class="modal" style="max-width:720px;padding:0;overflow:hidden;border-radius:18px">
+      <div style="background:linear-gradient(135deg, #1c2733 0%, #2c3e50 100%);color:#fff;padding:16px 20px;display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:10px">
+          <i class="fa fa-file-shield" style="color:var(--green)"></i>
+          <span id="driverDocViewerTitle" style="font-weight:700;font-size:1rem">Document Preview</span>
+        </div>
+        <button type="button" onclick="closeModal('driverDocViewerModal')" style="background:none;border:none;color:#fff;font-size:1.4rem;cursor:pointer">&times;</button>
+      </div>
+      <div style="padding:20px;text-align:center;background:#0b1118;min-height:300px;max-height:75vh;overflow:auto;display:flex;align-items:center;justify-content:center">
+        <img id="driverDocViewerImg" src="" style="max-width:100%;max-height:70vh;border-radius:8px;object-fit:contain;display:none" alt="Document">
+        <iframe id="driverDocViewerFrame" src="" style="width:100%;height:65vh;border:none;display:none;background:#fff;border-radius:8px"></iframe>
+        <div id="driverDocViewerFallback" style="display:none;color:#fff;padding:30px">
+          <i class="fa fa-file-pdf" style="font-size:3.5rem;color:#ef4444;margin-bottom:12px;display:block"></i>
+          <p id="driverDocViewerFallbackText" style="font-size:0.9rem">PDF Document</p>
+          <a id="driverDocViewerOpenBtn" href="#" target="_blank" class="btn btn-primary btn-sm" style="margin-top:12px"><i class="fa fa-arrow-up-right-from-square"></i> Open in New Tab</a>
+        </div>
+      </div>
+      <div style="padding:12px 20px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center">
+        <span id="driverDocViewerSubtext" style="font-size:0.78rem;color:var(--text-muted)"></span>
+        <button type="button" class="btn btn-sm btn-ghost" onclick="closeModal('driverDocViewerModal')">Close</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 5B. DigiLocker Govt Verification Interactive Simulation Modal -->
   <div class="modal-overlay" id="digilockerModal" style="z-index:99999">
-    <div class="modal" style="max-width:520px;padding:0;overflow:hidden;border-radius:20px">
-      <!-- DigiLocker Header -->
-      <div style="background:linear-gradient(135deg, #0a2540 0%, #1565c0 100%);color:#fff;padding:18px 24px">
+    <div class="modal" style="max-width:520px;padding:0;overflow:hidden;border-radius:20px;max-height:90vh;display:flex;flex-direction:column">
+      <!-- DigiLocker Header (Fixed at top) -->
+      <div style="background:linear-gradient(135deg, #0a2540 0%, #1565c0 100%);color:#fff;padding:18px 24px;flex-shrink:0">
         <div style="display:flex;align-items:center;justify-content:space-between">
           <div style="display:flex;align-items:center;gap:10px">
             <div style="background:#fff;padding:5px 10px;border-radius:8px;display:flex;align-items:center;gap:6px">
@@ -5181,25 +5293,41 @@
         </div>
       </div>
 
-      <div style="padding:20px 24px">
-        <!-- Step 1: Aadhaar / Mobile Auth -->
+      <div style="padding:20px 24px;overflow-y:auto;flex:1;min-height:0">
+        <!-- Step 1: Aadhaar / Mobile & Document Auth -->
         <div id="dlStep1">
           <div style="font-weight:800;font-size:1rem;color:var(--text);margin-bottom:4px">
-            Step 1: Authenticate with DigiLocker
+            Step 1: MoRTH &amp; DigiLocker Document Verification
           </div>
           <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:14px">
-            Enter your 12-digit Aadhaar Number or DigiLocker Registered Mobile Number to request document access.
+            Enter your official Driving License &amp; Vehicle Registration details to authenticate directly with MoRTH Sarathi &amp; Vahan databases via DigiLocker.
           </p>
-          <div class="form-group" style="margin-bottom:14px">
-            <label style="font-weight:700">Aadhaar / Mobile Number *</label>
-            <input type="text" id="dlInputAadhaar" placeholder="e.g. 987654321098 or Mobile No." style="border-radius:10px;padding:12px;font-size:0.95rem" maxlength="14">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+            <div class="form-group" style="margin:0">
+              <label style="font-weight:700">Driving License Number *</label>
+              <input type="text" id="dlInputDlNumber" placeholder="e.g. UP16 20210012345" style="border-radius:10px;padding:10px;font-size:0.9rem;text-transform:uppercase">
+            </div>
+            <div class="form-group" style="margin:0">
+              <label style="font-weight:700">Date of Birth (as per DL) *</label>
+              <input type="date" id="dlInputDob" style="border-radius:10px;padding:10px;font-size:0.9rem">
+            </div>
           </div>
-          <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:18px;font-size:0.78rem;color:var(--text-muted)">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+            <div class="form-group" style="margin:0">
+              <label style="font-weight:700">Vehicle RC / Plate No. *</label>
+              <input type="text" id="dlInputRcNumber" placeholder="e.g. UP16-BW-7890" style="border-radius:10px;padding:10px;font-size:0.9rem;text-transform:uppercase">
+            </div>
+            <div class="form-group" style="margin:0">
+              <label style="font-weight:700">DigiLocker Mobile / Aadhaar *</label>
+              <input type="text" id="dlInputAadhaar" placeholder="10-digit mobile or Aadhaar" style="border-radius:10px;padding:10px;font-size:0.9rem" maxlength="14">
+            </div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:16px;font-size:0.78rem;color:var(--text-muted)">
             <input type="checkbox" id="dlConsentCheck" checked style="margin-top:2px">
-            <label for="dlConsentCheck">I hereby consent to DigiLocker sharing my Driving License and Vehicle Registration (RC) details with Tyntron for driver verification.</label>
+            <label for="dlConsentCheck">I hereby give explicit consent to DigiLocker and MoRTH to verify and share my Driving License &amp; Vehicle Registration status with Tyntron.</label>
           </div>
           <button type="button" class="btn btn-primary" onclick="sendDigiLockerOtp()" style="width:100%;padding:12px;border-radius:12px;font-weight:800;background:#1565c0;border:none">
-            <i class="fa fa-paper-plane"></i> Get DigiLocker Security OTP
+            <i class="fa fa-shield-halved"></i> Request DigiLocker OTP &amp; Authenticate
           </button>
         </div>
 
@@ -5209,7 +5337,7 @@
             Step 2: Enter 6-Digit DigiLocker Security OTP
           </div>
           <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:14px" id="dlOtpSubtext">
-            A 6-digit security OTP has been sent to your registered mobile number ending in <b id="dlOtpMobileEnd">****</b>. (Demo OTP: <b>123456</b>)
+            A 6-digit security OTP has been sent to your registered mobile number ending in <b id="dlOtpMobileEnd">****</b>. (Test OTP: <b>123456</b>)
           </p>
           <div class="form-group" style="margin-bottom:16px;text-align:center">
             <input type="text" id="dlInputOtp" placeholder="123456" maxlength="6" style="border-radius:12px;padding:12px;font-size:1.3rem;letter-spacing:8px;text-align:center;font-weight:800;max-width:240px;margin:0 auto;display:block">
@@ -5238,18 +5366,18 @@
               <i class="fa fa-circle-check"></i>
             </div>
             <div>
-              <div style="font-weight:800;font-size:0.92rem;color:#1b5e20">MoRTH Documents Retrieved Successfully!</div>
-              <div style="font-size:0.78rem;color:#388e3c">Verified digitally via DigiLocker India</div>
+              <div style="font-weight:800;font-size:0.92rem;color:#1b5e20">MoRTH Documents Authenticated Successfully!</div>
+              <div style="font-size:0.78rem;color:#388e3c">Digitally signed &amp; verified via DigiLocker India</div>
             </div>
           </div>
 
           <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:14px;margin-bottom:18px;display:flex;flex-direction:column;gap:10px">
             <!-- Driving License Card -->
             <div style="border-bottom:1px solid #e2e8f0;padding-bottom:8px">
-              <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;font-weight:700">Driving License Details</div>
+              <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;font-weight:700">Driving License Details (MoRTH Sarathi)</div>
               <div style="font-weight:800;font-size:1rem;color:#0f172a;display:flex;align-items:center;justify-content:space-between;margin-top:2px">
                 <span id="dlFetchedDlNum">DL-1420220098765</span>
-                <span style="font-size:0.7rem;background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:10px;font-weight:700">ACTIVE ✓</span>
+                <span style="font-size:0.7rem;background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:10px;font-weight:700">ACTIVE &amp; VALID ✓</span>
               </div>
               <div style="font-size:0.78rem;color:#475569;margin-top:2px">
                 Holder: <b id="dlFetchedName">Driver Name</b> | Class: <b>LMV (Motor Car)</b>
@@ -5257,20 +5385,26 @@
             </div>
 
             <!-- Vehicle RC Card -->
-            <div>
-              <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;font-weight:700">Vehicle Registration (RC) Details</div>
+            <div style="border-bottom:1px solid #e2e8f0;padding-bottom:8px">
+              <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;font-weight:700">Vehicle Registration (RC) Details (MoRTH Vahan)</div>
               <div style="font-weight:800;font-size:1rem;color:#0f172a;display:flex;align-items:center;justify-content:space-between;margin-top:2px">
                 <span id="dlFetchedRcNum">UP16-BW-7890</span>
                 <span style="font-size:0.7rem;background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:10px;font-weight:700">REGISTERED ✓</span>
               </div>
               <div style="font-size:0.78rem;color:#475569;margin-top:2px">
-                Vehicle: <b id="dlFetchedCarModel">Maruti Brezza</b> | Fuel: <b>Petrol/CNG</b>
+                Vehicle: <b id="dlFetchedCarModel">Maruti Brezza</b> | Fuel: <b id="dlFetchedFuel">Petrol/CNG</b>
               </div>
+            </div>
+
+            <!-- Audit Hash & Certificate -->
+            <div style="font-size:0.72rem;color:var(--text-muted)">
+              <i class="fa fa-certificate" style="color:var(--green)"></i> Digital Certificate Token:
+              <span id="dlFetchedCertToken" style="font-family:monospace;font-weight:700;color:var(--text)">DL-VER-2026-OK</span>
             </div>
           </div>
 
           <button type="button" class="btn btn-primary" onclick="confirmDigiLockerVerification()" style="width:100%;padding:12px;border-radius:12px;font-weight:800;background:linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);border:none;box-shadow:0 4px 14px rgba(46,125,50,0.3)">
-            <i class="fa fa-circle-check"></i> Complete Verification &amp; Save Badge
+            <i class="fa fa-circle-check"></i> Complete Verification &amp; Apply Verified Badge
           </button>
         </div>
       </div>
@@ -8128,11 +8262,18 @@
 
     if (FB_READY) {
       try {
+        // Clear any legacy offline IndexedDB persistence cache so no offline/stale data lingers:
+        try {
+          if (window.indexedDB && typeof indexedDB.deleteDatabase === 'function') {
+            indexedDB.deleteDatabase('firestore/[DEFAULT]/homebiz-480e5/main');
+          }
+        } catch (e) { }
+
         const app = firebase.initializeApp(FIREBASE_CONFIG);
         db = firebase.firestore(app);
         auth = firebase.auth(app);
         storage = firebase.storage(app);
-        db.enablePersistence({ synchronizeTabs: true }).catch(() => { });
+        // Do NOT enable offline persistence (IndexedDB). All reads and writes must go directly to Cloud Firestore.
         // Secondary app instance so admin can create business accounts without
         // signing themselves out of their own Firebase session.
         let secApp;
@@ -8153,7 +8294,27 @@
     let _browseLevel = 'societies'; // 'societies' | 'societyPicker' | 'society' | 'category' — drill-down nav state
     let _browseCategory = null;
     let _browseProductQuery = null; // set instead of _browseCategory when level 'category' was reached via a global product pick
-    let SITE_CONFIG = {};
+    function isLocalDevEnvironment() {
+      try {
+        const host = (window.location && window.location.hostname) || '';
+        const proto = (window.location && window.location.protocol) || '';
+        return host === 'localhost' ||
+               host === '127.0.0.1' ||
+               host === '0.0.0.0' ||
+               host.startsWith('192.168.') ||
+               host.startsWith('10.') ||
+               host.endsWith('.local') ||
+               proto === 'file:' ||
+               (window.location && window.location.search && (window.location.search.includes('carpool=true') || window.location.search.includes('dev=true'))) ||
+               (typeof localStorage !== 'undefined' && localStorage.getItem('tyntron_dev_mode') === 'true');
+      } catch (e) {
+        return false;
+      }
+    }
+    let SITE_CONFIG = {
+      showCarpool: isLocalDevEnvironment(),
+      showDriverLogin: isLocalDevEnvironment()
+    };
     const DEFAULT_SOCIETIES = [
       { name: '11th Avenue', address: 'Gaur City 2, Greater Noida West, UP', lat: 28.6080, lng: 77.4270 },
       { name: '16th Avenue Gaur City 2', address: 'Gaur City 2, Greater Noida West, UP', lat: 28.6090, lng: 77.4290 },
@@ -8627,6 +8788,19 @@
 
     /* ═══════════ FEATURE VISIBILITY CONTROLLER ═══════════ */
     function isFeatureVisible(featureKey) {
+      // Carpool and Driver Hub are in active development:
+      // In local development, they are TRUE by default without changing the live database,
+      // so live customers on production domains do not see unready features.
+      if (featureKey === 'showCarpool' || featureKey === 'showDriverLogin') {
+        if (isLocalDevEnvironment()) {
+          try {
+            const localVal = localStorage.getItem('tyntron_local_' + featureKey);
+            if (localVal !== null) return localVal === 'true';
+          } catch (e) { }
+          return true; // Default to true in local development
+        }
+      }
+
       if (SITE_CONFIG && SITE_CONFIG[featureKey] !== undefined) {
         return SITE_CONFIG[featureKey] !== false;
       }
@@ -8636,6 +8810,11 @@
     function setFeatureVisible(featureKey, isVisible) {
       if (!SITE_CONFIG) SITE_CONFIG = {};
       SITE_CONFIG[featureKey] = !!isVisible;
+      if (isLocalDevEnvironment() && (featureKey === 'showCarpool' || featureKey === 'showDriverLogin')) {
+        try {
+          localStorage.setItem('tyntron_local_' + featureKey, !!isVisible ? 'true' : 'false');
+        } catch (e) { }
+      }
     }
 
     async function fsLoadConfig() {
@@ -8648,6 +8827,17 @@
         if (d.exists) {
           const rawData = d.data() || {};
           SITE_CONFIG = { ...SITE_CONFIG, ...rawData };
+          if (isLocalDevEnvironment()) {
+            try {
+              const localCarpool = localStorage.getItem('tyntron_local_showCarpool');
+              SITE_CONFIG.showCarpool = (localCarpool !== null) ? (localCarpool === 'true') : true;
+              const localDriver = localStorage.getItem('tyntron_local_showDriverLogin');
+              SITE_CONFIG.showDriverLogin = (localDriver !== null) ? (localDriver === 'true') : true;
+            } catch (e) {
+              SITE_CONFIG.showCarpool = true;
+              SITE_CONFIG.showDriverLogin = true;
+            }
+          }
         }
       } catch (e) {
         showToast('⚠️ Database error loading site config: ' + e.message);
@@ -10087,7 +10277,7 @@
     /* ═══════════ BOTTOM NAV (Home / Orders / Account app-shell) ═══════════ */
     let _customerPage = 'home';
     function switchCustomerPage(page) {
-      if (page === 'carpool' && SITE_CONFIG.showCarpool === false) {
+      if (page === 'carpool' && !isFeatureVisible('showCarpool')) {
         showToast('Carpool feature is currently disabled');
         page = 'home';
       }
@@ -10124,6 +10314,7 @@
     function openLeftSidebar() {
       const overlay = document.getElementById('leftSidebarOverlay');
       if (overlay) overlay.classList.add('open');
+      applyFooterLinks();
       updateSidebarProviderState();
     }
 
@@ -10155,59 +10346,73 @@
     // Default empty object for seed drivers (only registered drivers will be stored & loaded from database)
     const SEED_DRIVERS = {};
 
-    function initDriverSession() {
-      try {
-        const saved = localStorage.getItem('hb_driverMobile');
-        if (saved) {
-          const db = getDriverDatabase();
-          if (db[saved]) currentDriver = db[saved];
-        }
-      } catch (e) { }
-    }
+    // Strict Database Enforcement: Purge legacy localStorage carpool / driver data on startup
+    try {
+      localStorage.removeItem('hb_drivers_db');
+      localStorage.removeItem('hb_carpool_rides');
+      localStorage.removeItem('hb_carpool_bookings');
+      localStorage.removeItem('hb_driverMobile');
+      sessionStorage.removeItem('hb_driverMobile');
+    } catch (e) { }
 
     let _firestoreDrivers = {};
+
+    function getDriverDatabase() {
+      if (!_firestoreDrivers) _firestoreDrivers = {};
+      return _firestoreDrivers;
+    }
+
+    async function initDriverSession() {
+      try {
+        const saved = sessionStorage.getItem('hb_driverMobile') || localStorage.getItem('hb_driverMobile');
+        if (saved) {
+          if (!db) {
+            currentDriver = null;
+            return;
+          }
+          const docSnap = await db.collection('drivers').doc(saved).get({ source: 'server' });
+          if (docSnap && docSnap.exists) {
+            currentDriver = { mobile: docSnap.id, ...docSnap.data() };
+            _firestoreDrivers[saved] = currentDriver;
+            updatePanelTabs();
+          } else {
+            currentDriver = null;
+            sessionStorage.removeItem('hb_driverMobile');
+            localStorage.removeItem('hb_driverMobile');
+            updatePanelTabs();
+          }
+        }
+      } catch (e) {
+        console.warn('Driver session database check notice:', e.message || e);
+        currentDriver = null;
+      }
+    }
 
     async function fsLoadDrivers() {
       _firestoreDrivers = {};
       if (!db) return _firestoreDrivers;
       try {
-        const snap = await db.collection('drivers').get();
+        const snap = await db.collection('drivers').get({ source: 'server' });
         if (snap && !snap.empty) {
           snap.docs.forEach(doc => {
             _firestoreDrivers[doc.id] = { mobile: doc.id, ...doc.data() };
           });
         }
       } catch (e) {
-        if (e.code === 'permission-denied' || (e.message && e.message.includes('permissions'))) {
-          console.warn('Firestore Security Rules: Reading drivers collection requires permission configuration in Firebase Console.');
-        } else {
-          console.warn('Error loading drivers from Firestore:', e.message || e);
-        }
-      }
-      return _firestoreDrivers;
-    }
-
-    function getDriverDatabase() {
-      if (!_firestoreDrivers) {
-        _firestoreDrivers = {};
+        console.error('Error loading drivers from Firestore:', e);
       }
       return _firestoreDrivers;
     }
 
     async function saveDriverToDatabase(driverObj) {
-      if (!_firestoreDrivers) _firestoreDrivers = {};
-      if (driverObj && driverObj.mobile) {
-        _firestoreDrivers[driverObj.mobile] = driverObj;
-      }
+      if (!driverObj || !driverObj.mobile) return;
       if (!db) {
-        showToast('⚠️ Database is unreachable. Cannot save driver profile.');
-        return;
+        throw new Error('Database is not initialized or offline.');
       }
-      try {
-        await db.collection('drivers').doc(driverObj.mobile).set(driverObj, { merge: true });
-      } catch (e) {
-        showToast('⚠️ Database error saving driver: ' + e.message);
-      }
+      // Direct Firestore write without local storage fallback - will fail cleanly if security rules block it
+      await db.collection('drivers').doc(driverObj.mobile).set(driverObj, { merge: true });
+      if (!_firestoreDrivers) _firestoreDrivers = {};
+      _firestoreDrivers[driverObj.mobile] = driverObj;
     }
 
     let _drvMobileVerified = false;
@@ -10468,15 +10673,20 @@
 
       // Check if driver exists in Firestore DB drivers collection
       let driverFound = false;
+      let dbError = null;
       if (db) {
         try {
-          const docSnap = await db.collection('drivers').doc(mobile).get();
+          const docSnap = await db.collection('drivers').doc(mobile).get({ source: 'server' });
           if (docSnap && docSnap.exists) driverFound = true;
-        } catch (e) { }
+        } catch (e) {
+          dbError = e;
+          console.error('Database error checking driver login:', e);
+        }
       }
-      if (!driverFound) {
-        const localDb = getDriverDatabase();
-        if (localDb[mobile]) driverFound = true;
+
+      if (dbError) {
+        showToast('⚠️ Database error checking driver account: ' + (dbError.message || dbError));
+        return;
       }
 
       if (!driverFound && !isTestIdentifier(mobile)) {
@@ -10514,21 +10724,19 @@
       let driver = null;
       if (db) {
         try {
-          const docSnap = await db.collection('drivers').doc(mobile).get();
+          const docSnap = await db.collection('drivers').doc(mobile).get({ source: 'server' });
           if (docSnap && docSnap.exists) {
             driver = { mobile, ...docSnap.data() };
           }
         } catch (err) {
           console.error('Error checking driver in DB:', err);
+          showToast('⚠️ Database error: ' + (err.message || err));
+          return;
         }
-      }
-      if (!driver) {
-        const localDb = getDriverDatabase();
-        if (localDb[mobile]) driver = localDb[mobile];
       }
 
       if (!driver) {
-        showToast('⚠️ Mobile number ' + mobile + ' is not registered as a Driver. Please complete Driver Registration first.');
+        showToast('⚠️ Mobile number ' + mobile + ' is not registered in database. Please complete Driver Registration first.');
         switchDriverAuthTab('reg');
         const regMobEl = document.getElementById('drv_reg_mobile');
         if (regMobEl) regMobEl.value = mobile;
@@ -10553,7 +10761,7 @@
 
       await logoutPreviousSessions('driver');
       currentDriver = driver;
-      localStorage.setItem('hb_driverMobile', mobile);
+      sessionStorage.setItem('hb_driverMobile', mobile);
 
       closeModal('driverAuthModal');
       updatePanelTabs();
@@ -10600,18 +10808,27 @@
         carPlate,
         fuelType,
         dlNumber,
-        verified: true,
+        verified: false,
+        docsVerified: false,
+        verificationStatus: 'unverified',
         rating: null,
         ridesCompleted: 0,
         earningsTotal: 0,
         onDuty: true
       };
 
-      saveDriverToDatabase(newDriver);
+      // Strict direct Cloud Database write
+      try {
+        await saveDriverToDatabase(newDriver);
+      } catch (err) {
+        showToast('⚠️ Database error: ' + (err.message || err));
+        console.error('Driver registration failed to save in Firestore:', err);
+        return;
+      }
 
       await logoutPreviousSessions('driver');
       currentDriver = newDriver;
-      localStorage.setItem('hb_driverMobile', mobile);
+      sessionStorage.setItem('hb_driverMobile', mobile);
 
       closeModal('driverAuthModal');
       updatePanelTabs();
@@ -10621,7 +10838,10 @@
 
     function driverLogout() {
       currentDriver = null;
-      localStorage.removeItem('hb_driverMobile');
+      try {
+        localStorage.removeItem('hb_driverMobile');
+        sessionStorage.removeItem('hb_driverMobile');
+      } catch (e) { }
       updatePanelTabs();
       switchPanel('customer');
       showToast('Logged out from Driver Portal');
@@ -10658,6 +10878,112 @@
 
       const rides = getCarpoolRides().filter(r => r.driverMobile === currentDriver.mobile);
 
+      const isDocDone = isDriverDocVerified(currentDriver);
+      const verStatus = currentDriver.verificationStatus;
+      const verMethod = currentDriver.verificationMethod || 'admin_upload';
+
+      let statusBadge = '';
+      if (isDocDone) {
+        if (verMethod === 'digilocker') {
+          statusBadge = '<span style="font-size:0.72rem;background:#e3f2fd;color:#0d47a1;padding:3px 10px;border-radius:12px;font-weight:700"><i class="fa fa-shield-halved"></i> 🇮🇳 DIGILOCKER VERIFIED</span>';
+        } else {
+          statusBadge = '<span style="font-size:0.72rem;background:#e8f5e9;color:#2e7d32;padding:3px 10px;border-radius:12px;font-weight:700"><i class="fa fa-circle-check"></i> ADMIN VERIFIED</span>';
+        }
+      } else if (verStatus === 'admin_pending') {
+        statusBadge = '<span style="font-size:0.72rem;background:#fff8e1;color:#f57f17;padding:3px 10px;border-radius:12px;font-weight:700"><i class="fa fa-clock"></i> VERIFICATION PENDING</span>';
+      } else if (verStatus === 'rejected') {
+        statusBadge = '<span style="font-size:0.72rem;background:#ffebee;color:#c62828;padding:3px 10px;border-radius:12px;font-weight:700"><i class="fa fa-circle-xmark"></i> VERIFICATION REJECTED</span>';
+      } else {
+        statusBadge = '<span style="font-size:0.72rem;background:#eceff1;color:#546e7a;padding:3px 10px;border-radius:12px;font-weight:700"><i class="fa fa-circle-question"></i> UNVERIFIED</span>';
+      }
+
+      let alertBanner = '';
+      if (!isDocDone) {
+        if (verStatus === 'admin_pending') {
+          const submittedAtStr = currentDriver.verificationRequest?.submittedAt ? new Date(currentDriver.verificationRequest.submittedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'recently';
+          alertBanner = `
+            <div style="background:linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);border:1.5px solid #ffe082;border-radius:18px;padding:18px 20px;margin-bottom:20px;box-shadow:0 4px 16px rgba(245,127,23,0.08);display:flex;align-items:center;justify-content:space-between;flex-wrap:gap:14px">
+              <div style="display:flex;align-items:center;gap:14px">
+                <div style="width:48px;height:48px;border-radius:50%;background:#ffe082;color:#f57f17;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">
+                  <i class="fa fa-hourglass-half"></i>
+                </div>
+                <div>
+                  <div style="font-size:1.02rem;font-weight:800;color:#e65100;display:flex;align-items:center;gap:8px">
+                    Driver Documents Submitted — Under Admin Review
+                    <span style="font-size:0.72rem;background:#ffcc80;color:#bf360c;padding:2px 8px;border-radius:10px;font-weight:700">IN PROGRESS</span>
+                  </div>
+                  <div style="font-size:0.83rem;color:#795548;margin-top:2px">
+                    Your Driving License &amp; Vehicle RC were submitted on <b>${submittedAtStr}</b>. The Tyntron Admin team will review your request.
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button type="button" class="btn btn-sm btn-outline-plan" onclick="openCarpoolVerifyModal('direct')" style="background:#fff;border-radius:12px;padding:8px 14px">
+                  <i class="fa fa-file-lines"></i> View / Update Documents
+                </button>
+                <button type="button" class="btn btn-sm" onclick="openDigiLockerModal()" style="background:linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);color:#fff;font-weight:700;border-radius:12px;padding:8px 14px;border:none">
+                  <span>🇮🇳</span> Instant Verify via DigiLocker
+                </button>
+              </div>
+            </div>
+          `;
+        } else if (verStatus === 'rejected') {
+          alertBanner = `
+            <div style="background:linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);border:1.5px solid #ef9a9a;border-radius:18px;padding:18px 20px;margin-bottom:20px;box-shadow:0 4px 16px rgba(198,40,40,0.08);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px">
+              <div style="display:flex;align-items:center;gap:14px">
+                <div style="width:48px;height:48px;border-radius:50%;background:#ffcdd2;color:#c62828;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">
+                  <i class="fa fa-circle-exclamation"></i>
+                </div>
+                <div>
+                  <div style="font-size:1.02rem;font-weight:800;color:#c62828;display:flex;align-items:center;gap:8px">
+                    Document Verification Rejected by Admin
+                    <span style="font-size:0.72rem;background:#c62828;color:#fff;padding:2px 8px;border-radius:10px;font-weight:700">ACTION REQUIRED</span>
+                  </div>
+                  <div style="font-size:0.83rem;color:#b71c1c;margin-top:2px">
+                    <b>Admin Note:</b> "${esc(currentDriver.rejectionReason || 'Uploaded documents were blurry or did not match vehicle records.')}"
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button type="button" class="btn btn-sm btn-primary" onclick="openCarpoolVerifyModal('direct')" style="background:#c62828;color:#fff;border-radius:12px;padding:8px 16px;border:none">
+                  <i class="fa fa-upload"></i> Re-Upload Documents
+                </button>
+                <button type="button" class="btn btn-sm" onclick="openDigiLockerModal()" style="background:linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);color:#fff;font-weight:700;border-radius:12px;padding:8px 14px;border:none">
+                  <span>🇮🇳</span> Instant Verify via DigiLocker
+                </button>
+              </div>
+            </div>
+          `;
+        } else {
+          alertBanner = `
+            <div style="background:linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);border:1.5px solid #ffe082;border-radius:18px;padding:18px 20px;margin-bottom:20px;box-shadow:0 4px 16px rgba(230,81,0,0.08);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px">
+              <div style="display:flex;align-items:center;gap:14px">
+                <div style="width:48px;height:48px;border-radius:50%;background:#ffe0b2;color:#e65100;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">
+                  <i class="fa fa-triangle-exclamation"></i>
+                </div>
+                <div>
+                  <div style="font-size:1.02rem;font-weight:800;color:#e65100;display:flex;align-items:center;gap:8px">
+                    Driver Documents &amp; Verification Required
+                    <span style="font-size:0.72rem;background:#ffcc80;color:#bf360c;padding:2px 8px;border-radius:10px;font-weight:700">ACTION REQUIRED</span>
+                  </div>
+                  <div style="font-size:0.83rem;color:#795548;margin-top:2px">
+                    Verify your Driving License &amp; Vehicle RC using <b>DigiLocker (Instant)</b> or <b>Direct Document Upload (Admin Review)</b>.
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button type="button" class="btn btn-sm" onclick="openDigiLockerModal()" style="background:linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);color:#fff;font-weight:800;border-radius:12px;padding:10px 16px;border:none;box-shadow:0 4px 12px rgba(21,101,192,0.3)">
+                  <span>🇮🇳</span> Verify via DigiLocker
+                </button>
+                <button type="button" class="btn btn-sm" onclick="openCarpoolVerifyModal('direct')" style="background:linear-gradient(135deg, #e65100 0%, #b71c1c 100%);color:#fff;font-weight:800;border-radius:12px;padding:10px 16px;border:none;box-shadow:0 4px 12px rgba(230,81,0,0.3)">
+                  <i class="fa fa-upload"></i> Direct Upload
+                </button>
+              </div>
+            </div>
+          `;
+        }
+      }
+
       container.innerHTML = `
         <!-- Driver Profile Header -->
         <div style="background:linear-gradient(135deg, #1c2733 0%, #2c3e50 100%);color:#fff;border-radius:20px;padding:24px;margin-bottom:20px;box-shadow:0 6px 20px rgba(0,0,0,0.15)">
@@ -10669,7 +10995,7 @@
               <div>
                 <div style="font-size:1.3rem;font-weight:800;display:flex;align-items:center;gap:8px">
                   ${esc(currentDriver.name)}
-                  <span style="font-size:0.72rem;background:#e8f5e9;color:#2e7d32;padding:3px 10px;border-radius:12px;font-weight:700"><i class="fa fa-circle-check"></i> VERIFIED DRIVER</span>
+                  ${statusBadge}
                 </div>
                 <div style="font-size:0.84rem;color:rgba(255,255,255,0.75);margin-top:2px">
                   <i class="fa fa-car"></i> ${esc(currentDriver.carModel)} (${esc(currentDriver.carPlate)}) • ${esc(currentDriver.society || '')}
@@ -10709,32 +11035,7 @@
           </div>
         </div>
 
-        ${(!isDriverProfileComplete(currentDriver) || !isDriverDocVerified(currentDriver)) ? `
-          <div style="background:linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);border:1.5px solid #ffe082;border-radius:18px;padding:18px 20px;margin-bottom:20px;box-shadow:0 4px 16px rgba(230,81,0,0.08);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px">
-            <div style="display:flex;align-items:center;gap:14px">
-              <div style="width:48px;height:48px;border-radius:50%;background:#ffe0b2;color:#e65100;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">
-                <i class="fa fa-triangle-exclamation"></i>
-              </div>
-              <div>
-                <div style="font-size:1.02rem;font-weight:800;color:#e65100;display:flex;align-items:center;gap:8px">
-                  Driver Documents &amp; Verification Required
-                  <span style="font-size:0.72rem;background:#ffcc80;color:#bf360c;padding:2px 8px;border-radius:10px;font-weight:700">ACTION REQUIRED</span>
-                </div>
-                <div style="font-size:0.83rem;color:#795548;margin-top:2px">
-                  Verify your Driving License &amp; Vehicle RC using <b>DigiLocker (Instant)</b> or <b>Direct Document Upload (Admin Review)</b>.
-                </div>
-              </div>
-            </div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <button type="button" class="btn btn-sm" onclick="openDigiLockerModal()" style="background:linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);color:#fff;font-weight:800;border-radius:12px;padding:10px 16px;border:none;box-shadow:0 4px 12px rgba(21,101,192,0.3)">
-                <span>🇮🇳</span> Verify via DigiLocker
-              </button>
-              <button type="button" class="btn btn-sm" onclick="openCarpoolVerifyModal('direct')" style="background:linear-gradient(135deg, #e65100 0%, #b71c1c 100%);color:#fff;font-weight:800;border-radius:12px;padding:10px 16px;border:none;box-shadow:0 4px 12px rgba(230,81,0,0.3)">
-                <i class="fa fa-upload"></i> Direct Upload
-              </button>
-            </div>
-          </div>
-        ` : ''}
+        ${alertBanner}
 
         <!-- Driver Action Buttons -->
         <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">
@@ -10826,14 +11127,14 @@
     async function fsLoadCarpoolData() {
       if (!db) return;
       try {
-        const ridesSnap = await db.collection('carpool_rides').get();
+        const ridesSnap = await db.collection('carpool_rides').get({ source: 'server' });
         if (ridesSnap) {
           _firestoreCarpoolRides = ridesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         } else {
           _firestoreCarpoolRides = [];
         }
 
-        const bookingsSnap = await db.collection('carpool_bookings').get();
+        const bookingsSnap = await db.collection('carpool_bookings').get({ source: 'server' });
         if (bookingsSnap) {
           _firestoreCarpoolBookings = bookingsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         } else {
@@ -10843,55 +11144,37 @@
         if (typeof renderCarpoolFeed === 'function') renderCarpoolFeed();
         if (typeof renderMyRidesTab === 'function') renderMyRidesTab();
       } catch (e) {
-        if (e.code === 'permission-denied' || (e.message && e.message.includes('permissions'))) {
-          console.warn('Firestore Security Rules: Reading carpool collections requires permission configuration in Firebase Console.');
-        } else {
-          console.warn('Error loading carpool data from Firestore:', e.message || e);
-        }
+        console.error('Error loading carpool data from Firestore:', e);
       }
     }
 
     function getCarpoolRides() {
-      if (!_firestoreCarpoolRides) {
-        _firestoreCarpoolRides = [];
-      }
+      if (!_firestoreCarpoolRides) _firestoreCarpoolRides = [];
       return _firestoreCarpoolRides;
     }
 
     async function saveCarpoolRides(list) {
-      _firestoreCarpoolRides = list;
+      _firestoreCarpoolRides = list || [];
       if (!db) {
-        showToast('⚠️ Database is unreachable. Cannot save carpool ride.');
-        return;
+        throw new Error('Database is not initialized or offline.');
       }
-      try {
-        for (const ride of list) {
-          if (ride && ride.id) await db.collection('carpool_rides').doc(ride.id).set(ride, { merge: true });
-        }
-      } catch (e) {
-        showToast('⚠️ Database error saving carpool ride: ' + e.message);
+      for (const ride of _firestoreCarpoolRides) {
+        if (ride && ride.id) await db.collection('carpool_rides').doc(ride.id).set(ride, { merge: true });
       }
     }
 
     function getCarpoolBookings() {
-      if (!_firestoreCarpoolBookings) {
-        _firestoreCarpoolBookings = [];
-      }
+      if (!_firestoreCarpoolBookings) _firestoreCarpoolBookings = [];
       return _firestoreCarpoolBookings;
     }
 
     async function saveCarpoolBookings(list) {
-      _firestoreCarpoolBookings = list;
+      _firestoreCarpoolBookings = list || [];
       if (!db) {
-        showToast('⚠️ Database is unreachable. Cannot save carpool booking.');
-        return;
+        throw new Error('Database is not initialized or offline.');
       }
-      try {
-        for (const bk of list) {
-          if (bk && bk.id) await db.collection('carpool_bookings').doc(bk.id).set(bk, { merge: true });
-        }
-      } catch (e) {
-        showToast('⚠️ Database error saving carpool booking: ' + e.message);
+      for (const b of _firestoreCarpoolBookings) {
+        if (b && b.id) await db.collection('carpool_bookings').doc(b.id).set(b, { merge: true });
       }
     }
 
@@ -11057,8 +11340,10 @@
 
     function isDriverDocVerified(driver) {
       if (!driver) return false;
-      if (driver.docsVerified === true || driver.verified === true) return true;
-      if (driver.mobile === '9876543210' || driver.mobile === '9811223344') return true;
+      if (driver.verificationStatus === 'admin_pending') return false;
+      if (driver.verificationStatus === 'rejected') return false;
+      if (driver.verificationStatus === 'admin_approved' || driver.verificationStatus === 'digilocker_verified') return true;
+      if (driver.docsVerified === true && driver.verified === true) return true;
       return false;
     }
 
@@ -11084,6 +11369,13 @@
       if (!(currentDriver.carModel || '').trim()) missingFields.push('Car Model');
       if (!(currentDriver.carPlate || '').trim()) missingFields.push('Vehicle Plate No');
       if (!(currentDriver.dlNumber || '').trim()) missingFields.push('License Number');
+      if (!isDocDone) {
+        if (currentDriver.verificationStatus === 'admin_pending') {
+          missingFields.push('Document Review (Admin Approval Pending)');
+        } else {
+          missingFields.push('Document Verification (DL & Vehicle RC)');
+        }
+      }
 
       checklistContainer.innerHTML = `
         <div style="background:#fff;border:1.5px solid var(--border);border-radius:14px;padding:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,0.04)">
@@ -11152,6 +11444,121 @@
       }
     }
 
+    let _carpoolTripDirection = 'outbound';
+
+    function setCarpoolTripDirection(dir, preserveOtherValue = false) {
+      _carpoolTripDirection = dir;
+      const driverSociety = (currentDriver?.society || (typeof selectedSociety === 'string' ? selectedSociety : (selectedSociety?.name || 'Prateek Laurel'))).trim();
+
+      const outBtn = document.getElementById('cp_dirOutboundBtn');
+      const inBtn = document.getElementById('cp_dirInboundBtn');
+      const originInput = document.getElementById('cp_origin');
+      const destInput = document.getElementById('cp_destination');
+      const originBadge = document.getElementById('cp_originBadge');
+      const destBadge = document.getElementById('cp_destinationBadge');
+      const societyLabel = document.getElementById('cp_driverSocietyLabel');
+
+      if (societyLabel) societyLabel.textContent = driverSociety;
+
+      if (dir === 'outbound') {
+        if (outBtn) {
+          outBtn.style.background = 'var(--green-pale)';
+          outBtn.style.borderColor = 'var(--green)';
+          outBtn.style.color = 'var(--green-dark)';
+        }
+        if (inBtn) {
+          inBtn.style.background = '#fff';
+          inBtn.style.borderColor = '#cbd5e1';
+          inBtn.style.color = '#64748b';
+        }
+
+        if (originInput) {
+          originInput.value = driverSociety;
+          originInput.readOnly = true;
+          originInput.style.background = '#f0fdf4';
+          originInput.style.borderColor = '#86efac';
+          originInput.style.fontWeight = '700';
+          originInput.style.color = '#15803d';
+        }
+        if (originBadge) {
+          originBadge.innerHTML = '<span style="color:#16a34a;background:#dcfce7;padding:2px 7px;border-radius:6px;font-size:0.7rem;font-weight:700"><i class="fa fa-lock"></i> Society</span>';
+        }
+
+        if (destInput) {
+          destInput.readOnly = false;
+          destInput.style.background = '#fff';
+          destInput.style.borderColor = '';
+          destInput.style.fontWeight = 'normal';
+          destInput.style.color = '';
+          if (!preserveOtherValue && destInput.value.toLowerCase() === driverSociety.toLowerCase()) {
+            destInput.value = '';
+          }
+          destInput.placeholder = 'e.g. Cyber City / Noida Sec 62 / Airport';
+        }
+        if (destBadge) {
+          destBadge.innerHTML = '<span style="color:#64748b;background:#f1f5f9;padding:2px 7px;border-radius:6px;font-size:0.7rem;font-weight:600">Enter Location</span>';
+        }
+      } else {
+        // Inbound (Coming back to society)
+        if (inBtn) {
+          inBtn.style.background = 'var(--green-pale)';
+          inBtn.style.borderColor = 'var(--green)';
+          inBtn.style.color = 'var(--green-dark)';
+        }
+        if (outBtn) {
+          outBtn.style.background = '#fff';
+          outBtn.style.borderColor = '#cbd5e1';
+          outBtn.style.color = '#64748b';
+        }
+
+        if (destInput) {
+          destInput.value = driverSociety;
+          destInput.readOnly = true;
+          destInput.style.background = '#f0fdf4';
+          destInput.style.borderColor = '#86efac';
+          destInput.style.fontWeight = '700';
+          destInput.style.color = '#15803d';
+        }
+        if (destBadge) {
+          destBadge.innerHTML = '<span style="color:#16a34a;background:#dcfce7;padding:2px 7px;border-radius:6px;font-size:0.7rem;font-weight:700"><i class="fa fa-lock"></i> Society</span>';
+        }
+
+        if (originInput) {
+          originInput.readOnly = false;
+          originInput.style.background = '#fff';
+          originInput.style.borderColor = '';
+          originInput.style.fontWeight = 'normal';
+          originInput.style.color = '';
+          if (!preserveOtherValue && originInput.value.toLowerCase() === driverSociety.toLowerCase()) {
+            originInput.value = '';
+          }
+          originInput.placeholder = 'e.g. Office / Cyber City / Sec 62';
+        }
+        if (originBadge) {
+          originBadge.innerHTML = '<span style="color:#64748b;background:#f1f5f9;padding:2px 7px;border-radius:6px;font-size:0.7rem;font-weight:600">Enter Location</span>';
+        }
+      }
+      if (typeof autoSuggestCarpoolPrice === 'function') autoSuggestCarpoolPrice();
+    }
+
+    function toggleCarpoolTripDirection() {
+      const newDir = _carpoolTripDirection === 'outbound' ? 'inbound' : 'outbound';
+      const origVal = document.getElementById('cp_origin')?.value || '';
+      const destVal = document.getElementById('cp_destination')?.value || '';
+      const driverSociety = (currentDriver?.society || '').trim();
+
+      setCarpoolTripDirection(newDir, true);
+
+      if (newDir === 'inbound') {
+        const otherLoc = (origVal.toLowerCase() !== driverSociety.toLowerCase() && origVal) ? origVal : (destVal.toLowerCase() !== driverSociety.toLowerCase() ? destVal : '');
+        if (document.getElementById('cp_origin') && otherLoc) document.getElementById('cp_origin').value = otherLoc;
+      } else {
+        const otherLoc = (destVal.toLowerCase() !== driverSociety.toLowerCase() && destVal) ? destVal : (origVal.toLowerCase() !== driverSociety.toLowerCase() ? origVal : '');
+        if (document.getElementById('cp_destination') && otherLoc) document.getElementById('cp_destination').value = otherLoc;
+      }
+      if (typeof autoSuggestCarpoolPrice === 'function') autoSuggestCarpoolPrice();
+    }
+
     function openOfferRideModal(rideId) {
       if (!currentDriver) {
         showToast('Only registered Drivers can offer/publish rides. Please log in as a Driver.');
@@ -11169,6 +11576,7 @@
       _editingRideId = rideId || null;
       const modalTitleEl = document.getElementById('offerRideModalTitle');
       const submitBtnEl = document.getElementById('offerRideSubmitBtn');
+      const driverSociety = (currentDriver?.society || (typeof selectedSociety === 'string' ? selectedSociety : (selectedSociety?.name || 'Prateek Laurel'))).trim();
 
       if (rideId) {
         const rides = getCarpoolRides();
@@ -11178,8 +11586,16 @@
         if (modalTitleEl) modalTitleEl.innerHTML = '<i class="fa fa-pen-to-square" style="color:var(--green)"></i> Edit Carpool Ride';
         if (submitBtnEl) submitBtnEl.innerHTML = '<i class="fa fa-floppy-disk"></i> Save Ride Changes';
 
-        document.getElementById('cp_origin').value = ride.origin || '';
-        document.getElementById('cp_destination').value = ride.destination || '';
+        // Detect direction
+        const destIsSociety = (ride.destination || '').toLowerCase().includes(driverSociety.toLowerCase());
+        if (destIsSociety) {
+          setCarpoolTripDirection('inbound', true);
+          document.getElementById('cp_origin').value = ride.origin || '';
+        } else {
+          setCarpoolTripDirection('outbound', true);
+          document.getElementById('cp_destination').value = ride.destination || '';
+        }
+
         document.getElementById('cp_stopovers').value = (ride.stopovers || []).join(', ');
         document.getElementById('cp_date').value = ride.date || '';
         document.getElementById('cp_time').value = ride.time || '';
@@ -11199,7 +11615,8 @@
         if (modalTitleEl) modalTitleEl.innerHTML = '<i class="fa fa-car-side" style="color:var(--green)"></i> Offer / Publish a Ride';
         if (submitBtnEl) submitBtnEl.innerHTML = '<i class="fa fa-paper-plane"></i> Publish Ride';
 
-        document.getElementById('cp_origin').value = currentDriver.society || (typeof selectedSociety === 'string' ? selectedSociety : (selectedSociety?.name || 'Prateek Laurel'));
+        // Outbound by default: Start Location locked to Driver's Registered Society
+        setCarpoolTripDirection('outbound');
         document.getElementById('cp_destination').value = '';
         document.getElementById('cp_stopovers').value = '';
         const today = new Date().toISOString().split('T')[0];
@@ -11221,7 +11638,7 @@
       openModal('offerRideModal');
     }
 
-    function saveOfferRide(e) {
+    async function saveOfferRide(e) {
       if (e) e.preventDefault();
       if (!currentDriver) {
         showToast('Only registered Drivers can publish rides');
@@ -11243,6 +11660,20 @@
       }
       const origin = (document.getElementById('cp_origin').value || '').trim();
       const destination = (document.getElementById('cp_destination').value || '').trim();
+      const driverSociety = (currentDriver.society || (typeof selectedSociety === 'string' ? selectedSociety : (selectedSociety?.name || ''))).trim();
+
+      if (!origin) { showToast('Please enter departure start location'); return; }
+      if (!destination) { showToast('Please enter trip destination'); return; }
+
+      // Resident Carpool Rule: Ride MUST start from or end at driver's registered society
+      if (driverSociety) {
+        const originMatches = origin.toLowerCase().includes(driverSociety.toLowerCase());
+        const destMatches = destination.toLowerCase().includes(driverSociety.toLowerCase());
+        if (!originMatches && !destMatches) {
+          showToast(`⚠️ Resident Carpool Rule: As a resident of ${driverSociety}, your ride must either start from or end at ${driverSociety}.`);
+          return;
+        }
+      }
       const stopoversStr = (document.getElementById('cp_stopovers').value || '').trim();
       const date = document.getElementById('cp_date').value;
       const time = document.getElementById('cp_time').value;
@@ -11289,7 +11720,13 @@
             bookingMode
           };
 
-          saveCarpoolRides(list);
+          try {
+            await saveCarpoolRides(list);
+          } catch (err) {
+            showToast('⚠️ Database error updating ride: ' + (err.message || err));
+            console.error('Error updating ride in Firestore:', err);
+            return;
+          }
           _editingRideId = null;
           closeModal('offerRideModal');
           showToast('Ride updated successfully! ✏️');
@@ -11330,8 +11767,13 @@
         createdAt: Date.now()
       };
 
-      list.unshift(newRide);
-      saveCarpoolRides(list);
+      try {
+        await saveCarpoolRides([newRide, ...list]);
+      } catch (err) {
+        showToast('⚠️ Database error publishing ride: ' + (err.message || err));
+        console.error('Error publishing ride in Firestore:', err);
+        return;
+      }
 
       closeModal('offerRideModal');
       showToast('Ride published successfully! 🎉');
@@ -11349,16 +11791,20 @@
       });
       if (!ok) return;
 
+      if (!db) {
+        showToast('⚠️ Database is not connected.');
+        return;
+      }
+      try {
+        await db.collection('carpool_rides').doc(rideId).delete();
+      } catch(e) {
+        console.error('Error deleting ride from Firestore DB:', e);
+        showToast('⚠️ Database error deleting ride: ' + (e.message || e));
+        return;
+      }
       let rides = getCarpoolRides();
       rides = rides.filter(r => r.id !== rideId);
       _firestoreCarpoolRides = rides;
-      if (db) {
-        try {
-          await db.collection('carpool_rides').doc(rideId).delete();
-        } catch(e) {
-          console.error('Error deleting ride from Firestore DB:', e);
-        }
-      }
       showToast('Ride listing cancelled and removed');
       renderDriverPanel();
       if (typeof renderCarpoolFeed === 'function') renderCarpoolFeed();
@@ -11972,6 +12418,85 @@
       });
     }
 
+    window._pendingDriverDocs = {};
+
+    function previewDriverDocFile(e, type) {
+      const file = e.target && e.target.files && e.target.files[0];
+      if (!file) return;
+
+      const fileNameEl = document.getElementById(`${type}FileName`);
+      if (fileNameEl) fileNameEl.textContent = file.name;
+
+      const previewEl = document.getElementById(`${type}Preview`);
+      const imgEl = document.getElementById(`${type}Img`);
+      const labelEl = document.getElementById(`${type}Label`);
+
+      const reader = new FileReader();
+      reader.onload = function (evt) {
+        const dataUrl = evt.target.result;
+        if (!window._pendingDriverDocs) window._pendingDriverDocs = {};
+        window._pendingDriverDocs[type] = {
+          dataUrl: dataUrl,
+          name: file.name,
+          type: file.type
+        };
+
+        if (previewEl) previewEl.style.display = 'flex';
+        if (imgEl) {
+          if (file.type === 'application/pdf') {
+            imgEl.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="70" height="50" viewBox="0 0 70 50"><rect width="70" height="50" fill="%23fee2e2"/><text x="35" y="30" font-family="sans-serif" font-size="12" font-weight="bold" fill="%23b91c1c" text-anchor="middle">PDF</text></svg>';
+          } else {
+            imgEl.src = dataUrl;
+          }
+        }
+        if (labelEl) labelEl.textContent = `${file.name} (${Math.round(file.size / 1024)} KB)`;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function openDriverDocViewer(url, title, subtext) {
+      if (!url) {
+        showToast('Document file is not available or was not attached');
+        return;
+      }
+      const titleEl = document.getElementById('driverDocViewerTitle');
+      const subtextEl = document.getElementById('driverDocViewerSubtext');
+      const imgEl = document.getElementById('driverDocViewerImg');
+      const frameEl = document.getElementById('driverDocViewerFrame');
+      const fallbackEl = document.getElementById('driverDocViewerFallback');
+      const fallbackText = document.getElementById('driverDocViewerFallbackText');
+      const openBtn = document.getElementById('driverDocViewerOpenBtn');
+
+      if (titleEl) titleEl.textContent = title || 'Driver Document Preview';
+      if (subtextEl) subtextEl.textContent = subtext || '';
+      if (openBtn) openBtn.href = url;
+
+      const isPdf = (typeof url === 'string') && (url.toLowerCase().includes('.pdf') || url.startsWith('data:application/pdf'));
+
+      if (imgEl) imgEl.style.display = 'none';
+      if (frameEl) frameEl.style.display = 'none';
+      if (fallbackEl) fallbackEl.style.display = 'none';
+
+      if (isPdf) {
+        if (url.startsWith('data:application/pdf')) {
+          if (fallbackText) fallbackText.textContent = (title || 'Document') + ' (PDF Document Ready)';
+          if (fallbackEl) fallbackEl.style.display = 'block';
+        } else {
+          if (frameEl) {
+            frameEl.src = url;
+            frameEl.style.display = 'block';
+          }
+        }
+      } else {
+        if (imgEl) {
+          imgEl.src = url;
+          imgEl.style.display = 'block';
+        }
+      }
+
+      openModal('driverDocViewerModal');
+    }
+
     function previewVehiclePhoto(e) {
       const file = e.target && e.target.files && e.target.files[0];
       if (!file) return;
@@ -11980,7 +12505,7 @@
         const previewContainer = document.getElementById('cp_carPhotoPreview');
         const previewImg = document.getElementById('cp_carPhotoImg');
         if (previewImg) previewImg.src = evt.target.result;
-        if (previewContainer) previewContainer.style.display = 'block';
+        if (previewContainer) previewContainer.style.display = 'flex';
       };
       reader.readAsDataURL(file);
     }
@@ -12022,22 +12547,44 @@
 
     function openCarpoolVerifyModal(defaultTab) {
       if (currentDriver) {
-        if (currentDriver.dlNumber) {
-          const inputDl = document.getElementById('cp_dlNumber');
-          if (inputDl) inputDl.value = currentDriver.dlNumber;
-        }
+        const inputDl = document.getElementById('cp_dlNumber');
+        if (inputDl) inputDl.value = currentDriver.dlNumber || (currentDriver.verificationRequest && currentDriver.verificationRequest.dlNumber) || '';
+        const inputRc = document.getElementById('cp_rcNumber');
+        if (inputRc) inputRc.value = currentDriver.rcNumber || currentDriver.carPlate || (currentDriver.verificationRequest && currentDriver.verificationRequest.rcNumber) || '';
         if (currentDriver.carPhoto) {
           const previewContainer = document.getElementById('cp_carPhotoPreview');
           const previewImg = document.getElementById('cp_carPhotoImg');
           if (previewImg) previewImg.src = currentDriver.carPhoto;
-          if (previewContainer) previewContainer.style.display = 'block';
+          if (previewContainer) previewContainer.style.display = 'flex';
+        }
+
+        const existingSec = document.getElementById('cp_existingDocsSection');
+        const existingLinks = document.getElementById('cp_existingDocsLinks');
+        const req = currentDriver.verificationRequest;
+        if (existingSec && existingLinks && req) {
+          const links = [];
+          if (req.dlDocUrl) {
+            links.push(`<button type="button" class="btn btn-sm btn-ghost" onclick="openDriverDocViewer('${esc(req.dlDocUrl)}', 'Driving License - ${esc(currentDriver.name)}', 'DL: ${esc(req.dlNumber || currentDriver.dlNumber)}')"><i class="fa fa-id-card" style="color:#1565c0"></i> View Uploaded DL</button>`);
+          }
+          if (req.rcDocUrl) {
+            links.push(`<button type="button" class="btn btn-sm btn-ghost" onclick="openDriverDocViewer('${esc(req.rcDocUrl)}', 'Vehicle RC - ${esc(currentDriver.name)}', 'Plate: ${esc(req.rcNumber || currentDriver.carPlate)}')"><i class="fa fa-car" style="color:var(--green)"></i> View Uploaded RC</button>`);
+          }
+          if (req.carPhotoUrl) {
+            links.push(`<button type="button" class="btn btn-sm btn-ghost" onclick="openDriverDocViewer('${esc(req.carPhotoUrl)}', 'Vehicle Photo - ${esc(currentDriver.name)}', '${esc(currentDriver.carModel)}')"><i class="fa fa-image" style="color:var(--gold)"></i> View Vehicle Photo</button>`);
+          }
+          if (links.length) {
+            existingLinks.innerHTML = links.join('');
+            existingSec.style.display = 'block';
+          } else {
+            existingSec.style.display = 'none';
+          }
         }
       }
       switchVerifyTab(defaultTab || 'digilocker');
       openModal('carpoolVerifyModal');
     }
 
-    // ── DIGILOCKER SIMULATION LOGIC ──
+    // ── DIGILOCKER INTERACTIVE VERIFICATION LOGIC ──
     let _digiLockerData = null;
 
     function openDigiLockerModal() {
@@ -12048,22 +12595,44 @@
       document.getElementById('dlStep4').style.display = 'none';
 
       const aadhaarInput = document.getElementById('dlInputAadhaar');
-      if (aadhaarInput && currentDriver && currentDriver.mobile) {
-        aadhaarInput.value = currentDriver.mobile;
+      const dlInput = document.getElementById('dlInputDlNumber');
+      const rcInput = document.getElementById('dlInputRcNumber');
+      const dobInput = document.getElementById('dlInputDob');
+
+      if (currentDriver) {
+        if (aadhaarInput && !aadhaarInput.value) aadhaarInput.value = currentDriver.mobile || '';
+        if (dlInput && !dlInput.value) dlInput.value = currentDriver.dlNumber || '';
+        if (rcInput && !rcInput.value) rcInput.value = currentDriver.carPlate || currentDriver.rcNumber || '';
+        if (dobInput && !dobInput.value && currentDriver.dob) dobInput.value = currentDriver.dob;
       }
       openModal('digilockerModal');
     }
 
     function sendDigiLockerOtp() {
-      const inputVal = (document.getElementById('dlInputAadhaar').value || '').trim();
+      const inputVal = (document.getElementById('dlInputAadhaar')?.value || '').trim();
+      const dlVal = (document.getElementById('dlInputDlNumber')?.value || '').trim().toUpperCase();
+      const rcVal = (document.getElementById('dlInputRcNumber')?.value || '').trim().toUpperCase();
       const consent = document.getElementById('dlConsentCheck')?.checked;
 
       if (!inputVal) {
         showToast('Please enter your Aadhaar or Mobile Number');
         return;
       }
+      if (!dlVal) {
+        showToast('Please enter your official Driving License number');
+        return;
+      }
+      if (!rcVal) {
+        showToast('Please enter your Vehicle Registration (RC) number');
+        return;
+      }
       if (!consent) {
         showToast('Please accept the DigiLocker authorization consent');
+        return;
+      }
+
+      if (dlVal.length < 8) {
+        showToast('Driving License number should be at least 8-16 characters');
         return;
       }
 
@@ -12075,15 +12644,19 @@
 
       document.getElementById('dlStep1').style.display = 'none';
       document.getElementById('dlStep2').style.display = 'block';
-      showToast('🔒 DigiLocker OTP sent to your registered mobile number! (Use: 123456)');
+      showToast('🔒 DigiLocker MoRTH Security OTP sent to registered mobile! (Test OTP: 123456)');
     }
 
     function verifyDigiLockerOtp() {
-      const otp = (document.getElementById('dlInputOtp').value || '').trim();
+      const otp = (document.getElementById('dlInputOtp')?.value || '').trim();
       if (!otp || otp.length < 4) {
         showToast('Please enter valid 6-digit DigiLocker OTP');
         return;
       }
+
+      const dlVal = (document.getElementById('dlInputDlNumber')?.value || '').trim().toUpperCase() || (currentDriver?.dlNumber || 'DL-1420220098765');
+      const rcVal = (document.getElementById('dlInputRcNumber')?.value || '').trim().toUpperCase() || (currentDriver?.carPlate || 'UP16-BW-7890');
+      const dobVal = (document.getElementById('dlInputDob')?.value || '').trim();
 
       document.getElementById('dlStep2').style.display = 'none';
       document.getElementById('dlStep3').style.display = 'block';
@@ -12092,85 +12665,163 @@
       const fetchSubtext = document.getElementById('dlFetchSubtext');
 
       setTimeout(() => {
-        if (fetchText) fetchText.textContent = 'Authenticating with MoRTH Sarathi DL DB...';
-      }, 1000);
+        if (fetchText) fetchText.textContent = `Querying MoRTH Sarathi DL Gateway (${dlVal})...`;
+        if (fetchSubtext) fetchSubtext.textContent = 'Verifying digital signature & driver authorization...';
+      }, 900);
 
       setTimeout(() => {
-        if (fetchText) fetchText.textContent = 'Fetching Vehicle Registration RC from Vahan DB...';
-      }, 2000);
+        if (fetchText) fetchText.textContent = `Querying MoRTH Vahan RC Gateway (${rcVal})...`;
+        if (fetchSubtext) fetchSubtext.textContent = 'Checking vehicle fitness, registration & commercial permit...';
+      }, 1800);
 
       setTimeout(() => {
         const driverName = currentDriver ? currentDriver.name : 'Verified Driver';
         const carModel = currentDriver ? currentDriver.carModel : 'Maruti Brezza';
-        const carPlate = currentDriver ? currentDriver.carPlate : 'UP16-BW-7890';
-        const generatedDl = currentDriver?.dlNumber || ('DL-' + Math.floor(100000000000 + Math.random() * 900000000000));
+        const fuel = currentDriver ? (currentDriver.fuelType || 'petrol/cng') : 'Petrol/CNG';
+
+        const certToken = 'MORTH-SARATHI-' + Math.random().toString(36).substring(2, 8).toUpperCase() + '-' + Date.now().toString(36).toUpperCase();
 
         _digiLockerData = {
-          dlNumber: generatedDl,
-          rcNumber: carPlate,
+          dlNumber: dlVal,
+          rcNumber: rcVal,
+          dob: dobVal,
           name: driverName,
-          carModel: carModel
+          carModel: carModel,
+          fuel: fuel,
+          certificateToken: certToken,
+          verifiedAt: new Date().toISOString()
         };
 
         const dlDl = document.getElementById('dlFetchedDlNum');
         const dlRc = document.getElementById('dlFetchedRcNum');
         const dlNm = document.getElementById('dlFetchedName');
         const dlCar = document.getElementById('dlFetchedCarModel');
+        const dlFuel = document.getElementById('dlFetchedFuel');
+        const dlToken = document.getElementById('dlFetchedCertToken');
 
-        if (dlDl) dlDl.textContent = generatedDl;
-        if (dlRc) dlRc.textContent = carPlate;
+        if (dlDl) dlDl.textContent = dlVal;
+        if (dlRc) dlRc.textContent = rcVal;
         if (dlNm) dlNm.textContent = driverName;
         if (dlCar) dlCar.textContent = carModel;
+        if (dlFuel) dlFuel.textContent = fuel.toUpperCase();
+        if (dlToken) dlToken.textContent = certToken;
 
         document.getElementById('dlStep3').style.display = 'none';
         document.getElementById('dlStep4').style.display = 'block';
-        showToast('✅ MoRTH Verified Documents Retrieved via DigiLocker!');
-      }, 3000);
+        showToast('✅ MoRTH Authenticated Records Retrieved via DigiLocker!');
+      }, 2700);
     }
 
     function confirmDigiLockerVerification() {
       if (!_digiLockerData && currentDriver) {
         _digiLockerData = {
           dlNumber: currentDriver.dlNumber || 'DL-1420220098765',
-          rcNumber: currentDriver.carPlate || 'UP16-BW-7890'
+          rcNumber: currentDriver.carPlate || 'UP16-BW-7890',
+          certificateToken: 'MORTH-SARATHI-VERIFIED-' + Date.now(),
+          verifiedAt: new Date().toISOString()
         };
       }
 
       if (currentDriver) {
-        currentDriver.dlNumber = _digiLockerData?.dlNumber || currentDriver.dlNumber || 'DL-1420220098765';
+        currentDriver.dlNumber = _digiLockerData.dlNumber;
+        currentDriver.carPlate = _digiLockerData.rcNumber;
+        currentDriver.rcNumber = _digiLockerData.rcNumber;
         currentDriver.docsVerified = true;
         currentDriver.verified = true;
         currentDriver.verificationMethod = 'digilocker';
         currentDriver.verificationStatus = 'digilocker_verified';
+        currentDriver.digiLockerAudit = _digiLockerData;
         saveDriverToDatabase(currentDriver);
       }
 
       closeModal('digilockerModal');
-      showToast('🇮🇳 Verified via DigiLocker! Govt MoRTH Badge added to your profile 🎉');
+      showToast('🇮🇳 Verified via DigiLocker! Govt MoRTH Badge applied to your profile 🎉');
       if (typeof renderDriverPanel === 'function') renderDriverPanel();
       if (typeof updateCarpoolVerificationStatus === 'function') updateCarpoolVerificationStatus();
     }
 
-    function saveDriverVerification(e) {
+    async function saveDriverVerification(e) {
       if (e) e.preventDefault();
-      const dl = (document.getElementById('cp_dlNumber').value || '').trim();
-      if (!dl) { showToast('Please enter your Driving License number'); return; }
+      const dl = (document.getElementById('cp_dlNumber')?.value || '').trim().toUpperCase();
+      const rc = (document.getElementById('cp_rcNumber')?.value || '').trim().toUpperCase();
 
+      if (!dl) { showToast('Please enter your Driving License number'); return; }
+      if (!rc) { showToast('Please enter your Vehicle RC number'); return; }
+
+      const submitBtn = document.getElementById('cp_submitVerifyBtn');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Submitting Documents...';
+      }
+
+      const pendingDocs = window._pendingDriverDocs || {};
       const carImgEl = document.getElementById('cp_carPhotoImg');
       const carPhotoSrc = (carImgEl && carImgEl.src && carImgEl.src.startsWith('data:image')) ? carImgEl.src : null;
 
+      let dlDocUrl = pendingDocs['cp_dl']?.dataUrl || currentDriver?.verificationRequest?.dlDocUrl || '';
+      let rcDocUrl = pendingDocs['cp_rc']?.dataUrl || currentDriver?.verificationRequest?.rcDocUrl || '';
+      let carPhotoUrl = carPhotoSrc || currentDriver?.carPhoto || currentDriver?.verificationRequest?.carPhotoUrl || '';
+
+      if (!dlDocUrl && !currentDriver?.verificationRequest?.dlDocUrl) {
+        showToast('Please attach a photo or PDF copy of your Driving License');
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fa fa-paper-plane"></i> Submit for Admin Verification'; }
+        return;
+      }
+      if (!rcDocUrl && !currentDriver?.verificationRequest?.rcDocUrl) {
+        showToast('Please attach a photo or PDF copy of your Vehicle RC');
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fa fa-paper-plane"></i> Submit for Admin Verification'; }
+        return;
+      }
+
+      const submittedAt = new Date().toISOString();
+      const verificationRequest = {
+        dlNumber: dl,
+        rcNumber: rc,
+        dlDocUrl: dlDocUrl,
+        rcDocUrl: rcDocUrl,
+        carPhotoUrl: carPhotoUrl,
+        submittedAt: submittedAt,
+        status: 'pending'
+      };
+
       if (currentDriver) {
         currentDriver.dlNumber = dl;
-        currentDriver.docsVerified = true;
-        currentDriver.verified = true;
+        currentDriver.rcNumber = rc;
+        currentDriver.carPlate = rc;
+        currentDriver.docsVerified = false; // explicitly unverified until Admin approves!
+        currentDriver.verified = false;     // explicitly unverified until Admin approves!
         currentDriver.verificationMethod = 'admin_upload';
         currentDriver.verificationStatus = 'admin_pending';
-        if (carPhotoSrc) currentDriver.carPhoto = carPhotoSrc;
-        saveDriverToDatabase(currentDriver);
+        currentDriver.verificationRequest = verificationRequest;
+        if (carPhotoUrl) currentDriver.carPhoto = carPhotoUrl;
+
+        await saveDriverToDatabase(currentDriver);
+
+        if (db) {
+          try {
+            await db.collection('driver_verifications').doc(currentDriver.mobile).set({
+              mobile: currentDriver.mobile,
+              name: currentDriver.name,
+              email: currentDriver.email || '',
+              society: currentDriver.society || '',
+              address: currentDriver.address || '',
+              carModel: currentDriver.carModel || '',
+              carPlate: currentDriver.carPlate || rc,
+              ...verificationRequest
+            }, { merge: true });
+          } catch (dbErr) {
+            console.warn('Firestore driver_verifications save notice:', dbErr.message);
+          }
+        }
+      }
+
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fa fa-paper-plane"></i> Submit for Admin Verification';
       }
 
       closeModal('carpoolVerifyModal');
-      showToast('Identity Documents Submitted ✓ Admin review in progress (within 24 hours) 🎉');
+      showToast('Documents Submitted for Admin Review ✓ Status: Pending Verification');
       if (typeof renderDriverPanel === 'function') renderDriverPanel();
       if (typeof updateCarpoolVerificationStatus === 'function') updateCarpoolVerificationStatus();
     }
@@ -12178,8 +12829,9 @@
     function updateCarpoolVerificationStatus() {
       const statusEl = document.getElementById('cpVerifyStatusText');
       if (!statusEl) return;
-      const isVerified = currentDriver?.docsVerified || currentDriver?.verified;
+      const isVerified = isDriverDocVerified(currentDriver);
       const method = currentDriver?.verificationMethod || 'admin_upload';
+      const status = currentDriver?.verificationStatus;
 
       if (isVerified) {
         if (method === 'digilocker') {
@@ -12187,8 +12839,116 @@
         } else {
           statusEl.innerHTML = `<span style="color:#2e7d32;font-weight:700"><i class="fa fa-circle-check"></i> Admin Verified ✓</span>`;
         }
+      } else if (status === 'admin_pending') {
+        statusEl.innerHTML = `<span style="color:#f57f17;font-weight:700"><i class="fa fa-clock"></i> Verification Pending Review</span>`;
+      } else if (status === 'rejected') {
+        statusEl.innerHTML = `<span style="color:#c62828;font-weight:700"><i class="fa fa-circle-xmark"></i> Verification Rejected</span>`;
       } else {
         statusEl.textContent = `Verification Needed`;
+      }
+    }
+
+    async function adminApproveDriverVerification(mobile) {
+      const driversDb = getDriverDatabase();
+      let driver = driversDb[mobile] || { mobile };
+      if (db) {
+        try {
+          const docSnap = await db.collection('drivers').doc(mobile).get({ source: 'server' });
+          if (docSnap && docSnap.exists) driver = { mobile, ...docSnap.data() };
+        } catch (e) { }
+      }
+
+      const ok = await confirmAction({
+        title: 'Approve Driver Documents',
+        message: `Verify and approve ${driver.name || 'Driver'} (${mobile})? This will award the official Verified Driver Badge.`,
+        confirmText: 'Approve & Verify Driver',
+        cancelText: 'Cancel'
+      });
+      if (!ok) return;
+
+      driver.docsVerified = true;
+      driver.verified = true;
+      driver.verificationStatus = 'admin_approved';
+      driver.verificationMethod = 'admin_upload';
+      driver.verifiedAt = new Date().toISOString();
+      if (driver.verificationRequest) {
+        driver.verificationRequest.status = 'approved';
+        driver.verificationRequest.approvedAt = new Date().toISOString();
+      }
+
+      await saveDriverToDatabase(driver);
+
+      if (db) {
+        try {
+          await db.collection('driver_verifications').doc(mobile).set({
+            status: 'approved',
+            approvedAt: new Date().toISOString()
+          }, { merge: true });
+        } catch (e) { }
+      }
+
+      showToast(`Driver ${driver.name || mobile} approved and verified ✓`);
+      const c = document.getElementById('adminTabContent');
+      if (c) renderAdminCarpool(c);
+      if (currentDriver && currentDriver.mobile === mobile) {
+        currentDriver = { ...driver };
+        renderDriverPanel();
+      }
+    }
+
+    async function adminRejectDriverVerification(mobile) {
+      const driversDb = getDriverDatabase();
+      let driver = driversDb[mobile] || { mobile };
+      if (db) {
+        try {
+          const docSnap = await db.collection('drivers').doc(mobile).get({ source: 'server' });
+          if (docSnap && docSnap.exists) driver = { mobile, ...docSnap.data() };
+        } catch (e) { }
+      }
+
+      const res = await confirmAction({
+        title: 'Reject Driver Verification',
+        message: `Please specify the reason for rejecting ${driver.name || 'Driver'}'s documents (this explanation will be shown to the driver):`,
+        showInput: true,
+        inputLabel: 'Rejection Reason:',
+        inputPlaceholder: 'e.g. DL photo is blurry / expired, or RC plate does not match vehicle',
+        confirmText: 'Reject Documents',
+        cancelText: 'Cancel',
+        danger: true
+      });
+
+      const reason = typeof res === 'object' && res.confirmed ? (res.value || 'Document details could not be validated') : (typeof res === 'string' ? res : null);
+      if (!reason) return;
+
+      driver.docsVerified = false;
+      driver.verified = false;
+      driver.verificationStatus = 'rejected';
+      driver.rejectionReason = reason;
+      driver.rejectedAt = new Date().toISOString();
+      if (driver.verificationRequest) {
+        driver.verificationRequest.status = 'rejected';
+        driver.verificationRequest.rejectionReason = reason;
+        driver.verificationRequest.rejectedAt = new Date().toISOString();
+      }
+
+      await saveDriverToDatabase(driver);
+
+      if (db) {
+        try {
+          await db.collection('driver_verifications').doc(mobile).set({
+            status: 'rejected',
+            rejectionReason: reason,
+            rejectedAt: new Date().toISOString()
+          }, { merge: true });
+        } catch (e) { }
+      }
+
+      showToast(`Driver verification rejected. Reason logged ✓`);
+      const c = document.getElementById('adminTabContent');
+      if (c) renderAdminCarpool(c);
+      if (currentDriver && currentDriver.mobile === mobile) {
+        currentDriver = { ...driver };
+        renderDriverPanel();
       }
     }
 
@@ -20649,37 +21409,183 @@ Together, we grow stronger — one order at a time.`;
       const rides = getCarpoolRides();
 
       let driversList = [];
+      let dbError = null;
       if (db) {
         try {
-          const snap = await db.collection('drivers').get();
+          const snap = await db.collection('drivers').get({ source: 'server' });
           if (snap && !snap.empty) {
             driversList = snap.docs.map(doc => ({ mobile: doc.id, ...doc.data() }));
           }
         } catch (e) {
-          if (e.code === 'permission-denied' || (e.message && e.message.includes('permissions'))) {
-            console.warn('Firestore Security Rules: Reading drivers collection requires permission configuration in Firebase Console.');
-          } else {
-            console.warn('Error loading drivers from DB for Admin:', e.message || e);
-          }
+          dbError = e.message || String(e);
+          console.error('Error loading drivers from DB for Admin:', e);
         }
+      } else {
+        dbError = 'Cloud Firestore is not initialized';
       }
-      if (!db && !driversList.length) {
-        const localDb = getDriverDatabase();
-        driversList = Object.keys(localDb).map(m => ({ mobile: m, ...localDb[m] }));
-      }
+
+      let _adminCarpoolReqFilter = window._adminCarpoolReqFilter || 'all';
+
+      const pendingReqDrivers = driversList.filter(d => d.verificationStatus === 'admin_pending' || (d.verificationRequest && d.verificationRequest.status === 'pending'));
+      const approvedReqDrivers = driversList.filter(d => d.verificationStatus === 'admin_approved' || (d.verificationRequest && d.verificationRequest.status === 'approved') || (d.docsVerified && d.verificationMethod === 'admin_upload'));
+      const rejectedReqDrivers = driversList.filter(d => d.verificationStatus === 'rejected' || (d.verificationRequest && d.verificationRequest.status === 'rejected'));
+      const allReqDrivers = driversList.filter(d => d.verificationRequest || d.verificationStatus === 'admin_pending' || d.verificationStatus === 'admin_approved' || d.verificationStatus === 'rejected');
+
+      const pendingCount = pendingReqDrivers.length;
 
       let subContent = '';
 
-      if (_adminCarpoolSubTab === 'drivers') {
+      if (_adminCarpoolSubTab === 'requests') {
+        let displayList = allReqDrivers;
+        if (_adminCarpoolReqFilter === 'pending') displayList = pendingReqDrivers;
+        else if (_adminCarpoolReqFilter === 'approved') displayList = approvedReqDrivers;
+        else if (_adminCarpoolReqFilter === 'rejected') displayList = rejectedReqDrivers;
+
         subContent = `
           <div class="s-card">
             <div class="s-card-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
-              <span><i class="fa fa-users-gear" style="color:var(--green)"></i> Registered Driver Accounts Moderation (Direct Database)</span>
+              <span><i class="fa fa-file-shield" style="color:var(--green)"></i> Driver Document Verification Requests (Admin Review)</span>
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                <button class="btn btn-sm ${_adminCarpoolReqFilter === 'all' ? 'btn-primary' : 'btn-ghost'}" onclick="window._adminCarpoolReqFilter='all';switchAdminCarpoolSubTab('requests')">All (${allReqDrivers.length})</button>
+                <button class="btn btn-sm ${_adminCarpoolReqFilter === 'pending' ? 'btn-primary' : 'btn-ghost'}" onclick="window._adminCarpoolReqFilter='pending';switchAdminCarpoolSubTab('requests')" style="${pendingCount > 0 ? 'border:1px solid #ef4444;color:#b91c1c;font-weight:800' : ''}">Pending (${pendingCount})</button>
+                <button class="btn btn-sm ${_adminCarpoolReqFilter === 'approved' ? 'btn-primary' : 'btn-ghost'}" onclick="window._adminCarpoolReqFilter='approved';switchAdminCarpoolSubTab('requests')">Approved (${approvedReqDrivers.length})</button>
+                <button class="btn btn-sm ${_adminCarpoolReqFilter === 'rejected' ? 'btn-primary' : 'btn-ghost'}" onclick="window._adminCarpoolReqFilter='rejected';switchAdminCarpoolSubTab('requests')">Rejected (${rejectedReqDrivers.length})</button>
+              </div>
+            </div>
+
+            ${!displayList.length ? `
+              <div class="empty-state" style="padding:40px 16px"><i class="fa fa-file-circle-check" style="font-size:2.5rem;opacity:0.3"></i><p>No driver verification requests found under "${_adminCarpoolReqFilter}" filter.</p></div>
+            ` : `
+              <div style="overflow-x:auto">
+                <table class="menu-table">
+                  <thead>
+                    <tr>
+                      <th>Driver Details</th>
+                      <th>Vehicle Info</th>
+                      <th>Document IDs</th>
+                      <th>Uploaded Document Proofs</th>
+                      <th>Status &amp; Submission</th>
+                      <th>Admin Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${displayList.map(d => {
+                      const req = d.verificationRequest || {};
+                      const isPending = d.verificationStatus === 'admin_pending' || req.status === 'pending';
+                      const isApproved = d.verificationStatus === 'admin_approved' || req.status === 'approved' || (d.docsVerified && d.verificationMethod === 'admin_upload');
+                      const isRejected = d.verificationStatus === 'rejected' || req.status === 'rejected';
+
+                      const statusBadge = isApproved
+                        ? '<span style="font-size:0.75rem;background:#e8f5e9;color:#2e7d32;padding:3px 10px;border-radius:12px;font-weight:800"><i class="fa fa-circle-check"></i> APPROVED</span>'
+                        : (isRejected
+                          ? '<span style="font-size:0.75rem;background:#ffebee;color:#c62828;padding:3px 10px;border-radius:12px;font-weight:800"><i class="fa fa-circle-xmark"></i> REJECTED</span>'
+                          : '<span style="font-size:0.75rem;background:#fff8e1;color:#f57f17;padding:3px 10px;border-radius:12px;font-weight:800"><i class="fa fa-clock"></i> PENDING REVIEW</span>');
+
+                      const dlDocUrl = req.dlDocUrl || '';
+                      const rcDocUrl = req.rcDocUrl || '';
+                      const carPhotoUrl = req.carPhotoUrl || d.carPhoto || '';
+
+                      return `
+                        <tr>
+                          <td>
+                            <div style="font-weight:700;color:var(--text)">${esc(d.name || 'Driver')}</div>
+                            <div style="font-size:0.78rem;color:var(--text-muted)"><i class="fa fa-phone"></i> ${esc(d.mobile)}</div>
+                            <div style="font-size:0.74rem;color:var(--text-muted)"><i class="fa fa-envelope"></i> ${esc(d.email || 'N/A')}</div>
+                            <div style="font-size:0.74rem;color:var(--text-muted)"><i class="fa fa-building"></i> ${esc(d.society || '')} (${esc(d.address || 'N/A')})</div>
+                          </td>
+                          <td>
+                            <div style="font-weight:700;font-size:0.84rem;color:var(--green-dark)"><i class="fa fa-car"></i> ${esc(d.carModel || 'N/A')}</div>
+                            <div style="font-size:0.78rem;color:var(--text-muted)">Plate: <b>${esc(d.carPlate || req.rcNumber || 'N/A')}</b></div>
+                            <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase">Fuel: ${esc(d.fuelType || 'petrol')}</div>
+                          </td>
+                          <td>
+                            <div style="font-size:0.8rem;font-weight:700;color:var(--text)">DL: <span style="font-family:monospace">${esc(d.dlNumber || req.dlNumber || 'N/A')}</span></div>
+                            <div style="font-size:0.8rem;font-weight:700;color:var(--text);margin-top:4px">RC: <span style="font-family:monospace">${esc(req.rcNumber || d.carPlate || 'N/A')}</span></div>
+                          </td>
+                          <td>
+                            <div style="display:flex;flex-direction:column;gap:5px">
+                              ${dlDocUrl ? `
+                                <button type="button" class="btn btn-sm btn-ghost" style="padding:3px 8px;font-size:0.75rem;justify-content:flex-start;text-align:left;border:1px solid #e2e8f0;background:#f8fafc" onclick="openDriverDocViewer('${esc(dlDocUrl)}', 'Driving License - ${esc(d.name)}', 'DL: ${esc(d.dlNumber || req.dlNumber)}')">
+                                  <i class="fa fa-id-card" style="color:#1565c0"></i> View Driving License
+                                </button>
+                              ` : '<span style="font-size:0.74rem;color:#ef4444"><i class="fa fa-triangle-exclamation"></i> No DL uploaded</span>'}
+
+                              ${rcDocUrl ? `
+                                <button type="button" class="btn btn-sm btn-ghost" style="padding:3px 8px;font-size:0.75rem;justify-content:flex-start;text-align:left;border:1px solid #e2e8f0;background:#f8fafc" onclick="openDriverDocViewer('${esc(rcDocUrl)}', 'Vehicle RC - ${esc(d.name)}', 'Plate: ${esc(d.carPlate || req.rcNumber)}')">
+                                  <i class="fa fa-car" style="color:var(--green)"></i> View Vehicle RC
+                                </button>
+                              ` : '<span style="font-size:0.74rem;color:#ef4444"><i class="fa fa-triangle-exclamation"></i> No RC uploaded</span>'}
+
+                              ${carPhotoUrl ? `
+                                <button type="button" class="btn btn-sm btn-ghost" style="padding:3px 8px;font-size:0.75rem;justify-content:flex-start;text-align:left;border:1px solid #e2e8f0;background:#f8fafc" onclick="openDriverDocViewer('${esc(carPhotoUrl)}', 'Vehicle Photo - ${esc(d.name)}', '${esc(d.carModel)}')">
+                                  <i class="fa fa-image" style="color:var(--gold)"></i> View Car Photo
+                                </button>
+                              ` : '<span style="font-size:0.74rem;color:var(--text-muted)"><i class="fa fa-image"></i> No car photo</span>'}
+                            </div>
+                          </td>
+                          <td>
+                            <div>${statusBadge}</div>
+                            <div style="font-size:0.72rem;color:var(--text-muted);margin-top:5px">
+                              <i class="fa fa-calendar-day"></i> ${req.submittedAt ? new Date(req.submittedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Recently'}
+                            </div>
+                            ${isRejected && (d.rejectionReason || req.rejectionReason) ? `
+                              <div style="font-size:0.72rem;color:#b71c1c;margin-top:4px;max-width:180px">
+                                <b>Reason:</b> ${esc(d.rejectionReason || req.rejectionReason)}
+                              </div>
+                            ` : ''}
+                          </td>
+                          <td>
+                            <div style="display:flex;gap:6px;flex-wrap:wrap">
+                              ${isPending ? `
+                                <button class="btn btn-sm btn-primary" onclick="adminApproveDriverVerification('${d.mobile}')">
+                                  <i class="fa fa-check"></i> Approve
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="adminRejectDriverVerification('${d.mobile}')">
+                                  <i class="fa fa-times"></i> Reject
+                                </button>
+                              ` : (isApproved ? `
+                                <button class="btn btn-sm btn-ghost" style="color:var(--danger);border:1px solid #ffcdd2" onclick="adminRejectDriverVerification('${d.mobile}')">
+                                  <i class="fa fa-ban"></i> Revoke
+                                </button>
+                              ` : `
+                                <button class="btn btn-sm btn-primary" onclick="adminApproveDriverVerification('${d.mobile}')">
+                                  <i class="fa fa-rotate-left"></i> Re-Approve
+                                </button>
+                              `)}
+                            </div>
+                          </td>
+                        </tr>
+                      `;
+                    }).join('')}
+                  </tbody>
+                </table>
+              </div>
+            `}
+          </div>
+        `;
+      } else if (_adminCarpoolSubTab === 'drivers') {
+        subContent = `
+          <div class="s-card">
+            <div class="s-card-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                <span><i class="fa fa-users-gear" style="color:var(--green)"></i> Registered Driver Accounts Moderation (Cloud Database)</span>
+                <span style="font-size:0.72rem;background:#eff6ff;color:#2563eb;padding:3px 8px;border-radius:8px;font-weight:700"><i class="fa fa-cloud"></i> Firestore Live</span>
+              </div>
               <span style="font-size:0.8rem;color:var(--text-muted)">Total Drivers: ${driversList.length}</span>
             </div>
 
+            ${dbError ? `
+              <div style="background:#fef2f2;border:1.5px solid #fecaca;color:#b91c1c;padding:12px 16px;border-radius:10px;margin-bottom:14px;font-size:0.82rem;display:flex;align-items:center;gap:10px">
+                <i class="fa fa-triangle-exclamation" style="font-size:1.1rem;flex-shrink:0"></i>
+                <div>
+                  <b>Cloud Database Query Error:</b> ${esc(dbError)}
+                  <div style="font-size:0.75rem;color:#7f1d1d;margin-top:2px">Please update Firestore Security Rules in Firebase Console to allow reading the <code>drivers</code> collection.</div>
+                </div>
+              </div>
+            ` : ''}
+
             ${!driversList.length ? `
-              <div class="empty-state" style="padding:40px 16px"><i class="fa fa-id-card" style="font-size:2rem;opacity:0.3"></i><p>No driver accounts registered in database.</p></div>
+              <div class="empty-state" style="padding:40px 16px"><i class="fa fa-id-card" style="font-size:2rem;opacity:0.3"></i><p>No driver accounts found in cloud database.</p></div>
             ` : `
               <div style="overflow-x:auto">
                 <table class="menu-table">
@@ -20694,9 +21600,11 @@ Together, we grow stronger — one order at a time.`;
                   </thead>
                   <tbody>
                     ${driversList.map(d => {
-                      const isVer = d.docsVerified || d.verified;
+                      const isVer = isDriverDocVerified(d);
                       const verMethod = d.verificationMethod || 'admin_upload';
+                      const verStatus = d.verificationStatus;
                       const isDisabled = d.disabled === true;
+                      const req = d.verificationRequest;
                       return `
                         <tr>
                           <td>
@@ -20715,18 +21623,34 @@ Together, we grow stronger — one order at a time.`;
                               ${isVer ? (
                                 verMethod === 'digilocker' ?
                                 '<span style="font-size:0.7rem;background:#e3f2fd;color:#0d47a1;padding:2px 8px;border-radius:10px;font-weight:700"><i class="fa fa-shield-halved"></i> DigiLocker MoRTH</span>' :
-                                '<span style="font-size:0.7rem;background:#e8f5e9;color:#2e7d32;padding:2px 8px;border-radius:10px;font-weight:700"><i class="fa fa-circle-check"></i> Admin Direct</span>'
-                              ) : '<span style="font-size:0.7rem;background:#fff3e0;color:#e65100;padding:2px 8px;border-radius:10px;font-weight:700"><i class="fa fa-clock"></i> Unverified</span>'}
+                                '<span style="font-size:0.7rem;background:#e8f5e9;color:#2e7d32;padding:2px 8px;border-radius:10px;font-weight:700"><i class="fa fa-circle-check"></i> Admin Verified</span>'
+                              ) : (
+                                verStatus === 'admin_pending' ?
+                                '<span style="font-size:0.7rem;background:#fff8e1;color:#f57f17;padding:2px 8px;border-radius:10px;font-weight:700"><i class="fa fa-clock"></i> Review Pending</span>' :
+                                (verStatus === 'rejected' ?
+                                '<span style="font-size:0.7rem;background:#ffebee;color:#c62828;padding:2px 8px;border-radius:10px;font-weight:700"><i class="fa fa-circle-xmark"></i> Rejected</span>' :
+                                '<span style="font-size:0.7rem;background:#eceff1;color:#546e7a;padding:2px 8px;border-radius:10px;font-weight:700"><i class="fa fa-clock"></i> Unverified</span>')
+                              )}
                             </div>
+                            ${(req && req.dlDocUrl) ? `
+                              <div style="margin-top:4px">
+                                <button class="btn btn-sm btn-ghost" style="padding:2px 6px;font-size:0.7rem" onclick="openDriverDocViewer('${esc(req.dlDocUrl)}', 'Driving License - ${esc(d.name)}', 'DL: ${esc(d.dlNumber)}')"><i class="fa fa-id-card"></i> View Proof</button>
+                              </div>
+                            ` : ''}
                           </td>
                           <td>
                             ${isDisabled ? 
-                              '<span style="font-size:0.75rem;background:#ffebee;color:#c62828;padding:4px 10px;border-radius:12px;font-weight:800;display:inline-block"><i class="fa fa-circle-xmark"></i> SUSPENDED / DISABLED</span>' :
+                              '<span style="font-size:0.75rem;background:#ffebee;color:#c62828;padding:4px 10px;border-radius:12px;font-weight:800;display:inline-block"><i class="fa fa-circle-xmark"></i> SUSPENDED</span>' :
                               '<span style="font-size:0.75rem;background:#e8f5e9;color:#2e7d32;padding:4px 10px;border-radius:12px;font-weight:800;display:inline-block"><i class="fa fa-circle-check"></i> ACTIVE</span>'
                             }
                           </td>
                           <td>
                             <div style="display:flex;gap:6px;flex-wrap:wrap">
+                              ${(verStatus === 'admin_pending') ? `
+                                <button class="btn btn-sm btn-primary" onclick="adminApproveDriverVerification('${d.mobile}')">
+                                  <i class="fa fa-check"></i> Approve Docs
+                                </button>
+                              ` : ''}
                               <button class="btn btn-sm ${isDisabled ? 'btn-success' : 'btn-ghost'}" style="${isDisabled ? '' : 'color:#c62828;border:1.5px solid #ffcdd2'}" onclick="adminToggleDriverStatus('${d.mobile}')">
                                 <i class="fa ${isDisabled ? 'fa-circle-check' : 'fa-ban'}"></i> ${isDisabled ? 'Enable' : 'Disable'}
                               </button>
@@ -20801,12 +21725,15 @@ Together, we grow stronger — one order at a time.`;
 
       container.innerHTML = `
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
-          <div style="display:flex;gap:8px">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
             <button class="btn btn-sm ${_adminCarpoolSubTab === 'rides' ? 'btn-primary' : 'btn-ghost'}" onclick="switchAdminCarpoolSubTab('rides')">
               <i class="fa fa-car-side"></i> Published Rides (${rides.length})
             </button>
             <button class="btn btn-sm ${_adminCarpoolSubTab === 'drivers' ? 'btn-primary' : 'btn-ghost'}" onclick="switchAdminCarpoolSubTab('drivers')">
-              <i class="fa fa-id-card"></i> Manage Driver Accounts (${driversList.length})
+              <i class="fa fa-id-card"></i> Driver Accounts (${driversList.length})
+            </button>
+            <button class="btn btn-sm ${_adminCarpoolSubTab === 'requests' ? 'btn-primary' : 'btn-ghost'}" onclick="switchAdminCarpoolSubTab('requests')" style="${pendingCount > 0 ? 'border:1.5px solid #ef4444' : ''}">
+              <i class="fa fa-file-shield"></i> Verification Requests ${pendingCount > 0 ? `<span style="background:var(--danger);color:#fff;font-size:0.7rem;padding:2px 7px;border-radius:10px;font-weight:800;margin-left:4px">${pendingCount} PENDING</span>` : `(${allReqDrivers.length})`}
             </button>
           </div>
           <button class="btn btn-sm btn-ghost" onclick="refreshAdminCarpoolView()"><i class="fa fa-rotate"></i> Refresh DB Data</button>
@@ -20830,7 +21757,7 @@ Together, we grow stronger — one order at a time.`;
 
       if (db) {
         try {
-          const docSnap = await db.collection('drivers').doc(mobile).get();
+          const docSnap = await db.collection('drivers').doc(mobile).get({ source: 'server' });
           if (docSnap && docSnap.exists) {
             driver = { mobile, ...docSnap.data() };
           }
@@ -24979,8 +25906,9 @@ Together, we grow stronger — one order at a time.`;
 
       <!-- 1. Resident Carpool Feature -->
       <div style="background:var(--cream);border-radius:12px;padding:16px;border:1.5px solid var(--border)">
-        <div style="font-weight:700;font-size:.95rem;margin-bottom:8px;color:var(--text);display:flex;align-items:center;gap:8px">
-          <i class="fa fa-car-side" style="color:var(--green);font-size:1.1rem"></i> Resident Carpool Feature &amp; Bottom Nav Tab
+        <div style="font-weight:700;font-size:.95rem;margin-bottom:8px;color:var(--text);display:flex;align-items:center;justify-content:space-between">
+          <span><i class="fa fa-car-side" style="color:var(--green);font-size:1.1rem"></i> Resident Carpool Feature &amp; Bottom Nav Tab</span>
+          ${isLocalDevEnvironment() ? '<span style="background:rgba(46,125,50,0.12);color:var(--green);font-size:0.75rem;padding:2px 8px;border-radius:8px;font-weight:700"><i class="fa fa-code"></i> Active Locally</span>' : ''}
         </div>
         <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600;font-size:.88rem">
           <input type="checkbox" id="cfg_showCarpool" ${isFeatureVisible('showCarpool') ? 'checked' : ''} style="accent-color:var(--green);width:18px;height:18px">
@@ -24988,13 +25916,15 @@ Together, we grow stronger — one order at a time.`;
         </label>
         <p style="font-size:.78rem;color:var(--text-muted);margin-top:6px;line-height:1.4">
           When enabled, the Carpool tab is displayed in the bottom navigation bar and sidebar drawer. When disabled, Carpool is hidden site-wide.
+          <br><span style="display:inline-block;margin-top:4px;padding:2px 8px;border-radius:6px;background:rgba(46,125,50,0.08);color:var(--green);font-size:.73rem;font-weight:600"><i class="fa fa-circle-check"></i> Enabled locally by default without altering database (safe for live customers)</span>
         </p>
       </div>
 
        <!-- 2. Driver Hub & Driver Login in Sidebar -->
       <div style="background:var(--cream);border-radius:12px;padding:16px;border:1.5px solid var(--border)">
-        <div style="font-weight:700;font-size:.95rem;margin-bottom:8px;color:var(--text);display:flex;align-items:center;gap:8px">
-          <i class="fa fa-id-card-clip" style="color:var(--green);font-size:1.1rem"></i> Driver Hub &amp; Driver Login in Sidebar
+        <div style="font-weight:700;font-size:.95rem;margin-bottom:8px;color:var(--text);display:flex;align-items:center;justify-content:space-between">
+          <span><i class="fa fa-id-card-clip" style="color:var(--green);font-size:1.1rem"></i> Driver Hub &amp; Driver Login in Sidebar</span>
+          ${isLocalDevEnvironment() ? '<span style="background:rgba(46,125,50,0.12);color:var(--green);font-size:0.75rem;padding:2px 8px;border-radius:8px;font-weight:700"><i class="fa fa-code"></i> Active Locally</span>' : ''}
         </div>
         <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600;font-size:.88rem">
           <input type="checkbox" id="cfg_showDriverLogin" ${isFeatureVisible('showDriverLogin') ? 'checked' : ''} style="accent-color:var(--green);width:18px;height:18px">
@@ -25002,6 +25932,7 @@ Together, we grow stronger — one order at a time.`;
         </label>
         <p style="font-size:.78rem;color:var(--text-muted);margin-top:6px;line-height:1.4">
           When enabled, the Driver Hub section with Driver Login / Sign Up button is visible in the sidebar drawer menu. When unchecked, it is hidden.
+          <br><span style="display:inline-block;margin-top:4px;padding:2px 8px;border-radius:6px;background:rgba(46,125,50,0.08);color:var(--green);font-size:.73rem;font-weight:600"><i class="fa fa-circle-check"></i> Enabled locally by default without altering database (safe for live customers)</span>
         </p>
       </div>
 
@@ -25263,25 +26194,36 @@ Together, we grow stronger — one order at a time.`;
 
       SITE_CONFIG.subscriptionShowTiming = subscriptionShowTiming;
       SITE_CONFIG.failureNotificationRecipient = failureNotificationRecipient;
+      if (isLocalDevEnvironment()) {
+        try {
+          localStorage.setItem('tyntron_local_showCarpool', showCarpool ? 'true' : 'false');
+          localStorage.setItem('tyntron_local_showDriverLogin', showDriverLogin ? 'true' : 'false');
+        } catch (e) { }
+      }
 
-      await fsSaveConfig({
+      const dbPayload = {
         ENABLE_DISCOUNTS_AND_COUPONS: enableDiscountsAndCoupons,
-        showCarpool,
         showAiChatbot,
         showRegisterButton,
         showProductListing,
         showBusinessCanDeliver,
-        showDriverLogin,
         showBusinessOperatingSchedule,
         enableFailureNotificationEmail,
         subscriptionShowTiming,
         failureNotificationRecipient
-      });
+      };
+
+      if (!isLocalDevEnvironment()) {
+        dbPayload.showCarpool = showCarpool;
+        dbPayload.showDriverLogin = showDriverLogin;
+      }
+
+      await fsSaveConfig(dbPayload);
 
       applyFooterLinks();
       renderGlobalProductBoxes();
       updatePanelTabs();
-      showToast('Feature visibility settings saved ✓');
+      showToast('Feature visibility settings saved ✓' + (isLocalDevEnvironment() ? ' (Live database protected)' : ''));
     }
     function adminAddNumber() {
       const number = (document.getElementById('new_admin_number').value || '').trim();

@@ -109,6 +109,26 @@ service cloud.firestore {
       allow create, update: if isSignedIn();
       allow delete: if isSignedIn();
     }
+
+    match /drivers/{driverId} {
+      allow read, write: if true;
+    }
+
+    match /carpool_rides/{rideId} {
+      allow read, write: if true;
+    }
+
+    match /carpool_bookings/{bookingId} {
+      allow read, write: if true;
+    }
+
+    match /driver_verifications/{docId} {
+      allow read, write: if true;
+    }
+
+    match /failure_logs/{logId} {
+      allow read, write: if true;
+    }
   }
 }
 ```

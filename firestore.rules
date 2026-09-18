@@ -1,0 +1,86 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // 1. Vendors & Shops
+    match /vendors/{vendorId} {
+      allow read: if true;
+      allow create: if isSignedIn() && request.resource.data.ownerUid == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.ownerUid == request.auth.uid;
+    }
+
+    // 2. Business Accounts
+    match /accounts/{uid} {
+      allow read: if isSignedIn();
+      allow create, update: if isOwner(uid);
+      allow delete: if isSignedIn();
+    }
+
+    // 3. Global Site Configuration
+    match /config/{doc} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    // 4. Analytics & Stats
+    match /stats/{vendorId} {
+      allow read: if true;
+      allow create, update: if isSignedIn() && request.resource.data.vendorId == vendorId;
+      allow delete: if isSignedIn();
+    }
+
+    // 5. Orders & Order Logs
+    match /order_logs/{logId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if isSignedIn();
+    }
+
+    // 6. Customer Reviews
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if isSignedIn();
+    }
+
+    // 7. Customers
+    match /customers/{email} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn();
+      allow delete: if isSignedIn();
+    }
+
+    // 8. Carpool Drivers
+    match /drivers/{driverId} {
+      allow read, write: if true;
+    }
+
+    // 9. Carpool Rides & Feed
+    match /carpool_rides/{rideId} {
+      allow read, write: if true;
+    }
+
+    // 10. Carpool Bookings
+    match /carpool_bookings/{bookingId} {
+      allow read, write: if true;
+    }
+
+    // 11. Driver Verification Requests (DL, RC, MoRTH)
+    match /driver_verifications/{docId} {
+      allow read, write: if true;
+    }
+
+    // 12. App Failure Logs
+    match /failure_logs/{logId} {
+      allow read, write: if true;
+    }
+  }
+}
