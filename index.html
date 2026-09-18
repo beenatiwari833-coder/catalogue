@@ -17648,9 +17648,13 @@ Together, we grow stronger — one order at a time.`;
     }
 
     /* ═══════════ FULL-SCREEN LOCATION SPLASH + NO-INTERNET STATE ═══════════ */
-    function hideLocationSplash() {
+    async function hideLocationSplash() {
       const el = document.getElementById('locationSplash');
       if (!el || el.classList.contains('hide')) return;
+      // Geolocation can fail/resolve (e.g. permission denied) before the Firestore site
+      // config does -- wait for it so the onboarding splash shows the real configured
+      // slides instead of silently falling back to DEFAULT_ONBOARDING_SLIDES's placeholder copy.
+      if (window._configLoadPromise) await window._configLoadPromise;
       showOnboardingSplash();
       el.classList.add('hide');
       setTimeout(() => {
@@ -17714,7 +17718,7 @@ Together, we grow stronger — one order at a time.`;
 
     const DEFAULT_ONBOARDING_SLIDES = [
       {
-        title: "Connecti ng millions of buyers & suppliers worldwide since 35 years",
+        title: "Discover Trusted Home Businesses Nearby",
         desc: "Discover and support trusted neighbourhood home businesses, creators, and local services in your society.",
         image: "",
         svg: ONBOARDING_SVG_1
