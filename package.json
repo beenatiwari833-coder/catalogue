@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "test": "node test/test_search_playwright.js"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.63.0"
+  }
+}
