@@ -10357,6 +10357,16 @@
 
     let _firestoreDrivers = {};
 
+    async function ensureCarpoolAuth() {
+      if (auth && !auth.currentUser) {
+        try {
+          await auth.signInAnonymously();
+        } catch (e) {
+          console.warn('Anonymous auth for carpool access notice:', e.message || e);
+        }
+      }
+    }
+
     function getDriverDatabase() {
       if (!_firestoreDrivers) _firestoreDrivers = {};
       return _firestoreDrivers;
@@ -10370,6 +10380,7 @@
             currentDriver = null;
             return;
           }
+          await ensureCarpoolAuth();
           const docSnap = await db.collection('drivers').doc(saved).get({ source: 'server' });
           if (docSnap && docSnap.exists) {
             currentDriver = { mobile: docSnap.id, ...docSnap.data() };
@@ -10392,6 +10403,7 @@
       _firestoreDrivers = {};
       if (!db) return _firestoreDrivers;
       try {
+        await ensureCarpoolAuth();
         const snap = await db.collection('drivers').get({ source: 'server' });
         if (snap && !snap.empty) {
           snap.docs.forEach(doc => {
@@ -10409,6 +10421,7 @@
       if (!db) {
         throw new Error('Database is not initialized or offline.');
       }
+      await ensureCarpoolAuth();
       // Direct Firestore write without local storage fallback - will fail cleanly if security rules block it
       await db.collection('drivers').doc(driverObj.mobile).set(driverObj, { merge: true });
       if (!_firestoreDrivers) _firestoreDrivers = {};
@@ -10446,6 +10459,7 @@
     function openDriverAuthModal() {
       if (typeof buildSocietySelector === 'function') buildSocietySelector();
       openModal('driverAuthModal');
+      ensureCarpoolAuth().catch(() => {});
     }
 
     function showDrvLoginNotRegisteredNotice(mobile) {
@@ -10671,6 +10685,8 @@
 
       clearDrvLoginNotRegisteredNotice();
 
+      await ensureCarpoolAuth();
+
       // Check if driver exists in Firestore DB drivers collection
       let driverFound = false;
       let dbError = null;
@@ -10718,7 +10734,17 @@
       const otp = (document.getElementById('drv_login_otp').value || '').trim();
 
       if (!mobile) { showToast('Enter registered driver mobile number'); return; }
-      if (!otp) { showToast('Enter OTP code'); return; }
+      if (!otp) {
+        const row = document.getElementById('drv_login_otpRow');
+        if (!row || row.style.display === 'none') {
+          await drvLoginSendOtp();
+          return;
+        }
+        showToast('Enter OTP code');
+        return;
+      }
+
+      await ensureCarpoolAuth();
 
       // Query database directly for existing registered driver document
       let driver = null;
@@ -10736,10 +10762,8 @@
       }
 
       if (!driver) {
+        showDrvLoginNotRegisteredNotice(mobile);
         showToast('⚠️ Mobile number ' + mobile + ' is not registered in database. Please complete Driver Registration first.');
-        switchDriverAuthTab('reg');
-        const regMobEl = document.getElementById('drv_reg_mobile');
-        if (regMobEl) regMobEl.value = mobile;
         return;
       }
 
@@ -11127,6 +11151,7 @@
     async function fsLoadCarpoolData() {
       if (!db) return;
       try {
+        await ensureCarpoolAuth();
         const ridesSnap = await db.collection('carpool_rides').get({ source: 'server' });
         if (ridesSnap) {
           _firestoreCarpoolRides = ridesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -17375,73 +17400,98 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
        to finish activating admin mode, instead of continuing the customer signup. */
     async function caAdminActivate() {
       const errEl = document.getElementById('caAdminErr');
-      errEl.style.display = 'none';
+      if (errEl) errEl.style.display = 'none';
 
       const fbEmail = (document.getElementById('ca_adminEmail')?.value || '').trim();
       const fbPw = document.getElementById('ca_adminPw')?.value || '';
 
       if (!fbEmail || !fbPw) {
         isAdmin = false;
-        errEl.textContent = 'Enter your Firebase email and password';
-        errEl.style.display = 'block';
+        if (errEl) {
+          errEl.textContent = 'Enter your Firebase email and password';
+          errEl.style.display = 'block';
+        }
+        return;
+      }
+
+      if (!auth) {
+        isAdmin = false;
+        if (errEl) {
+          errEl.textContent = '❌ Firebase Auth is not initialized. Please check network/config.';
+          errEl.style.display = 'block';
+        }
         return;
       }
 
       // Automatically log out any previous business seller or customer session before activating Admin mode
       await logoutPreviousSessions('admin');
 
-      isAdmin = true;
+      let cred = null;
+      let currentUser = auth.currentUser;
 
-      if (auth) {
-        let currentUser = auth.currentUser;
-        // Re-use session ONLY if logged in with non-anonymous email matching the requested admin email
-        if (currentUser && !currentUser.isAnonymous && currentUser.email && currentUser.email.toLowerCase() === fbEmail.toLowerCase()) {
-          window._adminUid = currentUser.uid;
-          sessionStorage.setItem('hb_adminUid', currentUser.uid);
-        } else {
-          // Sign out previous anonymous session or stale user session
-          if (currentUser) {
-            await auth.signOut().catch(() => {});
-          }
-          try {
-            let cred = null;
+      // Re-use session ONLY if logged in with non-anonymous email matching the requested admin email
+      if (currentUser && !currentUser.isAnonymous && currentUser.email && currentUser.email.toLowerCase() === fbEmail.toLowerCase()) {
+        window._adminUid = currentUser.uid;
+        sessionStorage.setItem('hb_adminUid', currentUser.uid);
+      } else {
+        // Sign out previous anonymous session or stale user session
+        if (currentUser) {
+          await auth.signOut().catch(() => {});
+        }
+        try {
+          cred = await auth.signInWithEmailAndPassword(fbEmail, fbPw);
+        } catch (signInErr) {
+          const errCode = (signInErr && (signInErr.code || signInErr.message)) || '';
+          if (errCode.includes('invalid-login-credentials') || errCode.includes('wrong-password') || errCode.includes('invalid-credential') || errCode.includes('user-not-found')) {
+            // Check if user doesn't exist yet, try creating initial account once
             try {
-              cred = await auth.signInWithEmailAndPassword(fbEmail, fbPw);
-            } catch (signInErr) {
-              const errCode = signInErr.code || signInErr.message || '';
-              if (errCode.includes('invalid-login-credentials') || errCode.includes('user-not-found') || errCode.includes('invalid-credential')) {
-                try {
-                  cred = await auth.createUserWithEmailAndPassword(fbEmail, fbPw);
-                } catch (createErr) {
-                  console.warn('Firebase Auth create account fallback:', createErr.message);
+              cred = await auth.createUserWithEmailAndPassword(fbEmail, fbPw);
+            } catch (createErr) {
+              const cCode = (createErr && (createErr.code || createErr.message)) || '';
+              isAdmin = false;
+              if (cCode.includes('email-already-in-use')) {
+                if (errEl) {
+                  errEl.textContent = '❌ Incorrect password for ' + fbEmail + '. Please re-check your password.';
+                  errEl.style.display = 'block';
+                }
+              } else {
+                if (errEl) {
+                  errEl.textContent = '❌ Firebase Auth error: ' + (createErr.message || createErr);
+                  errEl.style.display = 'block';
                 }
               }
+              return;
             }
-            if (cred && cred.user) {
-              window._adminUid = cred.user.uid;
-              sessionStorage.setItem('hb_adminUid', cred.user.uid);
-            } else if (!auth.currentUser) {
-              const anonCred = await auth.signInAnonymously().catch(() => null);
-              if (anonCred && anonCred.user) {
-                window._adminUid = anonCred.user.uid;
-                sessionStorage.setItem('hb_adminUid', anonCred.user.uid);
-              }
-            } else {
-              window._adminUid = auth.currentUser.uid;
-              sessionStorage.setItem('hb_adminUid', auth.currentUser.uid);
+          } else {
+            isAdmin = false;
+            if (errEl) {
+              errEl.textContent = '❌ Firebase login failed: ' + (signInErr.message || signInErr);
+              errEl.style.display = 'block';
             }
-          } catch (e) {
-            console.warn('Firebase Admin login exception:', e.message);
+            return;
           }
+        }
+
+        if (cred && cred.user) {
+          window._adminUid = cred.user.uid;
+          sessionStorage.setItem('hb_adminUid', cred.user.uid);
+        } else {
+          isAdmin = false;
+          if (errEl) {
+            errEl.textContent = '❌ Authentication failed. Could not verify Firebase credentials.';
+            errEl.style.display = 'block';
+          }
+          return;
         }
       }
 
+      isAdmin = true;
       closeModal('customerAuthModal');
       document.getElementById('adminBanner').style.display = 'block';
       switchPanel('admin');
       updatePanelTabs();
       renderAll();
-      showToast(window._adminUid ? 'Admin mode activated — Firebase connected ✓' : 'Admin mode activated ✓');
+      showToast('Admin mode activated — Firebase connected ✓');
     }
     async function exitAdmin() {
       if (auth && auth.currentUser && !currentBusiness) {
