@@ -3,7 +3,41 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#ffffff">
+  <script>
+    /* iOS / Mobile Safe Area Inset Detection & Fallback */
+    (function () {
+      function applyIosSafeInsets() {
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+          (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        const isCapacitorIOS = !!(window.Capacitor?.isNativePlatform?.() && window.Capacitor?.getPlatform?.() === 'ios');
+
+        if (isIOS || isCapacitorIOS) {
+          document.documentElement.classList.add('is-ios');
+          const testEl = document.createElement('div');
+          testEl.style.cssText = 'position:fixed;top:0;height:env(safe-area-inset-top,0px);visibility:hidden;pointer-events:none;';
+          (document.body || document.documentElement).appendChild(testEl);
+          const computedHeight = parseFloat(window.getComputedStyle(testEl).height) || 0;
+          testEl.remove();
+
+          if (computedHeight === 0) {
+            // env() returned 0 in this iOS webview; calculate fallback from device dimensions
+            const screenH = Math.max(window.screen.height, window.screen.width);
+            const fallbackTop = screenH >= 852 ? 54 : (screenH >= 812 ? 47 : 20);
+            document.documentElement.style.setProperty('--safe-top', fallbackTop + 'px');
+          }
+        }
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', applyIosSafeInsets);
+      } else {
+        applyIosSafeInsets();
+      }
+    })();
+  </script>
   <title>TynTron – For the Residents, By the Residents</title>
   <link rel="icon" type="image/jpeg" href="newlogo.png.jpeg">
   <link rel="apple-touch-icon" href="newlogo.png.jpeg">
@@ -28,6 +62,10 @@
     rel="stylesheet">
   <style>
     :root {
+      /* Safe area insets (iOS notch / Dynamic Island / Home Indicator) */
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+
       /* TynTron brand palette — Classic Saffron + gold accent (ACTIVE THEME) */
       --green: #FF9933;
       --green-dark: #B85C1A;
@@ -65,8 +103,9 @@
 
     html {
       scroll-behavior: smooth;
-      max-width: 100%;
-      overflow-x: clip;
+      max-width: 100vw;
+      width: 100%;
+      overflow-x: hidden !important;
     }
 
     body {
@@ -74,8 +113,22 @@
       background: var(--cream);
       color: var(--text);
       min-height: 100vh;
-      max-width: 100%;
-      overflow-x: clip;
+      max-width: 100vw;
+      width: 100%;
+      overflow-x: hidden !important;
+      position: relative;
+    }
+
+    .table-responsive,
+    div[style*="overflow-x:auto"],
+    div[style*="overflow-x: auto"] {
+      width: 100% !important;
+      max-width: 100% !important;
+      overflow-x: auto !important;
+      -webkit-overflow-scrolling: touch !important;
+      box-sizing: border-box !important;
+      display: block !important;
+      touch-action: pan-x pan-y !important;
     }
 
     /* BOTTOM NAV — app-shell (Home / Orders / Account) */
@@ -412,7 +465,8 @@
       top: 0;
       z-index: 100;
       border-bottom: 1px solid var(--border);
-      box-shadow: 0 2px 12px rgba(20, 20, 30, .05)
+      box-shadow: 0 2px 12px rgba(20, 20, 30, .05);
+      padding-top: var(--safe-top, env(safe-area-inset-top, 0px));
     }
 
     .header-inner {
@@ -515,7 +569,7 @@
     }
 
     .sidebar-header {
-      padding: 20px;
+      padding: calc(20px + var(--safe-top, env(safe-area-inset-top, 0px))) 20px 20px;
       background: linear-gradient(135deg, var(--green-dark), #1b5e20);
       color: var(--white);
       display: flex;
@@ -2562,27 +2616,105 @@
     /* ── MENU MODAL ── */
     .menu-item-row {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 13px 0;
+      flex-direction: column;
+      padding: 14px 0;
       border-bottom: 1px solid var(--border);
-      gap: 12px
+      gap: 10px;
+      width: 100%;
+      box-sizing: border-box;
     }
 
     .menu-item-row:last-child {
-      border-bottom: none
+      border-bottom: none;
+    }
+
+    .menu-item-main {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .menu-item-img-container {
+      position: relative;
+      flex-shrink: 0;
+      width: 66px;
+      height: 66px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1.5px solid var(--border);
+      background: var(--cream);
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .menu-item-cover-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform .18s ease, opacity .15s ease;
+    }
+
+    .menu-item-cover-img:hover {
+      transform: scale(1.05);
+    }
+
+    .menu-item-img-badge {
+      position: absolute;
+      bottom: 3px;
+      right: 3px;
+      background: rgba(0, 0, 0, 0.72);
+      color: #fff;
+      font-size: 0.62rem;
+      font-weight: 700;
+      padding: 2px 5px;
+      border-radius: 5px;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      backdrop-filter: blur(2px);
+    }
+
+    .menu-item-body {
+      flex: 1;
+      min-width: 0;
     }
 
     .menu-item-name {
-      font-weight: 600;
-      font-size: .9rem;
-      color: var(--text)
+      font-weight: 700;
+      font-size: .95rem;
+      color: var(--text);
+      line-height: 1.35;
+      word-break: break-word;
     }
 
     .menu-item-desc {
-      font-size: .74rem;
+      font-size: .78rem;
       color: var(--text-muted);
-      margin-top: 2px
+      line-height: 1.45;
+      margin-top: 3px;
+      word-break: break-word;
+    }
+
+    .menu-item-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+      flex-shrink: 0;
+      margin-left: auto;
+    }
+
+    @media (min-width: 641px) {
+      .menu-item-actions {
+        flex-direction: row;
+        align-items: center;
+        gap: 12px;
+      }
     }
 
     .menu-item-price {
@@ -2590,8 +2722,94 @@
       color: var(--green);
       font-size: .95rem;
       white-space: nowrap;
-      min-width: 52px;
-      text-align: right
+      text-align: right;
+    }
+
+    /* Dedicated Horizontal Photo Strip */
+    .menu-item-multi-images {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      box-sizing: border-box;
+      padding-top: 4px;
+    }
+
+    .multi-images-label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .multi-images-scroll {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      overflow-x: auto;
+      flex-wrap: nowrap;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      flex: 1;
+      min-width: 0;
+      padding: 2px 0;
+    }
+
+    .multi-images-scroll::-webkit-scrollbar {
+      display: none;
+    }
+
+    .item-gallery-thumb-btn {
+      position: relative;
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      border: 2px solid var(--border, #d1d5db);
+      background: #fff;
+      overflow: hidden;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all .15s ease;
+      box-sizing: border-box;
+    }
+
+    .item-gallery-thumb-btn.active {
+      border-color: var(--green, #FF9933);
+      box-shadow: 0 0 0 2px var(--green-pale, #FFF3E0);
+    }
+
+    .item-gallery-thumb-btn img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .gallery-view-all-pill {
+      font-size: 0.72rem;
+      padding: 0 10px;
+      border: 1.5px solid var(--border, #d1d5db);
+      border-radius: 8px;
+      height: 38px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      color: var(--green-dark, #B85C1A);
+      font-weight: 700;
+      background: var(--cream, #fdfbf7);
+      cursor: pointer;
+      flex-shrink: 0;
+      white-space: nowrap;
+      transition: all .15s ease;
+      font-family: inherit;
+    }
+
+    .gallery-view-all-pill:hover {
+      border-color: var(--green);
+      background: var(--green-pale);
     }
 
     .qty-ctrl {
@@ -2657,9 +2875,24 @@
 
     @media(max-width:640px) {
 
-      /* Prevent any element from causing horizontal scroll */
+      /* Prevent any element from causing horizontal scroll on mobile */
+      html,
       body {
-        overflow-x: clip;
+        overflow-x: hidden !important;
+        max-width: 100vw !important;
+        width: 100% !important;
+      }
+
+      /* Prevent iOS auto-zoom on input focus by keeping font-size at least 16px and ensure inputs can receive text */
+      input,
+      select,
+      textarea,
+      .form-group input,
+      .form-group select,
+      .form-group textarea {
+        font-size: 16px !important;
+        -webkit-user-select: text !important;
+        user-select: text !important;
       }
 
       /* ── HEADER ── */
@@ -2891,21 +3124,36 @@
 
       /* ── MODALS ── */
       .modal-overlay {
-        padding: 0;
-        align-items: flex-end
+        padding: 0 !important;
+        align-items: flex-end !important;
+        max-width: 100vw !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
       }
 
       /* slide up from bottom on mobile */
       .modal {
-        padding: 18px 16px;
-        border-radius: 18px 18px 0 0;
-        max-height: 90vh;
-        width: 100%;
-        max-width: 100%;
+        padding: 18px 16px !important;
+        border-radius: 18px 18px 0 0 !important;
+        max-height: 90vh !important;
+        width: 100% !important;
+        max-width: 100vw !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
       }
 
       .form-grid {
-        grid-template-columns: 1fr
+        grid-template-columns: 1fr !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+      }
+
+      .form-grid > div,
+      .form-group,
+      .form-group > div {
+        min-width: 0 !important;
+        box-sizing: border-box !important;
       }
 
       .modal-actions {
@@ -2929,46 +3177,95 @@
 
       /* ── BUSINESS / ADMIN PANELS ── */
       #panel-business {
-        padding: 0 12px 40px;
-        margin: 16px auto
+        padding: 0 12px 40px !important;
+        margin: 16px auto !important;
+        max-width: 100vw !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+      }
+
+      #businessContent {
+        padding: 0 8px 40px !important;
+        margin: 12px auto !important;
+        max-width: 100vw !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
       }
 
       #panel-admin {
-        padding: 0 12px 40px;
-        margin: 0 auto
+        padding: 0 12px 40px !important;
+        margin: 0 auto !important;
+        max-width: 100vw !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
       }
 
       .s-card {
-        padding: 16px;
-        overflow-x: auto
+        padding: 16px !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
       }
 
       .s-card-title {
-        font-size: .95rem;
-        flex-wrap: wrap;
-        gap: 6px
+        font-size: .95rem !important;
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+        word-break: break-word !important;
       }
 
       .admin-tab-nav {
-        overflow-x: auto;
-        gap: 0
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        max-width: 100% !important;
+        gap: 0;
       }
 
       .admin-tab-btn {
         padding: 9px 12px;
-        font-size: .76rem
+        font-size: .76rem;
+        flex-shrink: 0;
       }
 
       /* ── TABLES ── */
       .menu-table {
         font-size: .75rem;
-        min-width: 480px
+        min-width: 480px;
       }
 
-      /* allow horizontal scroll inside s-card */
+      /* allow horizontal scroll inside dedicated .table-responsive wrapper and overflow-x containers */
+      .table-responsive,
+      div[style*="overflow-x:auto"],
+      div[style*="overflow-x: auto"] {
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        box-sizing: border-box !important;
+        display: block !important;
+        touch-action: pan-x pan-y !important;
+      }
+
+      /* Fallback for any menu-table placed directly in a card or modal without wrapper */
+      .s-card > .menu-table,
+      .modal > .menu-table,
+      #adminAccountsTable {
+        display: block !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        touch-action: pan-x pan-y !important;
+      }
+
       .menu-table th,
       .menu-table td {
-        padding: 7px 6px
+        padding: 7px 6px;
       }
 
       /* ── ADVERTISEMENT GRID ── */
@@ -2991,12 +3288,28 @@
 
       /* ── MENU MODAL (order) ── */
       .menu-item-row {
-        flex-wrap: wrap;
-        gap: 8px
+        gap: 10px !important;
+      }
+
+      .menu-item-main {
+        gap: 10px !important;
+      }
+
+      .menu-item-img-container {
+        width: 62px !important;
+        height: 62px !important;
+      }
+
+      .menu-item-name {
+        font-size: .9rem !important;
+      }
+
+      .menu-item-desc {
+        font-size: .75rem !important;
       }
 
       .qty-ctrl {
-        margin-left: auto
+        margin-left: 0;
       }
 
       /* ── FORM GRID inside s-card ── */
@@ -4633,7 +4946,7 @@
   <!-- ── BUSINESS LOGIN MODAL ── -->
   <div class="modal-overlay" id="loginModal" style="z-index:300">
     <div class="modal" style="max-width:380px;text-align:center">
-      <div style="font-size:2.2rem;margin-bottom:8px">🔐</div>
+      <div style="font-size:2.2rem;margin-bottom:8px;color:var(--gold)"><i class="fa fa-lock"></i></div>
       <div class="modal-title" style="justify-content:center;margin-bottom:16px" id="loginModalTitle">Business Login
       </div>
 
@@ -4683,7 +4996,7 @@
   <!-- ── BUSINESS PASSWORD RESET MODAL (EmailJS OTP + Direct Reset) ── -->
   <div class="modal-overlay" id="businessResetModal" style="z-index:350">
     <div class="modal" style="max-width:400px;text-align:center">
-      <div style="font-size:2.2rem;margin-bottom:8px">🔑</div>
+      <div style="font-size:2.2rem;margin-bottom:8px;color:var(--gold)"><i class="fa fa-key"></i></div>
       <div class="modal-title" style="justify-content:center;margin-bottom:8px">Reset Password</div>
       <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:16px" id="businessResetSubtitle">
         We sent a 6-digit OTP code to your email. Enter the OTP code and your new password below:
@@ -9760,12 +10073,14 @@
           </div>
           <button class="btn btn-primary btn-sm" onclick="openCouponEditModal({ creator_type: 'ADMIN', vendor_id: null })"><i class="fa fa-plus"></i> Add New Coupon</button>
         </div>
-        <table class="menu-table">
-          <thead>
-            <tr><th>Code</th><th>Type</th><th>Discount</th><th>Min Order</th><th>Bank Tie-up</th><th>Status</th><th style="text-align:right">Actions</th></tr>
-          </thead>
-          <tbody>${rowsHtml || '<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">No coupons found. Click "Add New Coupon" to create one.</td></tr>'}</tbody>
-        </table>
+        <div class="table-responsive">
+          <table class="menu-table">
+            <thead>
+              <tr><th>Code</th><th>Type</th><th>Discount</th><th>Min Order</th><th>Bank Tie-up</th><th>Status</th><th style="text-align:right">Actions</th></tr>
+            </thead>
+            <tbody>${rowsHtml || '<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">No coupons found. Click "Add New Coupon" to create one.</td></tr>'}</tbody>
+          </table>
+        </div>
       </div>`;
     }
 
@@ -17484,44 +17799,46 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
 
           return `
       <div class="menu-item-row" style="${isShopClosed ? 'opacity:0.75' : ''}">
-        <div id="mi_img_wrap_${it.id}" style="position:relative;flex-shrink:0;${currentCoverImg ? '' : 'display:none'}">
-          <img id="mi_img_${it.id}" src="${esc(currentCoverImg)}" onclick="event.stopPropagation();openImageGalleryModal('${it.id}', 0)" style="width:58px;height:58px;object-fit:cover;border-radius:10px;cursor:pointer;border:1.5px solid var(--border);transition:transform .15s ease,box-shadow .15s ease" onmouseover="this.style.transform='scale(1.06)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='scale(1)';this.style.boxShadow=''" title="Click to preview photos" alt="${esc(it.name)}"/>
-          ${itemImages.length > 1 ? `
-            <span style="position:absolute;bottom:3px;right:3px;background:rgba(0,0,0,0.7);color:#fff;font-size:0.62rem;font-weight:700;padding:1px 5px;border-radius:4px;pointer-events:none;display:flex;align-items:center;gap:3px">
-              <i class="fa fa-images" style="font-size:0.6rem"></i> ${itemImages.length}
-            </span>
-          ` : ''}
-        </div>
-        <div style="flex:1;min-width:0">
-          <div class="menu-item-name">${esc(it.name)}</div>
-          ${it.desc ? `<div class="menu-item-desc">${esc(it.desc)}</div>` : ''}
-          ${itemImages.length > 1 ? `
-            <div class="menu-item-multi-images" style="margin-top:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-              <span style="font-size:0.7rem;color:var(--text-muted);font-weight:700;display:inline-flex;align-items:center;gap:4px">
-                <i class="fa fa-images" style="color:var(--green)"></i> ${itemImages.length} Photos:
+        <div class="menu-item-main">
+          <div id="mi_img_wrap_${it.id}" class="menu-item-img-container" style="${currentCoverImg ? '' : 'display:none'}">
+            <img id="mi_img_${it.id}" src="${esc(currentCoverImg)}" onclick="event.stopPropagation();openImageGalleryModal('${it.id}', 0)" class="menu-item-cover-img" title="Click to preview photos" alt="${esc(it.name)}"/>
+            ${itemImages.length > 1 ? `
+              <span class="menu-item-img-badge" onclick="event.stopPropagation();openImageGalleryModal('${it.id}', 0)">
+                <i class="fa fa-images"></i> ${itemImages.length}
               </span>
+            ` : ''}
+          </div>
+          <div class="menu-item-body">
+            <div class="menu-item-name">${esc(it.name)}</div>
+            ${it.desc ? `<div class="menu-item-desc">${esc(it.desc)}</div>` : ''}
+          </div>
+          <div class="menu-item-actions">
+            <div id="miprice_${it.id}">${priceHtml}</div>
+            ${actionWidget}
+          </div>
+        </div>
+
+        ${itemImages.length > 1 ? `
+          <div class="menu-item-multi-images">
+            <span class="multi-images-label">
+              <i class="fa fa-images" style="color:var(--green)"></i> ${itemImages.length} Photos:
+            </span>
+            <div class="multi-images-scroll">
               ${itemImages.map((src, idx) => `
                 <div class="item-gallery-thumb-btn ${idx === 0 ? 'active' : ''}"
                   id="thumb_${it.id}_${idx}"
                   onclick="event.stopPropagation();switchCustomerItemImage('${it.id}', ${idx})"
-                  style="position:relative;width:34px;height:34px;border-radius:6px;border:2px solid ${idx === 0 ? 'var(--green,#FF9933)' : 'var(--border,#d1d5db)'};background:#fff;overflow:hidden;cursor:pointer;flex-shrink:0;transition:all .15s ease;box-shadow:${idx === 0 ? '0 0 0 2px var(--green-pale,#FFF3E0)' : 'none'}"
                   title="Photo ${idx + 1} of ${itemImages.length} — Click to view"
-                  onmouseover="if(!this.classList.contains('active'))this.style.borderColor='var(--green)'"
-                  onmouseout="if(!this.classList.contains('active'))this.style.borderColor='var(--border,#d1d5db)'"
                 >
-                  <img src="${esc(src)}" style="width:100%;height:100%;object-fit:cover" alt="Photo ${idx + 1}">
+                  <img src="${esc(src)}" alt="Photo ${idx + 1}">
                 </div>
               `).join('')}
-              <button type="button" class="btn btn-sm btn-ghost" onclick="event.stopPropagation();openImageGalleryModal('${it.id}', 0)" style="font-size:0.7rem;padding:2px 8px;border:1px solid var(--border,#d1d5db);border-radius:6px;height:32px;display:inline-flex;align-items:center;gap:4px;color:var(--green-dark,#B85C1A);font-weight:700" title="View all photos full size">
+              <button type="button" class="gallery-view-all-pill" onclick="event.stopPropagation();openImageGalleryModal('${it.id}', 0)" title="View all photos full size">
                 <i class="fa fa-expand"></i> View All
               </button>
             </div>
-          ` : ''}
-        </div>
-        <div style="display:flex;align-items:center;flex-shrink:0;gap:6px">
-          <div id="miprice_${it.id}">${priceHtml}</div>
-          ${actionWidget}
-        </div>
+          </div>
+        ` : ''}
       </div>`;
         }).join('');
         const orderBtn = document.getElementById('menuOrderBtn');
@@ -17638,7 +17955,9 @@ TynTron reserves the right to modify platform guidelines or suspend non-complian
 
       const imgEl = document.getElementById(`mi_img_${itemId}`);
       if (imgEl) {
+        imgEl.style.opacity = '0.6';
         imgEl.src = itemImages[imgIdx];
+        setTimeout(() => { imgEl.style.opacity = '1'; }, 60);
         imgEl.onclick = function (e) {
           e.stopPropagation();
           openImageGalleryModal(itemId, imgIdx);
@@ -20731,7 +21050,9 @@ Together, we grow stronger — one order at a time.`;
       buildSocietySelector();
       setFormSocietyValue('f_society_select', 'f_society_custom_group', 'f_society', selectedSociety || 'Prateek Laurel');
       document.getElementById('tileModal').classList.add('open');
-      setTimeout(() => document.getElementById('f_venture').focus(), 120);
+      if (window.innerWidth > 640) {
+        setTimeout(() => document.getElementById('f_venture')?.focus(), 120);
+      }
     }
     async function openEditModal(id) {
       let item = DATA.find(d => d.id === id) || { id };
@@ -25311,10 +25632,10 @@ Together, we grow stronger — one order at a time.`;
     <div class="s-card-title"><i class="fa fa-layer-group" style="color:var(--green)"></i> Business Offerings &amp; Items <span style="font-size:.8rem;color:var(--text-muted);font-weight:600;margin-left:6px">${limitText}</span> ${limitWarning}
       ${addBtn}
     </div>
-    ${menu.length ? `<table class="menu-table">
+    ${menu.length ? `<div class="table-responsive"><table class="menu-table">
       <thead><tr><th>Offering Name</th><th>Cost / Price</th><th>Description</th><th>Available</th><th>Actions</th></tr></thead>
       <tbody>${rows}</tbody>
-    </table>`: `<div class="empty-state" style="padding:24px"><i class="fa fa-layer-group"></i><p>No business offerings added yet. Click "Add Business Offering" above to add products, services, menu, classes, events, etc.</p></div>`}
+    </table></div>`: `<div class="empty-state" style="padding:24px"><i class="fa fa-layer-group"></i><p>No business offerings added yet. Click "Add Business Offering" above to add products, services, menu, classes, events, etc.</p></div>`}
   </div>`;
 
       const vendorCoupons = (_couponsList || []).filter(c => c.vendor_id === v.id);
@@ -25324,7 +25645,7 @@ Together, we grow stronger — one order at a time.`;
       <button class="btn btn-sm btn-primary" onclick="openCouponEditModal({ creator_type: 'VENDOR', vendor_id: '${v.id}' })"><i class="fa fa-plus"></i> Create Vendor Coupon</button>
     </div>
     <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:12px">Create special discount coupons exclusive to your business. Customers can apply these during checkout.</p>
-    ${vendorCoupons.length ? `<table class="menu-table">
+    ${vendorCoupons.length ? `<div class="table-responsive"><table class="menu-table">
       <thead><tr><th>Code</th><th>Discount</th><th>Min Order</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
       <tbody>
         ${vendorCoupons.map(cp => `<tr>
@@ -25342,7 +25663,7 @@ Together, we grow stronger — one order at a time.`;
           </td>
         </tr>`).join('')}
       </tbody>
-    </table>` : `<div class="empty-state" style="padding:16px"><p style="font-size:0.85rem;margin:0">No coupons created yet for your business.</p></div>`}
+    </table></div>` : `<div class="empty-state" style="padding:16px"><p style="font-size:0.85rem;margin:0">No coupons created yet for your business.</p></div>`}
   </div>`;
 
       return offeringsCard + couponsCard;
@@ -26112,7 +26433,9 @@ Together, we grow stronger — one order at a time.`;
       document.getElementById('mi_avail').checked = item?.available !== false;
 
       document.getElementById('menuItemModal').classList.add('open');
-      setTimeout(() => document.getElementById('mi_name').focus(), 100);
+      if (window.innerWidth > 640) {
+        setTimeout(() => document.getElementById('mi_name')?.focus(), 100);
+      }
     }
 
     async function saveMenuItem() {
@@ -26318,7 +26641,7 @@ Together, we grow stronger — one order at a time.`;
     <div style="margin-bottom:10px">
       <input id="adminVendorSearch" type="text" placeholder="Search by name, phone, email, address, category, or sub-category…" value="${q}" oninput="filterAdminVendors(this.value)" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:.85rem;background:var(--bg-card);color:var(--text)">
     </div>
-    <div style="max-height:60vh;overflow-y:auto">
+    <div class="table-responsive" style="max-height:60vh;overflow:auto;-webkit-overflow-scrolling:touch">
     <table class="menu-table" style="font-size:.82rem">
       <thead><tr><th>#</th><th>Business</th><th>Category &amp; Sub-Cat</th><th>Contact &amp; Email</th><th>Address</th><th>Menu</th><th>Actions</th></tr></thead>
       <tbody>${list.length ? list.map((v, i) => getAdminVendorRowHtml(v, i)).join('') : `<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px">No vendors match "${q}"</td></tr>`}</tbody>
@@ -26546,10 +26869,10 @@ Together, we grow stronger — one order at a time.`;
     <div style="margin-bottom:12px;margin-top:10px">
       <input id="adminAccountSearch" type="text" placeholder="Search sellers by name, email, or vendor…" oninput="filterAdminAccounts(this.value)" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:.85rem;background:var(--bg-card);color:var(--text)">
     </div>
-    ${accounts.length ? `<table class="menu-table" id="adminAccountsTable">
+    ${accounts.length ? `<div class="table-responsive"><table class="menu-table" id="adminAccountsTable">
       <thead><tr><th>Name</th><th>Email</th><th>Vendor</th><th>Subscription</th><th>Actions</th></tr></thead>
       <tbody>${accounts.map(renderAccountRow).join('')}</tbody>
-    </table>`: `<div class="empty-state" style="padding:20px"><i class="fa fa-users"></i><p>No business accounts yet.</p></div>`}
+    </table></div>`: `<div class="empty-state" style="padding:20px"><i class="fa fa-users"></i><p>No business accounts yet.</p></div>`}
   </div>`;
     }
 
@@ -27449,42 +27772,46 @@ Together, we grow stronger — one order at a time.`;
       <button class="btn btn-primary btn-sm" onclick="adminOpenAddSocietyModal()"><i class="fa fa-plus"></i> Add New Society</button>
     </div>
     <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:14px">Each business is linked to a society. The website auto-detects the visitor's society via GPS. Add coordinates so detection works precisely.</p>
-    <table class="menu-table" style="margin-bottom:16px">
-      <thead><tr><th>Society Name</th><th>Address</th><th>Latitude</th><th>Longitude</th><th style="width:140px;text-align:right">Actions</th></tr></thead>
-      <tbody>
-        ${(_societyList()).map(s => {
-        const escapedName = s.name.replace(/'/g, "\\'");
-        return `<tr>
-            <td style="font-weight:700">
-              <div>${esc(s.name)}</div>
-              ${s.googleMapName ? `<div style="font-size:0.73rem;color:var(--green-dark);font-weight:600;margin-top:2px"><i class="fa fa-map-location-dot"></i> ${esc(s.googleMapName)}</div>` : ''}
-            </td>
-            <td style="font-size:.8rem;color:var(--text-muted)">${esc(s.address || '—')}</td>
-            <td style="font-size:.8rem">${s.lat || '—'}</td>
-            <td style="font-size:.8rem">${s.lng || '—'}</td>
-            <td style="text-align:right;white-space:nowrap">
-              <button class="btn btn-sm" style="background:#e67e22;color:#fff;padding:4px 10px;font-size:0.78rem;border-radius:6px;margin-right:4px;border:none;cursor:pointer;font-weight:600" onclick="adminOpenEditSocietyModal('${escapedName}')" title="Edit Society"><i class="fa fa-pen"></i> Edit</button>
-              <button class="btn btn-sm btn-danger" style="padding:4px 10px;font-size:0.78rem;border-radius:6px" onclick="adminRemoveSociety('${escapedName}')" title="Delete Society"><i class="fa fa-trash"></i> Delete</button>
-            </td>
-          </tr>`;
-      }).join('')}
-      </tbody>
-    </table>
+    <div class="table-responsive">
+      <table class="menu-table" style="margin-bottom:16px">
+        <thead><tr><th>Society Name</th><th>Address</th><th>Latitude</th><th>Longitude</th><th style="width:140px;text-align:right">Actions</th></tr></thead>
+        <tbody>
+          ${(_societyList()).map(s => {
+          const escapedName = s.name.replace(/'/g, "\\'");
+          return `<tr>
+              <td style="font-weight:700">
+                <div>${esc(s.name)}</div>
+                ${s.googleMapName ? `<div style="font-size:0.73rem;color:var(--green-dark);font-weight:600;margin-top:2px"><i class="fa fa-map-location-dot"></i> ${esc(s.googleMapName)}</div>` : ''}
+              </td>
+              <td style="font-size:.8rem;color:var(--text-muted)">${esc(s.address || '—')}</td>
+              <td style="font-size:.8rem">${s.lat || '—'}</td>
+              <td style="font-size:.8rem">${s.lng || '—'}</td>
+              <td style="text-align:right;white-space:nowrap">
+                <button class="btn btn-sm" style="background:#e67e22;color:#fff;padding:4px 10px;font-size:0.78rem;border-radius:6px;margin-right:4px;border:none;cursor:pointer;font-weight:600" onclick="adminOpenEditSocietyModal('${escapedName}')" title="Edit Society"><i class="fa fa-pen"></i> Edit</button>
+                <button class="btn btn-sm btn-danger" style="padding:4px 10px;font-size:0.78rem;border-radius:6px" onclick="adminRemoveSociety('${escapedName}')" title="Delete Society"><i class="fa fa-trash"></i> Delete</button>
+              </td>
+            </tr>`;
+        }).join('')}
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <!-- Admin access management card -->
   <div class="s-card" style="margin-top:18px">
     <div class="s-card-title"><i class="fa fa-user-shield" style="color:var(--green)"></i> Admin Access — Authorized Mobile Numbers</div>
     <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:14px">There's no separate admin login screen — anyone who verifies one of these mobile numbers via OTP on the regular customer <strong>Login / Sign Up</strong> button will be asked for the Firebase email + password below (the same one you use) to finish activating admin mode, instead of continuing as a customer.</p>
-    <table class="menu-table" style="margin-bottom:16px">
-      <thead><tr><th>Mobile Number</th><th></th></tr></thead>
-      <tbody>
-        ${_adminNumbers().map(n => `<tr>
-          <td style="font-weight:700">${esc(n)}</td>
-          <td><button class="btn btn-sm btn-danger" onclick="adminRemoveNumber('${n.replace(/'/g, "\\'")}')"><i class="fa fa-trash"></i></button></td>
-        </tr>`).join('')}
-      </tbody>
-    </table>
+    <div class="table-responsive">
+      <table class="menu-table" style="margin-bottom:16px">
+        <thead><tr><th>Mobile Number</th><th></th></tr></thead>
+        <tbody>
+          ${_adminNumbers().map(n => `<tr>
+            <td style="font-weight:700">${esc(n)}</td>
+            <td><button class="btn btn-sm btn-danger" onclick="adminRemoveNumber('${n.replace(/'/g, "\\'")}')"><i class="fa fa-trash"></i></button></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
     <div style="display:flex;gap:8px">
       <input id="new_admin_number" placeholder="10-digit mobile number" maxlength="10" style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:.84rem">
       <button class="btn btn-primary btn-sm" onclick="adminAddNumber()"><i class="fa fa-plus"></i> Add Number</button>
@@ -27785,7 +28112,7 @@ Together, we grow stronger — one order at a time.`;
       if (latInput) latInput.value = '';
       if (lngInput) lngInput.value = '';
       openModal('societyModal');
-      setTimeout(() => { if (nameInput) nameInput.focus(); }, 120);
+      if (window.innerWidth > 640) setTimeout(() => { if (nameInput) nameInput.focus(); }, 120);
     }
 
     function adminOpenEditSocietyModal(name) {
@@ -27806,7 +28133,7 @@ Together, we grow stronger — one order at a time.`;
       if (latInput) latInput.value = soc.lat != null ? soc.lat : '';
       if (lngInput) lngInput.value = soc.lng != null ? soc.lng : '';
       openModal('societyModal');
-      setTimeout(() => { if (nameInput) nameInput.focus(); }, 120);
+      if (window.innerWidth > 640) setTimeout(() => { if (nameInput) nameInput.focus(); }, 120);
     }
 
     function _restoreSocietiesCardScroll() {
@@ -28185,15 +28512,17 @@ Together, we grow stronger — one order at a time.`;
       }).sort((a, b) => b.orders - a.orders);
       c.innerHTML = `<div class="s-card">
     <div class="s-card-title"><i class="fa fa-chart-bar" style="color:var(--green)"></i> Vendor Stats</div>
-    <table class="menu-table">
-      <thead><tr><th>Vendor</th><th>Profile Views</th><th>Order Clicks</th><th>WA Clicks</th></tr></thead>
-      <tbody>${rows.map(r => `<tr>
-        <td><strong>${r.v.venture}</strong><br><span style="font-size:.72rem;color:var(--text-muted)">${r.v.cat.split(',')[0]}</span></td>
-        <td style="text-align:center">${r.views}</td>
-        <td style="text-align:center;font-weight:700;color:${r.orders > 0 ? 'var(--green)' : 'var(--text-muted)'}">${r.orders}</td>
-        <td style="text-align:center">${r.wa}</td>
-      </tr>`).join('')}</tbody>
-    </table>
+    <div class="table-responsive">
+      <table class="menu-table">
+        <thead><tr><th>Vendor</th><th>Profile Views</th><th>Order Clicks</th><th>WA Clicks</th></tr></thead>
+        <tbody>${rows.map(r => `<tr>
+          <td><strong>${r.v.venture}</strong><br><span style="font-size:.72rem;color:var(--text-muted)">${r.v.cat.split(',')[0]}</span></td>
+          <td style="text-align:center">${r.views}</td>
+          <td style="text-align:center;font-weight:700;color:${r.orders > 0 ? 'var(--green)' : 'var(--text-muted)'}">${r.orders}</td>
+          <td style="text-align:center">${r.wa}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>
   </div>`;
     }
 
