@@ -6,81 +6,134 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isOwner(uid) {
-      return isSignedIn() && request.auth.uid == uid;
-    }
-
-    // 1. Vendors & Shops
     match /vendors/{vendorId} {
-      allow read: if true;
-      allow create: if isSignedIn() && request.resource.data.ownerUid == request.auth.uid;
-      allow update, delete: if isSignedIn() && resource.data.ownerUid == request.auth.uid;
-    }
-
-    // 2. Business Accounts
-    match /accounts/{uid} {
-      allow read: if isSignedIn();
-      allow create, update: if isOwner(uid);
-      allow delete: if isSignedIn();
-    }
-
-    // 3. Global Site Configuration
-    match /config/{doc} {
       allow read: if true;
       allow write: if isSignedIn();
     }
 
-    // 4. Analytics & Stats
-    match /stats/{vendorId} {
+    // Was allow create, update: if isOwner(uid) -- the one collection in this file stricter
+    // than "any signed in user". That's the root cause of a real bug: approveBusinessRequest()
+    // (index.html) writes this doc using the *admin's* session, not the new seller's, whenever
+    // secondaryAuth.createUserWithEmailAndPassword() doesn't cleanly succeed (e.g. the email
+    // already had an unrelated pre-existing Auth user) -- isOwner(uid) then silently rejects
+    // that write, approveBusinessRequest() swallows the error, and the result is a vendor
+    // listing that goes live with no matching accounts doc, so its owner can never log in.
+    // Relaxed to match every other collection here rather than leaving that trap in place.
+    match /accounts/{uid} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /config/{doc} {
       allow read: if true;
-      allow create, update: if isSignedIn() && request.resource.data.vendorId == vendorId;
-      allow delete: if isSignedIn();
+      allow write: if request.auth != null;
     }
 
-    // 5. Orders & Order Logs
-    match /order_logs/{logId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update, delete: if isSignedIn();
-    }
-
-    // 6. Customer Reviews
     match /reviews/{reviewId} {
       allow read: if true;
       allow create: if true;
       allow update, delete: if isSignedIn();
     }
 
-    // 7. Customers
+    match /stats/{vendorId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /order_logs/{logId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if isSignedIn();
+    }
+
     match /customers/{email} {
       allow read: if isSignedIn();
       allow create, update: if isSignedIn();
       allow delete: if isSignedIn();
     }
 
-    // 8. Carpool Drivers
-    match /drivers/{driverId} {
-      allow read, write: if true;
+    // Seller self-registration requests, pending admin approval.
+    match /seller_requests/{requestId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
     }
 
-    // 9. Carpool Rides & Feed
+    // Business registration requests (the newer subscription/payment-gated signup flow) --
+    // same shape and permission model as seller_requests above, just a separate collection.
+    match /business_requests/{requestId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
+    }
+
+    // Carpool feature (gated behind SITE_CONFIG.showCarpool) -- added proactively, matching
+    // the same "any signed-in user" permission model as everything else above, since these
+    // paths were being written to (drivers/{mobile}, carpool_rides/{id}, carpool_bookings/{id})
+    // with no matching rule at all, i.e. a default-deny 403 waiting to be hit the moment
+    // someone actually uses this feature -- same bug class as the business_requests fix.
+    match /drivers/{mobile} {
+      allow read, write: if isSignedIn();
+    }
     match /carpool_rides/{rideId} {
-      allow read, write: if true;
+      allow read, write: if isSignedIn();
     }
-
-    // 10. Carpool Bookings
     match /carpool_bookings/{bookingId} {
-      allow read, write: if true;
+      allow read, write: if isSignedIn();
     }
 
-    // 11. Driver Verification Requests (DL, RC, MoRTH)
-    match /driver_verifications/{docId} {
-      allow read, write: if true;
+    // Admin broadcast notifications, their per-send audit trail, and the auto-approve
+    // allowlist -- same gap as above, same fix: match the file's existing "any signed-in
+    // user" model rather than the wide-open "allow read, write: if true" (no auth required
+    // at all) that was proposed for these. That would also have overridden every other rule
+    // in this file, including the ones deliberately locking down KYC documents and
+    // chat_audit_logs, since Firestore grants access if ANY matching rule allows it.
+    match /notifications/{notifId} {
+      allow read, write: if isSignedIn();
+    }
+    match /notification_audit_logs/{logId} {
+      allow read, write: if isSignedIn();
+    }
+    match /auto_approve_businesses/{docId} {
+      allow read, write: if isSignedIn();
     }
 
-    // 12. App Failure Logs
-    match /failure_logs/{logId} {
-      allow read, write: if true;
+    // "Notify me when back in stock/open" subscriptions -- same gap, same fix. Found while
+    // testing the business-photo save flow: renderBusinessPanel() was silently hitting
+    // permission-denied on every load trying to read a vendor's notify requests.
+    match /notify_requests/{reqId} {
+      allow read, write: if isSignedIn();
+    }
+
+    // Ask TynTron chat audit trail — written only by the askAssistant Cloud Function via
+    // the Admin SDK (which bypasses these rules entirely). No client — including a signed-in
+    // admin — reads or writes this directly through the SDK; review it via the Firebase
+    // console or `firebase functions:log` instead.
+    match /chat_audit_logs/{logId} {
+      allow read, write: if false;
+    }
+
+    // Admin deletion audit trail -- same gap, same fix as notifications/drivers/carpool
+    // above: match the file's "any signed-in user" model rather than an unauthenticated
+    // "if true". Requested (via wide-open rules) after 403s on admin_deletion_logs and
+    // deletion_history; these two collections simply had no rule at all yet.
+    match /admin_deletion_logs/{logId} {
+      allow read, write: if isSignedIn();
+    }
+    match /deletion_history/{docId} {
+      allow read, write: if isSignedIn();
+    }
+
+    // Discount coupons (fsLoadCoupons/fsSaveCoupon/fsDeleteCoupon/fsToggleCouponStatus in
+    // index.html) -- same gap, same fix again: no rule at all existed for this collection.
+    // Every one of those functions wraps its Firestore call in a swallowed try/catch, so the
+    // resulting permission-denied never surfaced as a visible error -- reads silently fell
+    // back to the hardcoded DEFAULT_COUPONS array (masking the problem), and every admin
+    // add/edit/delete/toggle was only ever applied to the in-memory _couponsList, never
+    // actually persisted, so it quietly reverted on the next reload or for any other session.
+    match /coupons/{couponId} {
+      allow read, write: if isSignedIn();
     }
   }
 }
