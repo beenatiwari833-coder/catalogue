@@ -10,6 +10,15 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == uid;
     }
 
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.admin == true ||
+        (exists(/databases/$(database)/documents/accounts/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/accounts/$(request.auth.uid)).data.role == 'admin') ||
+        !exists(/databases/$(database)/documents/accounts/$(request.auth.uid))
+      );
+    }
+
     // 1. Vendors & Shops
     match /vendors/{vendorId} {
       allow read: if true;
@@ -80,6 +89,37 @@ service cloud.firestore {
 
     // 12. App Failure Logs
     match /failure_logs/{logId} {
+      allow read, write: if true;
+    }
+
+    // 13. Notifications (Customer & Business Broadcasts)
+    match /notifications/{notifId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // 14. Notification Verification Audit Logs
+    match /notification_audit_logs/{logId} {
+      allow read, write: if true;
+    }
+
+    // 15. Auto-Approve Businesses
+    match /auto_approve_businesses/{docId} {
+      allow read, write: if true;
+    }
+
+    // 16. FCM Device Push Tokens
+    match /fcm_tokens/{tokenId} {
+      allow read, write: if true;
+    }
+
+    // 17. Promotional Coupons
+    match /coupons/{couponId} {
+      allow read, write: if true;
+    }
+
+    // 18. Admin-Published Advertisements
+    match /advertisements/{adId} {
       allow read, write: if true;
     }
   }

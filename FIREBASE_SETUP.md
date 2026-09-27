@@ -129,11 +129,53 @@ service cloud.firestore {
     match /failure_logs/{logId} {
       allow read, write: if true;
     }
+
+    match /notifications/{notifId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /notification_audit_logs/{logId} {
+      allow read, write: if true;
+    }
+
+    match /auto_approve_businesses/{docId} {
+      allow read, write: if true;
+    }
+
+    match /fcm_tokens/{tokenId} {
+      allow read, write: if true;
+    }
+
+    match /coupons/{couponId} {
+      allow read, write: if true;
+    }
+
+    match /advertisements/{adId} {
+      allow read, write: if true;
+    }
   }
 }
 ```
 
 Click **Publish**.
+
+## Step 6b — Set Firebase Storage security rules
+
+In Firebase Console → **Storage → Rules**, paste:
+
+```
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if true;
+    }
+  }
+}
+```
+
+Click **Publish**. This allows uploaded advertisement images and registration files to be saved in Firebase Storage.
 
 ## Step 9 — Customer login (email OTP) setup
 
@@ -159,3 +201,31 @@ Customers verify their email with a one-time code before their first order (and 
 4. Share the email/password with the business
 
 That's it! The business can now log in via **Business Login** and manage their own business.
+
+---
+
+## Step 10 — Closed-App Push Notifications (FCM Setup)
+
+To receive notifications on Android / iOS when the app is **completely closed** (swiped away from Recent Apps):
+
+### Part A: Add `google-services.json` to the Android Project
+1. Go to [Firebase Console](https://console.firebase.google.com) → project `homebiz-480e5` → click the **gear icon ⚙ (Project Settings)**.
+2. Under **Your apps**, click **Add app** → select **Android**.
+3. Package Name: `com.prateeklaurel.catalogue`
+4. Nickname: `TynTron Mobile`
+5. Click **Register app** and download the `google-services.json` file.
+6. Move the downloaded file into your app folder:
+   ```bash
+   cp ~/Downloads/google-services.json /Users/abc/homebiz-app/android/app/google-services.json
+   ```
+
+### Part B: Enable Direct FCM Dispatch in Admin Panel (No Paid Plan Needed)
+1. In Firebase Console → **Project Settings (⚙)** → **Cloud Messaging** tab.
+2. Under **Cloud Messaging API (Legacy)**, click the 3 dots → **Manage API in Google Cloud Console** → click **Enable**.
+3. Return to Firebase Console and copy the **Server Key** (starts with `AAAA...`).
+4. Open the TynTron app → **Admin Panel** → **Site Config** tab.
+5. Scroll down to **Firebase Cloud Messaging (FCM)**.
+6. Paste the **Server Key** into **FCM Server Key** and click **Save Config**.
+
+Now, whenever an Admin clicks **Approve** on a seller broadcast, the push is instantly dispatched to all customers' phones, appearing in their Android notification drawer even when the app is completely closed!
+

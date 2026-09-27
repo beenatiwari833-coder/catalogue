@@ -117,7 +117,7 @@ async function runTests() {
     // Helper: navigate and inject test fixtures
     async function loadPageWithFixtures() {
       await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
-      await page.waitForTimeout(800);
+      await page.waitForTimeout(1800);
 
       await page.evaluate((fixtures) => {
         // Set selected society to Prateek Laurel

@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "912207487650",
+    "firebase_url": "https://homebiz-480e5-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "homebiz-480e5",
+    "storage_bucket": "homebiz-480e5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:912207487650:android:465cc586ece9183d232dfb",
+        "android_client_info": {
+          "package_name": "com.prateeklaurel.catalogue"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB803B_Vgx0TPuDNYbRFGZvMHRcxGYSBW8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
