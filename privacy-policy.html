@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Policy — TynTron</title>
+<meta name="description" content="TynTron's Privacy Policy — how we collect, use, and protect your personal information.">
+<link rel="icon" href="favicon.ico">
+<style>
+  :root {
+    --accent: #FF9933;
+    --accent-dark: #B85C1A;
+    --cream: #F6F9FC;
+    --white: #ffffff;
+    --text: #1C2733;
+    --text-muted: #5B6B7A;
+    --border: #E1E8F0;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--cream);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+  }
+  header {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  header img { height: 36px; width: 36px; border-radius: 8px; object-fit: cover; }
+  header .brand { font-size: 1.25rem; font-weight: 800; color: var(--text); }
+  header .brand span { color: var(--accent); }
+  header a.back {
+    margin-left: auto;
+    color: var(--accent-dark);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: .92rem;
+  }
+  header a.back:hover { text-decoration: underline; }
+  main {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+  h1 {
+    font-size: 1.9rem;
+    margin: 0 0 6px;
+  }
+  .meta {
+    color: var(--text-muted);
+    font-size: .9rem;
+    margin-bottom: 28px;
+  }
+  #policyBody {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px 32px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-size: .97rem;
+  }
+  .state-msg {
+    color: var(--text-muted);
+    font-style: italic;
+  }
+  .error-msg {
+    color: #c0392b;
+    font-weight: 600;
+  }
+  footer {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: .85rem;
+    padding: 24px;
+  }
+  footer a { color: var(--accent-dark); }
+</style>
+</head>
+<body>
+
+<header>
+  <img src="newlogo.png.jpeg" alt="TynTron logo">
+  <div class="brand">Tyn<span>Tron</span></div>
+  <a class="back" href="/">← Back to TynTron</a>
+</header>
+
+<main>
+  <h1>Privacy Policy</h1>
+  <div class="meta">The current, authoritative version of this policy is always shown below, loaded live from TynTron.</div>
+  <div id="policyBody"><span class="state-msg">Loading…</span></div>
+</main>
+
+<footer>
+  TynTron — questions about this policy? Contact <a href="mailto:info@tyntron.com">info@tyntron.com</a>
+</footer>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script>
+  const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyB803B_Vgx0TPuDNYbRFGZvMHRcxGYSBW8",
+    authDomain: "homebiz-480e5.firebaseapp.com",
+    projectId: "homebiz-480e5",
+    storageBucket: "homebiz-480e5.firebasestorage.app",
+    messagingSenderId: "912207487650",
+    appId: "1:912207487650:web:465cc586ece9183d232dfb"
+  };
+
+  const bodyEl = document.getElementById('policyBody');
+
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    const db = firebase.firestore();
+    db.collection('config').doc('site').get()
+      .then(doc => {
+        const text = doc.exists ? (doc.data().privacy || '') : '';
+        bodyEl.textContent = text.trim()
+          ? text
+          : 'This policy is being updated. Please check back shortly, or contact info@tyntron.com.';
+      })
+      .catch(err => {
+        bodyEl.innerHTML = '<span class="error-msg">Could not load the policy right now (' +
+          (err && err.message ? err.message : 'network error') +
+          '). Please contact info@tyntron.com for a copy.</span>';
+      });
+  } catch (e) {
+    bodyEl.innerHTML = '<span class="error-msg">Could not load the policy right now. Please contact info@tyntron.com for a copy.</span>';
+  }
+</script>
+
+</body>
+</html>
